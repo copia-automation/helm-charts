@@ -70,7 +70,7 @@ spec:
             - name: ssh
               containerPort: {{ .Values.copia.config.server.SSH_LISTEN_PORT | default "22" }}
             - name: http
-              containerPort: {{ .Values.copia.config.server.HTTP_PORT | default "22" }}
+              containerPort: {{ .Values.copia.config.server.HTTP_PORT | default "80" }}
             {{- if .Values.copia.config.server.ENABLE_PPROF }}
             - name: profiler
               containerPort: 6060
