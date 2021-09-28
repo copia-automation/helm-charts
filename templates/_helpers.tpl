@@ -37,8 +37,7 @@ Create image name and tag used by the deployment.
 {{- define "app.image" -}}
 {{- $name := .Values.image.repository -}}
 {{- $tag := ternary .Values.image.version .Values.image.tag (hasKey .Values.image "version") -}}
-{{- $rootless := ternary "-rootless" "" (.Values.image.rootless) -}}
-{{- printf "%s:%s%s" $name $tag $rootless -}}
+{{- printf "%s:%s" $name $tag -}}
 {{- end -}}
 
 {{/*
