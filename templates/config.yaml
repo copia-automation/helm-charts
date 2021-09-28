@@ -8,7 +8,7 @@ type: Opaque
 stringData:
   app.ini: |
     {{- /* autogenerate app.ini */ -}}
-    {{- range $key, $value := .Values.gitea.config  }}
+    {{- range $key, $value := .Values.copia.config  }}
     {{- if kindIs "map" $value }}
     {{- if gt (len $value) 0 }}
 
