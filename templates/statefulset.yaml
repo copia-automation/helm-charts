@@ -123,8 +123,8 @@ spec:
               mountPath: /tmp
             - name: data
               mountPath: /data
-            - name: config
-              mountPath: /data/gitea/conf
+            # - name: config
+            #   mountPath: /data/gitea/conf
             {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
             {{- end }}
@@ -141,9 +141,9 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       volumes:
-        - name: config
-          secret:
-            secretName: {{ include "app.fullname" . }}-ini
+        # - name: config
+        #   secret:
+        #     secretName: {{ include "app.fullname" . }}-ini
         {{- if .Values.extraVolumes }}
         {{- toYaml .Values.extraVolumes | nindent 8 }}
         {{- end }}

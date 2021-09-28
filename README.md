@@ -44,7 +44,7 @@ resources:
 Ideally, the database is running in a private subnet capable of access from pods running on the EKS cluster. Ensure that the database accepts incoming connections on the relevant port (postgres: `5432`, mysql: `3306`) from the security group ID associated with the EKS host nodes.
 
 ##### Between Application and Clients
-A service is created for the Copia application that exposes an HTTP web service on port `3000`. 
+A service is created for the Copia application that exposes an HTTP web service on port `3000`.
 
 #### Persistent Storage
 
