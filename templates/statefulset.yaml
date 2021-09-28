@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "app.fullname" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "app.selectorLabels" . | nindent 6 }}
+      {{- if .Values.statefulset.labels }}
+      {{- toYaml .Values.statefulset.labels | nindent 6 }}
+      {{- end }}
+  serviceName: {{ include "app.fullname" . }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        {{- with .Values.copia.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "app.labels" . | nindent 8 }}
+        {{- if .Values.statefulset.labels }}
+        {{- toYaml .Values.statefulset.labels | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.schedulerName }}
+      schedulerName: "{{ .Values.schedulerName }}"
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ include "app.image" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - gitea
+          env:
+            # SSH Port values have to be set here as well for openssh configuration
+            - name: SSH_LISTEN_PORT
+              value: {{ .Values.copia.config.server.SSH_LISTEN_PORT | default "22" | quote }}
+            - name: SSH_PORT
+              value: {{ .Values.copia.config.server.SSH_PORT | default "22" | quote }}
+            - name: GITEA_APP_INI
+              value: /data/gitea/conf/app.ini
+            - name: GITEA_CUSTOM
+              value: /data/gitea
+            - name: GITEA_WORK_DIR
+              value: /data
+            - name: GITEA_TEMP
+              value: /tmp/gitea
+            - name: TMPDIR
+              value: /tmp/gitea
+            {{- if .Values.signing.enabled }}
+            - name: GNUPGHOME
+              value: {{ .Values.signing.gpgHome }}
+            {{- end }}
+            {{- if .Values.statefulset.env }}
+            {{- toYaml .Values.statefulset.env | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: ssh
+              containerPort: {{ .Values.copia.config.server.SSH_LISTEN_PORT | default "22" }}
+            - name: http
+              containerPort: {{ .Values.copia.config.server.HTTP_PORT | default "22" }}
+            {{- if .Values.copia.config.server.ENABLE_PPROF }}
+            - name: profiler
+              containerPort: 6060
+            {{- end }}
+          {{- if .Values.copia.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: {{ .Values.copia.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.copia.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.copia.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.copia.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.copia.livenessProbe.failureThreshold }}
+          {{- else if .Values.copia.customLivenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.copia.customLivenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.copia.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: {{ .Values.copia.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.copia.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.copia.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.copia.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.copia.readinessProbe.failureThreshold }}
+          {{- else if .Values.copia.customReadinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.copia.customReadinessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.copia.startupProbe.enabled }}
+          startupProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: {{ .Values.copia.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.copia.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.copia.startupProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.copia.startupProbe.successThreshold }}
+            failureThreshold: {{ .Values.copia.startupProbe.failureThreshold }}
+          {{- else if .Values.copia.customStartupProbe }}
+          startupProbe:
+            {{- toYaml .Values.copia.customStartupProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: temp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /data/gitea/conf
+            {{- if .Values.extraVolumeMounts }}
+            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      volumes:
+        - name: config
+          secret:
+            secretName: {{ include "app.fullname" . }}-ini
+        {{- if .Values.extraVolumes }}
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
+        {{- end }}
+        - name: temp
+          emptyDir: {}
+  {{- if and .Values.persistence.enabled .Values.persistence.existingClaim }}
+        - name: data
+          persistentVolumeClaim:
+  {{- with .Values.persistence.existingClaim }}
+            claimName: {{ tpl . $ }}
+  {{- end }}
+  {{- else if not .Values.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+  {{- end }}
