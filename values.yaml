@@ -7,8 +7,9 @@ image:
 imagePullSecrets: []
 service:
   http:
-    type: LoadBalancer
+    type: ClusterIP
     port: 3000
+    clusterIP: None
     #loadBalancerIP:
     #nodePort:
     #externalTrafficPolicy:
