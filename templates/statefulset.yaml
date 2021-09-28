@@ -131,6 +131,25 @@ spec:
             - name: data
               emptyDir: {}
   {{- else if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+      volumes:
+        # - name: config
+        #   secret:
+        #     secretName: {{ include "app.fullname" . }}-ini
+        {{- if .Values.extraVolumes }}
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
+        {{- end }}
+        - name: temp
+          emptyDir: {}
+  {{- if and .Values.persistence.enabled .Values.persistence.existingClaim }}
+        - name: data
+          persistentVolumeClaim:
+  {{- with .Values.persistence.existingClaim }}
+            claimName: {{ tpl . $ }}
+  {{- end }}
+  {{- else if not .Values.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+  {{- end }}
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -175,22 +194,3 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      volumes:
-        # - name: config
-        #   secret:
-        #     secretName: {{ include "app.fullname" . }}-ini
-        {{- if .Values.extraVolumes }}
-        {{- toYaml .Values.extraVolumes | nindent 8 }}
-        {{- end }}
-        - name: temp
-          emptyDir: {}
-  {{- if and .Values.persistence.enabled .Values.persistence.existingClaim }}
-        - name: data
-          persistentVolumeClaim:
-  {{- with .Values.persistence.existingClaim }}
-            claimName: {{ tpl . $ }}
-  {{- end }}
-  {{- else if not .Values.persistence.enabled }}
-        - name: data
-          emptyDir: {}
-  {{- end }}
