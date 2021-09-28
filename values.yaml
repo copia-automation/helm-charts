@@ -52,7 +52,7 @@ statefulset:
   labels: {}
 persistence:
   enabled: true
-  existingClaim: true
+  existingClaim:
   size: 10Gi
   accessModes:
     - ReadWriteOnce
