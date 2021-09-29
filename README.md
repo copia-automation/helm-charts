@@ -5,7 +5,9 @@ Helm's [documentation](https://helm.sh/docs) to get started.
 
 Once Helm has been set up correctly, add the repo as follows:
 
-`helm repo add copia-automation https://copia-automation.github.io/helm-charts`
+```
+helm repo add copia-automation https://copia-automation.github.io/helm-charts
+```
 
 If you had already added this repo earlier, run `helm repo update` to retrieve
 the latest versions of the packages.  You can then run `helm search repo
@@ -13,8 +15,12 @@ copia-automation` to see the charts.
 
 To install the copia chart:
 
-`helm install my-copia copia-automation/copia`
+```
+helm install my-copia copia-automation/copia
+```
 
 To uninstall the chart:
 
-`helm delete my-copia`
+```
+helm delete my-copia
+```
