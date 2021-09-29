@@ -1,16 +1,7 @@
 # Copia Helm Chart
 This chart installs Copia's version control system on a Kubernetes cluster. Read more about [Helm](https://helm.sh/).
 
-## Installation
-```
-helm repo add copiaio https://dl.copia.io/charts
-helm install copia-git copiaio/git
-    --version v0.1.0 \
-    --namespace copia --create-namespace
-```
-
 ### Example Azure Installation
-
 #### Create a Custom Persistent Volume Class
 Data is stored on a persistent volume hosted on an Azure disk. This Helm chart can create the volume, but you must supply it with an appropriate persistent volume class. Create the following Kubernetes resource:
 
@@ -38,9 +29,51 @@ kubectl apply -f azure-volume-class.yaml
 You can read more about persistent volume classes on Azure in Microsoft's [documentation](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi#dynamically-create-azure-disk-pvs-by-using-the-built-in-storage-classes).
 
 #### Create a `values.yaml` file
-Configuration of the Helm chart can be done in a custom configuration file. Default values are located in [values.yaml](./values.yaml)
+Configuration of the Helm chart can be done in a custom configuration file. Default values are located in [values.yaml](./values.yaml). This example will deploy to an AKS cluster:
 
-### AWS
+**values.yaml**
+```
+service:
+  http:
+    type: LoadBalancer
+    port: 3000
+    clusterIP: None
+    #loadBalancerIP:
+    #nodePort:
+    #externalTrafficPolicy:
+    #externalIPs:
+    loadBalancerSourceRanges: []
+    annotations:
+persistence:
+  enabled: true
+  existingClaim:
+  size: 600Gi
+  accessModes:
+    - ReadWriteOnce
+  labels: {}
+  annotations: {}
+  storageClass: azuredisk-csi
+```
+
+## Install the Helm chart
+If you have already installed Helm, run the following:
+
+```
+helm repo add copia-automation https://copia-automation.github.io/helm-charts
+helm install my-copia copia-automation/copia \
+  -f values.yaml \
+  -n copia \
+  --create-namespace
+```
+
+You should see a new pod appear by running `kubectl get pods -n copia`,
+
+```
+NAME         READY   STATUS    RESTARTS   AGE
+my-copia-0   1/1     Running   0          2m30s
+```
+
+### Example AWS Installation
 This installation covers installing to EKS (Elastic Kubernetes Service) on AWS.
 
 #### Prerequisites
