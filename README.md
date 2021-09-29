@@ -9,6 +9,37 @@ helm install copia-git copiaio/git
     --namespace copia --create-namespace
 ```
 
+### Example Azure Installation
+
+#### Create a Custom Persistent Volume Class
+Data is stored on a persistent volume hosted on an Azure disk. This Helm chart can create the volume, but you must supply it with an appropriate persistent volume class. Create the following Kubernetes resource:
+
+**azure-volume-class.yaml**
+```
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: azuredisk-csi
+  namespace: copia
+provisioner: disk.csi.azure.com
+parameters:
+  skuname: StandardSSD_LRS 
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+```
+
+To apply, run:
+
+```
+kubectl apply -f azure-volume-class.yaml
+```
+
+You can read more about persistent volume classes on Azure in Microsoft's [documentation](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi#dynamically-create-azure-disk-pvs-by-using-the-built-in-storage-classes).
+
+#### Create a `values.yaml` file
+Configuration of the Helm chart can be done in a custom configuration file. Default values are located in [values.yaml](./values.yaml)
+
 ### AWS
 This installation covers installing to EKS (Elastic Kubernetes Service) on AWS.
 
@@ -44,7 +75,7 @@ resources:
 Ideally, the database is running in a private subnet capable of access from pods running on the EKS cluster. Ensure that the database accepts incoming connections on the relevant port (postgres: `5432`, mysql: `3306`) from the security group ID associated with the EKS host nodes.
 
 ##### Between Application and Clients
-A service is created for the Copia application that exposes an HTTP web service on port `3000`. 
+A service is created for the Copia application that exposes an HTTP web service on port `3000`.
 
 #### Persistent Storage
 

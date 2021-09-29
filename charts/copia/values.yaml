@@ -5,11 +5,10 @@ image:
   tag: latest
   pullPolicy: Always
 imagePullSecrets: []
-securityContext: {}
 service:
   http:
-    type: LoadBalancer
-    port: 80
+    type: ClusterIP
+    port: 3000
     clusterIP: None
     #loadBalancerIP:
     #nodePort:
@@ -53,7 +52,7 @@ statefulset:
   labels: {}
 persistence:
   enabled: true
-  existingClaim: true
+  existingClaim:
   size: 10Gi
   accessModes:
     - ReadWriteOnce
