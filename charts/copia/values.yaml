@@ -2,7 +2,7 @@ replicaCount: 1
 clusterDomain: cluster.local
 image:
   repository: copiaio/copia
-  tag: latest
+  tag: v0.1.11
   pullPolicy: Always
 imagePullSecrets: []
 service:
