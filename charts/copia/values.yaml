@@ -7,12 +7,12 @@ image:
 imagePullSecrets: []
 service:
   http:
-    type: ClusterIP
+    type: NodePort
     port: 3000
-    clusterIP: None
+    targetPort: 4001
+    # clusterIP: None
     #loadBalancerIP:
     #nodePort:
-    #targetPort: 4001
     #externalTrafficPolicy:
     #externalIPs:
     loadBalancerSourceRanges: []
@@ -91,14 +91,14 @@ copia:
     periodSeconds: 10
     successThreshold: 1
     failureThreshold: 10
-  config:
-    APP_NAME: "Copia"
-    RUN_MODE: production
-    oauth2:
-      JWT_SECRET: <REQUIRED>
-    security:
-      INTERNAL_TOKEN: <REQUIRED>
-    server:
-      LFS_JWT_SECRET: <REQUIRED>
-    copia:
-      LICENSE_KEY: <REQUIRED>
+  # config:
+  #   APP_NAME: "Copia"
+  #   RUN_MODE: production
+  #   oauth2:
+  #     JWT_SECRET: <REQUIRED>
+  #   security:
+  #     INTERNAL_TOKEN: <REQUIRED>
+  #   server:
+  #     LFS_JWT_SECRET: <REQUIRED>
+  #   copia:
+  #     LICENSE_KEY: <REQUIRED>
