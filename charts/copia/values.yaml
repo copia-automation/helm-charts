@@ -12,6 +12,7 @@ service:
     clusterIP: None
     #loadBalancerIP:
     #nodePort:
+    #targetPort: 4001
     #externalTrafficPolicy:
     #externalIPs:
     loadBalancerSourceRanges: []

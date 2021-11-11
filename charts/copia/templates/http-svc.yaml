@@ -33,6 +33,10 @@ spec:
     {{- if  .Values.service.http.nodePort }}
     nodePort: {{ .Values.service.http.nodePort }}
     {{- end }}
+    {{- if .Values.copia.config.server.HTTP_PORT }}
     targetPort: {{ .Values.copia.config.server.HTTP_PORT }}
+    {{- else if .Values.service.http.targetPort }}
+    targetPort: {{ .Values.service.http.targetPort }}
+    {{- end }}
   selector:
     {{- include "app.selectorLabels" . | nindent 4 }}
