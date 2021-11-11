@@ -35,18 +35,22 @@ spec:
         paths:
           {{- range .paths }}
           - path: {{ .path }}
-            {{- if and .pathType ($.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress") }}
             pathType: {{ .pathType }}
-            {{- end }}
             backend:
-            {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+            {{- if .backend }}
+              service:
+                name: {{ .backend.service.name }}
+                port:
+                  {{- if .backend.service.port.number }}
+                  number: {{ .backend.service.port.number }}
+                  {{- else if .backend.service.port.name }}
+                  name: {{ .backend.service.port.name }}
+                  {{- end }}
+            {{- else }}
               service:
                 name: {{ $fullName }}-http
                 port:
                   number: {{ $httpPort }}
-            {{- else }}
-              serviceName: {{ $fullName }}-http
-              servicePort: {{ $httpPort }}
             {{- end }}
           {{- end }}
     {{- end }}
