@@ -36,7 +36,14 @@ Create image name and tag used by the deployment.
 */}}
 {{- define "app.image" -}}
 {{- $name := .Values.image.repository -}}
-{{- $tag := ternary .Values.image.version .Values.image.tag (hasKey .Values.image "version") -}}
+{{- $tag := "latest" -}}
+{{- if (hasKey .Values.image "version") -}}
+{{- $tag := .Values.image.version -}}
+{{- else if (hasKey .Values.image "tag") -}}
+{{- $tag := .Values.image.tag -}}
+{{- else -}}
+{{- $tag := .Chart.AppVersion -}}
+{{- end -}}
 {{- printf "%s:%s" $name $tag -}}
 {{- end -}}
 

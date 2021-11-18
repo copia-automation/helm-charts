@@ -45,10 +45,17 @@ spec:
             - gitea
           env:
             # SSH Port values have to be set here as well for openssh configuration
+            {{- if (hasKey .Values.copia "config") }}
             - name: SSH_LISTEN_PORT
               value: {{ .Values.copia.config.server.SSH_LISTEN_PORT | default "22" | quote }}
             - name: SSH_PORT
               value: {{ .Values.copia.config.server.SSH_PORT | default "22" | quote }}
+            {{- else }}
+            - name: SSH_LISTEN_PORT
+              value: "22"
+            - name: SSH_PORT
+              value: "22"
+            {{- end }}
             - name: GITEA_APP_INI
               value: /data/gitea/conf/app.ini
             - name: GITEA_CUSTOM
@@ -67,13 +74,20 @@ spec:
             {{- toYaml .Values.statefulset.env | nindent 12 }}
             {{- end }}
           ports:
+            {{- if (hasKey .Values.copia "config") }}
             - name: ssh
               containerPort: {{ .Values.copia.config.server.SSH_LISTEN_PORT | default "22" }}
             - name: http
               containerPort: {{ .Values.copia.config.server.HTTP_PORT | default "80" }}
-            {{- if .Values.copia.config.server.ENABLE_PPROF }}
+              {{- if .Values.copia.config.server.ENABLE_PPROF }}
             - name: profiler
               containerPort: 6060
+              {{- end }}
+            {{- else }}
+            - name: ssh
+              containerPort: 22
+            - name: http
+              containerPort: 80
             {{- end }}
           {{- if .Values.copia.livenessProbe.enabled }}
           livenessProbe:
@@ -123,6 +137,10 @@ spec:
               mountPath: /tmp
             - name: data
               mountPath: /data
+            {{- if (hasKey .Values.copia "config") }}
+            - name: config
+              mountPath: /data/gitea/conf
+            {{- end }}
             {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
             {{- end }}
@@ -139,9 +157,11 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       volumes:
-        # - name: config
-        #   secret:
-        #     secretName: {{ include "app.fullname" . }}-ini
+        {{- if (hasKey .Values.copia "config") }}
+        - name: config
+          secret:
+            secretName: {{ include "app.fullname" . }}-ini
+        {{- end }}
         {{- if .Values.extraVolumes }}
         {{- toYaml .Values.extraVolumes | nindent 8 }}
         {{- end }}

@@ -33,8 +33,8 @@ spec:
     {{- if  .Values.service.http.nodePort }}
     nodePort: {{ .Values.service.http.nodePort }}
     {{- end }}
-    {{- if .Values.copia.config.server.HTTP_PORT }}
-    targetPort: {{ .Values.copia.config.server.HTTP_PORT }}
+    {{- if (hasKey .Values.copia "config") }}
+    targetPort: {{ .Values.copia.config.server.HTTP_PORT | default .Values.service.http.targetPort }}
     {{- else if .Values.service.http.targetPort }}
     targetPort: {{ .Values.service.http.targetPort }}
     {{- end }}
