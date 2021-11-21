@@ -14,8 +14,8 @@ spec:
   selector:
     matchLabels:
       {{- include "app.selectorLabels" . | nindent 6 }}
-      {{- if .Values.statefulset.labels }}
-      {{- toYaml .Values.statefulset.labels | nindent 6 }}
+      {{- if .Values.deployment.labels }}
+      {{- toYaml .Values.deployment.labels | nindent 6 }}
       {{- end }}
   template:
     metadata:
@@ -26,8 +26,8 @@ spec:
         {{- end }}
       labels:
         {{- include "app.labels" . | nindent 8 }}
-        {{- if .Values.statefulset.labels }}
-        {{- toYaml .Values.statefulset.labels | nindent 8 }}
+        {{- if .Values.deployment.labels }}
+        {{- toYaml .Values.deployment.labels | nindent 8 }}
         {{- end }}
     spec:
       {{- if .Values.schedulerName }}
@@ -72,8 +72,8 @@ spec:
             - name: GNUPGHOME
               value: {{ .Values.signing.gpgHome }}
             {{- end }}
-            {{- if .Values.statefulset.env }}
-            {{- toYaml .Values.statefulset.env | nindent 12 }}
+            {{- if .Values.deployment.env }}
+            {{- toYaml .Values.deployment.env | nindent 12 }}
             {{- end }}
           ports:
             {{- if (hasKey .Values.copia "config") }}

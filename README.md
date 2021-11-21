@@ -87,7 +87,7 @@ acceptable. [EKS Optimized Amazon Linux](https://docs.aws.amazon.com/eks/latest/
 and is what Copia recommends.
 
 ##### Placement
-The Copia Git application is installed as a [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/), and
+The Copia Git application is installed as a [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), and
 must be co-located in the same availability zone as the volume where git data is stored. In a typical production EKS configuration, there is at least one node each in a minimum of three availability zones. If you are running fewer nodes, availability zone placement may be a concern. Consequently, ensure that a schedulable node is present in the same availability zone as the volume.
 
 ##### Resourcing

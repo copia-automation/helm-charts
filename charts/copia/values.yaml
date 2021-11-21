@@ -45,7 +45,7 @@ resources: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
-statefulset:
+deployment:
   env: []
     # - name: VARIABLE
     #   value: my-value
@@ -60,7 +60,7 @@ persistence:
   labels: {}
   annotations: {}
   # storageClass:
-# additional volumes to add to the statefulset.
+# additional volumes to add to the deployment.
 extraVolumes:
 extraVolumeMounts:
 # bash shell script copied verbatim to the start of the init-container.
