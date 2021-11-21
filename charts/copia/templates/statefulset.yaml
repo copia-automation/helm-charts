@@ -133,13 +133,14 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           volumeMounts:
-            - name: temp
+            - name     : temp
               mountPath: /tmp
-            - name: data
+            - name     : data
               mountPath: /data
             {{- if (hasKey .Values.copia "config") }}
-            - name: config
-              mountPath: /data/gitea/conf
+            - name     : config
+              mountPath: /data/gitea/conf/app.ini
+              subPath  : app.ini
             {{- end }}
             {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
