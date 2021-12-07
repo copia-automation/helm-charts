@@ -1,3 +1,4 @@
+{{- if hasKey .Values.copia "config" }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -21,3 +22,4 @@ stringData:
     {{ $key | upper }} = {{ $value }}
     {{- end }}
     {{- end }}
+{{- end }}

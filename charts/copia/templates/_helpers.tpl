@@ -52,7 +52,13 @@ Common labels
 helm.sh/chart: {{ include "app.chart" . }}
 app: {{ include "app.name" . }}
 {{ include "app.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
+{{- if hasKey .Values.image "version" -}}
+app.kubernetes.io/version: {{ .Values.image.version| quote }}
+version: {{ .Values.image.version| quote }}
+{{- else if hasKey .Values.image "tag" }}
+app.kubernetes.io/version: {{ .Values.image.tag| quote }}
+version: {{ .Values.image.tag| quote }}
+{{- else }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 version: {{ .Chart.AppVersion | quote }}
 {{- end }}

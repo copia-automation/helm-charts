@@ -6,6 +6,7 @@ metadata:
     {{- include "app.labels" . | nindent 4 }}
 spec:
   replicas: 1
+  revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -77,7 +78,7 @@ spec:
             - name: ssh
               containerPort: {{ .Values.copia.config.server.SSH_LISTEN_PORT | default "22" }}
             - name: http
-              containerPort: {{ .Values.copia.config.server.HTTP_PORT | default "80" }}
+              containerPort: {{ .Values.copia.config.server.HTTP_PORT | default "4001" }}
               {{- if .Values.copia.config.server.ENABLE_PPROF }}
             - name: profiler
               containerPort: 6060
@@ -86,7 +87,7 @@ spec:
             - name: ssh
               containerPort: 22
             - name: http
-              containerPort: 80
+              containerPort: 4001
             {{- end }}
           {{- if .Values.copia.livenessProbe.enabled }}
           livenessProbe:
@@ -133,7 +134,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           volumeMounts:
             - name     : temp
-              mountPath: /tmp
+              mountPath: /tmp/gitea
             - name     : data
               mountPath: /data
             {{- if (hasKey .Values.copia "config") }}
