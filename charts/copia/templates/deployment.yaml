@@ -10,8 +10,9 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
+      {{- with .Values.deployment.rollingUpdate }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
   selector:
     matchLabels:
       {{- include "app.selectorLabels" . | nindent 6 }}

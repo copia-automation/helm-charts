@@ -50,6 +50,9 @@ deployment:
     #   value: my-value
   terminationGracePeriodSeconds: 60
   labels: {}
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
 persistence:
   enabled: true
   existingClaim:
