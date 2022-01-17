@@ -91,6 +91,13 @@ spec:
             - name: http
               containerPort: 4001
             {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command: [
+                  "sh", "-c",
+                  "sleep 10 && /usr/local/bin/gitea manager shutdown",
+                ]
           {{- if .Values.copia.livenessProbe.enabled }}
           livenessProbe:
             tcpSocket:
