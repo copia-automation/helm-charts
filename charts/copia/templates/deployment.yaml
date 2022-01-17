@@ -38,6 +38,7 @@ spec:
       {{- end }}
       securityContext:
         fsGroup: 1000
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ include "app.image" . }}"
