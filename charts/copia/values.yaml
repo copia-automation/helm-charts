@@ -45,9 +45,33 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 deployment:
-  env: []
-    # - name: VARIABLE
-    #   value: my-value
+  env:
+    # - name: ACD_CONVERSION_URL
+    #   value: https://rockwell-tools.copia.io/convertOctetStream
+    # - name: ZAP14_CONVERSION_URL
+    #   value: http://zap2zipv14.copia.io:9694
+    # - name: ZAP15_CONVERSION_URL
+    #   value: http://zap2zipv15.copia.io:9695
+    # - name: ZAP16_CONVERSION_URL
+    #   value: http://zap2zip.copia.io:9696
+    # - name: ZAP17_CONVERSION_URL
+    #   value: http://zap2zipv17.copia.io:9697
+    # - name: ACD_IMPORT_CONVERSION_URL
+    #   value: https://rockwell-tools.copia.io/convertL5xToAcd
+    # - name: ZAP14_IMPORT_CONVERSION_URL
+    #   value: http://zap2zipv14.copia.io:9694/import
+    # - name: ZAP15_IMPORT_CONVERSION_URL
+    #   value: http://zap2zipv15.copia.io:9695/import
+    # - name: ZAP16_IMPORT_CONVERSION_URL
+    #   value: http://zap2zip.copia.io:9696/import
+    # - name: ZAP17_IMPORT_CONVERSION_URL
+    #   value: http://zap2zipv17.copia.io:9697/import
+    # - name: CODESYS_CONVERSION_URL
+    #   value: http://codesys.copia.io:8888/export
+    # - name: CODESYS_IMPORT_CONVERSION_URL
+    #   value: http://codesys.copia.io:8888/import
+    # - name: CONTROL_EXPERT_CONVERSION_URL
+    #   value: http://control-expert.copia.io:9696/export
   terminationGracePeriodSeconds: 60
   labels: {}
   rollingUpdate:
