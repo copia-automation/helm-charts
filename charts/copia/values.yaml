@@ -98,25 +98,23 @@ signing:
 copia:
   livenessProbe:
     enabled: false
-    initialDelaySeconds: 200
-    timeoutSeconds: 1
-    periodSeconds: 10
-    successThreshold: 1
-    failureThreshold: 10
   readinessProbe:
     enabled: false
-    initialDelaySeconds: 5
-    timeoutSeconds: 1
-    periodSeconds: 10
-    successThreshold: 1
-    failureThreshold: 3
-  startupProbe:
-    enabled: false
-    initialDelaySeconds: 60
-    timeoutSeconds: 1
-    periodSeconds: 10
-    successThreshold: 1
-    failureThreshold: 10
+  customStartupProbe:
+    httpGet:
+      path: /
+      port: 4001
+    initialDelaySeconds: 10
+    periodSeconds      : 5
+    timeoutSeconds     : 2
+    failureThreshold   : 10
+  customLivenessProbe:
+    httpGet:
+      path: /
+      port: 4001
+    periodSeconds   : 10
+    timeoutSeconds  : 2
+    failureThreshold: 2
   # config:
   #   APP_NAME: "Copia"
   #   RUN_MODE: production
