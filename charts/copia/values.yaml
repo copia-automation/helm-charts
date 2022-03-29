@@ -50,9 +50,9 @@ deployment:
     #   value: https://rockwell-tools.copia.io/convertOctetStream
     # - name: ZAP14_CONVERSION_URL
     #   value: http://zap2zipv14.copia.io:9694
+    # - name: ZAP15_0_CONVERSION_URL
+    #   value: http://zap2zipv15-0.copia.io:9695
     # - name: ZAP15_CONVERSION_URL
-    #   value: http://zap2zipv15-vanilla.copia.io:9695
-    # - name: ZAP15_1_CONVERSION_URL
     #   value: http://zap2zipv15.copia.io:9695
     # - name: ZAP16_CONVERSION_URL
     #   value: http://zap2zip.copia.io:9696
@@ -62,9 +62,9 @@ deployment:
     #   value: https://rockwell-tools.copia.io/convertL5xToAcd
     # - name: ZAP14_IMPORT_CONVERSION_URL
     #   value: http://zap2zipv14.copia.io:9694/import
+    # - name: ZAP15_0_IMPORT_CONVERSION_URL
+    #   value: http://zap2zipv15-0.copia.io:9695/import
     # - name: ZAP15_IMPORT_CONVERSION_URL
-    #   value: http://zap2zipv15-vanilla.copia.io:9695/import
-    # - name: ZAP15_1_IMPORT_CONVERSION_URL
     #   value: http://zap2zipv15.copia.io:9695/import
     # - name: ZAP16_IMPORT_CONVERSION_URL
     #   value: http://zap2zip.copia.io:9696/import
