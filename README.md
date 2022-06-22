@@ -78,7 +78,7 @@ This installation covers installing to EKS (Elastic Kubernetes Service) on AWS.
 
 #### Prerequisites
 - [Elastic Kubernetes Service](https://aws.amazon.com/eks/) cluster with available EC2 worker nodes
-- [Elastic Bean Stalk Container Storage Interface](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) installed to leverage EBS volume storage
+- [Elastic Block Store Container Storage Interface](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) installed to leverage EBS volume storage
 
 #### Compute Resourcing
 ##### OS
