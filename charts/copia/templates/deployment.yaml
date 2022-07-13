@@ -8,11 +8,15 @@ spec:
   replicas: {{ .Values.replicaCount | default 1 }}
   revisionHistoryLimit: 2
   strategy:
+    {{- if and .Values.deployment.strategy (eq .Values.deployment.strategy "Recreate") }}
+    type: Recreate
+    {{- else }}
     type: RollingUpdate
     rollingUpdate:
       {{- with .Values.deployment.rollingUpdate }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
+    {{- end }}
   selector:
     matchLabels:
       {{- include "app.selectorLabels" . | nindent 6 }}
@@ -35,6 +39,9 @@ spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if and (hasKey .Values "deployment") .Values.deployment.serviceAccountName }}
+      serviceAccountName: "{{ .Values.deployment.serviceAccountName }}"
       {{- end }}
       securityContext:
         fsGroup: 1000
