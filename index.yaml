@@ -3,6 +3,16 @@ entries:
   copia:
   - apiVersion: v2
     appVersion: v0.6.0
+    created: "2022-07-13T19:06:42.643355221Z"
+    description: Copia Helm chart for Kubernetes
+    digest: 3363828e7c7199fe5f3ba0cb7e91849e9c359fc66dba980472f243cc11e05535
+    name: copia
+    type: application
+    urls:
+    - https://github.com/copia-automation/helm-charts/releases/download/copia-0.6.1/copia-0.6.1.tgz
+    version: 0.6.1
+  - apiVersion: v2
+    appVersion: v0.6.0
     created: "2022-06-21T22:38:47.637131206Z"
     description: Copia Helm chart for Kubernetes
     digest: 450313bf21c10916262585bca3276538f654597743a43b22b16f1c978a4b3769
@@ -301,4 +311,4 @@ entries:
     urls:
     - https://github.com/copia-automation/helm-charts/releases/download/copia-0.0.4/copia-0.0.4.tgz
     version: 0.0.4
-generated: "2022-06-21T22:38:47.637467011Z"
+generated: "2022-07-13T19:06:42.643878135Z"
