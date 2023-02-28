@@ -48,6 +48,10 @@ deployment:
   env:
     # - name: ACD_CONVERSION_URL
     #   value: https://rockwell-tools.copia.io/convertOctetStream
+    # - name: ROCKWELL_V35_CONVERSION_URL
+    #   value: https://rockwell-v35.copia.io/convertOctetStream
+    # - name: ROCKWELL_V35_IMPORT_CONVERSION_URL
+    #   value: https://rockwell-v35.copia.io/convertL5xToAcd
     # - name: ZAP14_CONVERSION_URL
     #   value: http://zap2zipv14.copia.io:9694
     # - name: ZAP15_0_CONVERSION_URL
