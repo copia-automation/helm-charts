@@ -1,0 +1,25 @@
+{{- if hasKey .Values.conversionManager "config" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "app.fullname" . }}-ini
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  app.ini: |
+    {{- /* autogenerate app.ini */ -}}
+    {{- range $key, $value := .Values.conversionManager.config  }}
+    {{- if kindIs "map" $value }}
+    {{- if gt (len $value) 0 }}
+
+    [{{ $key }}]
+    {{- range $n_key, $n_value := $value }}
+    {{ $n_key | upper }} = {{ $n_value }}
+    {{- end }}
+    {{- end }}
+    {{- else }}
+    {{ $key | upper }} = {{ $value }}
+    {{- end }}
+    {{- end }}
+{{- end }}
