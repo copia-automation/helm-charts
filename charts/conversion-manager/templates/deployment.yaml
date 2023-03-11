@@ -5,7 +5,9 @@ metadata:
   labels:
     {{- include "app.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount | default 1 }}
+  {{- if not .Values.autoscaling.enabled }}
+   replicas: {{ .Values.replicaCount | default 1 }}
+  {{- end }}
   revisionHistoryLimit: 2
   strategy:
     {{- if and .Values.deployment.strategy (eq .Values.deployment.strategy "Recreate") }}
@@ -40,9 +42,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.deployment.serviceAccountName }}
       serviceAccountName: "{{ .Values.deployment.serviceAccountName }}"
-      {{- end }}
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
@@ -51,60 +51,26 @@ spec:
           image: "{{ include "app.image" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - gitea
+            - yarn run:prod
           env:
-            # SSH Port values have to be set here as well for openssh configuration
-            {{- if (hasKey .Values.conversionManager "config") }}
-            - name: SSH_LISTEN_PORT
-              value: {{ .Values.conversionManager.config.server.SSH_LISTEN_PORT | default "22" | quote }}
-            - name: SSH_PORT
-              value: {{ .Values.conversionManager.config.server.SSH_PORT | default "22" | quote }}
-            {{- else }}
-            - name: SSH_LISTEN_PORT
-              value: "22"
-            - name: SSH_PORT
-              value: "22"
-            {{- end }}
-            - name: GITEA_APP_INI
-              value: /data/gitea/conf/app.ini
-            - name: GITEA_CUSTOM
-              value: /data/gitea
-            - name: GITEA_WORK_DIR
-              value: /data
-            - name: GITEA_TEMP
-              value: /tmp/gitea
-            - name: TMPDIR
-              value: /tmp/gitea
-            {{- if .Values.signing.enabled }}
-            - name: GNUPGHOME
-              value: {{ .Values.signing.gpgHome }}
-            {{- end }}
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_RUNTIME_METRICS_ENABLED
+              value: "true"
+            - name: DD_PROFILING_ENABLED
+              value: "true"
             {{- if .Values.deployment.env }}
             {{- toYaml .Values.deployment.env | nindent 12 }}
-            {{- end }}
           ports:
             {{- if (hasKey .Values.conversionManager "config") }}
-            - name: ssh
-              containerPort: {{ .Values.conversionManager.config.server.SSH_LISTEN_PORT | default "22" }}
             - name: http
-              containerPort: {{ .Values.conversionManager.config.server.HTTP_PORT | default "4001" }}
-              {{- if .Values.conversionManager.config.server.ENABLE_PPROF }}
-            - name: profiler
-              containerPort: 6060
-              {{- end }}
+              containerPort: {{ .Values.conversionManager.config.server.HTTP_PORT | default "8888" }}
             {{- else }}
-            - name: ssh
-              containerPort: 22
             - name: http
-              containerPort: 4001
+              containerPort: 8888
             {{- end }}
-          lifecycle:
-            preStop:
-              exec:
-                command: [
-                  "sh", "-c",
-                  "sleep 10 && /usr/local/bin/gitea manager shutdown",
-                ]
+          # not sure lifecycle is needed/works - no shutdown cmd but there is graceful shutdown
+          #lifecycle:
           {{- if .Values.conversionManager.livenessProbe.enabled }}
           livenessProbe:
             tcpSocket:
@@ -149,52 +115,30 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           volumeMounts:
-            - name     : temp
-              mountPath: /tmp/gitea
-            - name     : data
-              mountPath: /data
-            {{- if (hasKey .Values.conversionManager "config") }}
-            - name     : config
-              mountPath: /data/gitea/conf/app.ini
-              subPath  : app.ini
-            {{- end }}
-            {{- if .Values.extraVolumeMounts }}
-            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
-            {{- end }}
+            - name: temp
+              mountPath: /tmp
+            {{ if (hasKey .Values.conversionManager "config") }}
+            - name: config
+              mountPath: /usr/src/app/config/.env.prod
+              subPath: .env.prod
+            {{ end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    {{- with .Values.affinity }}
+      {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.tolerations }}
+      {{- end }}
+      {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
-    {{- end }}
+      {{- end }}
       volumes:
-        {{- if (hasKey .Values.conversionManager "config") }}
+        {{ if (hasKey .Values.conversionManager "config") }}
         - name: config
           secret:
-            secretName: {{ include "app.fullname" . }}-ini
-        {{- end }}
-        {{- if .Values.extraVolumes }}
-        {{- toYaml .Values.extraVolumes | nindent 8 }}
-        {{- end }}
+            secretName: {{ include "app.fullname" . }}-env
+        {{ end }}
         - name: temp
           emptyDir: {}
-  {{- if and .Values.persistence.enabled .Values.persistence.existingClaim }}
-        - name: data
-          persistentVolumeClaim:
-  {{- with .Values.persistence.existingClaim }}
-            claimName: {{ tpl . $ }}
-  {{- end }}
-  {{- else if not .Values.persistence.enabled }}
-        - name: data
-          emptyDir: {}
-  {{- else if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
-        - name: data
-          persistentVolumeClaim:
-            claimName: {{ include "app.fullname" . }}-data
-  {{- end }}
