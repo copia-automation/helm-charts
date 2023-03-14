@@ -5,9 +5,7 @@ metadata:
   labels:
     {{- include "app.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-   replicas: {{ .Values.replicaCount | default 1 }}
-  {{- end }}
+  replicas: {{ .Values.replicaCount | default 1 }}
   revisionHistoryLimit: 2
   strategy:
     {{- if and .Values.deployment.strategy (eq .Values.deployment.strategy "Recreate") }}
@@ -42,7 +40,9 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.deployment.serviceAccountName }}
       serviceAccountName: "{{ .Values.deployment.serviceAccountName }}"
+      {{- end }}
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
@@ -51,7 +51,7 @@ spec:
           image: "{{ include "app.image" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - yarn run:prod
+            - "yarn run:prod"
           env:
             - name: DD_LOGS_INJECTION
               value: "true"
@@ -61,16 +61,15 @@ spec:
               value: "true"
             {{- if .Values.deployment.env }}
             {{- toYaml .Values.deployment.env | nindent 12 }}
+            {{- end }}
           ports:
             {{- if (hasKey .Values.conversionManager "config") }}
             - name: http
-              containerPort: {{ .Values.conversionManager.config.server.HTTP_PORT | default "8888" }}
+              containerPort: {{ .Values.conversionManager.config.PORT | default "8888" }}
             {{- else }}
             - name: http
               containerPort: 8888
             {{- end }}
-          # not sure lifecycle is needed/works - no shutdown cmd but there is graceful shutdown
-          #lifecycle:
           {{- if .Values.conversionManager.livenessProbe.enabled }}
           livenessProbe:
             tcpSocket:
@@ -117,11 +116,11 @@ spec:
           volumeMounts:
             - name: temp
               mountPath: /tmp
-            {{ if (hasKey .Values.conversionManager "config") }}
+            {{- if (hasKey .Values.conversionManager "config") }}
             - name: config
               mountPath: /usr/src/app/config/.env.prod
               subPath: .env.prod
-            {{ end }}
+            {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -135,10 +134,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        {{ if (hasKey .Values.conversionManager "config") }}
+        {{- if (hasKey .Values.conversionManager "config") }}
         - name: config
           secret:
             secretName: {{ include "app.fullname" . }}-env
-        {{ end }}
+        {{- end }}
         - name: temp
           emptyDir: {}

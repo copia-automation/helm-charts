@@ -7,8 +7,8 @@ imagePullSecrets: []
 service:
   http:
     type: NodePort
-    port: 3000
-    targetPort: 4001
+    port: 3010
+    targetPort: 8888
     # clusterIP: None
     #loadBalancerIP:
     #nodePort:
@@ -37,10 +37,6 @@ resources: {}
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-## Use an alternate scheduler, e.g. "stork".
-## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
-##
-# schedulerName:
 nodeSelector: {}
 tolerations: []
 affinity: {}
@@ -74,23 +70,21 @@ conversionManager:
     enabled: false
   customStartupProbe:
     httpGet:
-      path: /
-      port: 4001
+      path: /api/v1/ping
+      port: 8888
     initialDelaySeconds: 10
     periodSeconds      : 5
     timeoutSeconds     : 2
     failureThreshold   : 10
   customLivenessProbe:
     httpGet:
-      path: /
-      port: 4001
+      path: /api/v1/ping
+      port: 8888
     periodSeconds   : 10
     timeoutSeconds  : 2
     failureThreshold: 2
-  # config:
-  #   APP_NAME: "Conversion Manager"
-  #   RUN_MODE: production
-  #   security:
-  #     INTERNAL_TOKEN: <REQUIRED>
-  #   conversionManager:
-  #     LICENSE_KEY: <REQUIRED>
+  config:
+    APP_NAME: "Conversion Manager"
+    RUN_MODE: production
+    HOST: conversion-manager.copia.io
+    PORT: 8888

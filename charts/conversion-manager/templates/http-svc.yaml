@@ -34,7 +34,7 @@ spec:
     nodePort: {{ .Values.service.http.nodePort }}
     {{- end }}
     {{- if (hasKey .Values.conversionManager "config") }}
-    targetPort: {{ .Values.conversionManager.config.server.HTTP_PORT | default .Values.service.http.targetPort }}
+    targetPort: {{ .Values.conversionManager.config.PORT | default .Values.service.http.targetPort }}
     {{- else if .Values.service.http.targetPort }}
     targetPort: {{ .Values.service.http.targetPort }}
     {{- end }}

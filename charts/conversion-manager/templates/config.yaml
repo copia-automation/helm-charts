@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "app.fullname" . }}-ini
+  name: {{ include "app.fullname" . }}-env
   labels:
     {{- include "app.labels" . | nindent 4 }}
 type: Opaque
@@ -15,11 +15,11 @@ stringData:
 
     [{{ $key }}]
     {{- range $n_key, $n_value := $value }}
-    {{ $n_key | upper }} = {{ $n_value }}
+    {{ $n_key | upper }}={{- $n_value }}
     {{- end }}
     {{- end }}
     {{- else }}
-    {{ $key | upper }} = {{ $value }}
+    {{ $key | upper }}={{- $value }}
     {{- end }}
     {{- end }}
 {{- end }}
