@@ -118,8 +118,8 @@ spec:
               mountPath: /tmp
             {{- if (hasKey .Values.conversionManager "config") }}
             - name: config
-              mountPath: /usr/src/app/config/.env.prod
-              subPath: .env.prod
+              mountPath: /usr/src/app/.env
+              subPath: .env
             {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
