@@ -1,4 +1,4 @@
-apiVersion: v2https://github.com/copia-automation/helm-charts/tree/main
+apiVersion: v2
 name: copia
 description: Copia Helm chart for Kubernetes
 type: application
