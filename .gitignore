@@ -1,2 +1,4 @@
 .DS_Store
 .dccache
+*.tgz
+Chart.lock

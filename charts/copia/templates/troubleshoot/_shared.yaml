@@ -1,0 +1,23 @@
+{{- define "troubleshoot.collectors.shared" -}}
+- clusterInfo: {}
+- clusterResources: {}
+- registryImages:
+    namespace: {{ .Release.Namespace }}
+    images:
+      - "replicated/replicated-sdk:{{ .Chart.Dependencies.replicated.version }}"
+      - "{{ include "app.image" . }}"
+{{- end -}}
+
+{{- define "troubleshoot.analyzers.shared" -}}
+- registryImages:
+    name: Registry Images
+    outcomes:
+      - fail:
+        when: "missing > 0"
+        message: Images are missing from registry
+      - warn:
+          when: "errors > 0"
+          message: Failed to check if images are present in registry
+      - pass:
+          message: All images are present in registry
+{{- end -}}
