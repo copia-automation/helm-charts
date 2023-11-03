@@ -33,7 +33,7 @@ jobs:
         working-directory: charts/copia
         run: |
           helm package -u . \
-            --version=$(echo ${{ github.ref_name }} | sed 's/\//\-/g')
+            --version=${{ env.REF_NAME }}
 
       - name: Update the HelmChart kind
         uses: jacobtomlinson/gha-find-replace@a51bbcd94d000df9ca0fcb54ec8be69aad8374b0 # v3
@@ -49,7 +49,7 @@ jobs:
         with:
           app-slug: ${{ env.REPLICATED_APP }}
           api-token: ${{ secrets.REPLICATED_API_KEY }}
-          yaml-dir: ./charts/copia
+          chart: ./charts/copia
           promote-channel: ${{ env.CHANNEL_NAME }}
           version: ${{ env.REF_NAME }}
 
