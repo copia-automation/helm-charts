@@ -40,8 +40,10 @@ jobs:
         id: package-helm-chart
         working-directory: charts/copia
         run: |
-          helm package -u . --version=${{ env.REF_NAME }}
-          echo "CHART=$(find . -type f -name "*.tgz" -exec realpath {} \)" >> $GITHUB_ENV
+          PACKAGE=$(helm package -u . --version=${{ env.REF_NAME }})
+          echo "CHART=$(echo "$PACKAGE" | \
+            grep -oE 'Successfully packaged chart and saved it to: (.+)$' | \
+            sed 's/Successfully packaged chart and saved it to: //')" >> $GITHUB_ENV
 
       - name: Create Replicated Release
         id: create-release
