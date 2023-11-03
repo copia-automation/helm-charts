@@ -1,0 +1,32 @@
+name: Replicated PR Channel Cleanup
+
+on:
+  pull_request:
+    types:
+      - closed
+
+permissions: write-all
+
+env:
+  REPLICATED_APP: copia
+
+jobs:
+  archive-channel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Define Channel Name
+        run: |
+          FILTERED_REF_NAME=$(echo ${{ github.ref_name }} | sed 's/\//\-/g')
+          echo "CHANNEL_NAME=$FILTERED_REF_NAME" >> $GITHUB_ENV
+
+      - name: Archive Replicated Channel
+        uses: replicatedhq/replicated-actions/archive-channel@v1
+        with:
+          app-slug: ${{ env.REPLICATED_APP }}
+          api-token: ${{ secrets.REPLICATED_API_KEY }}
+          channel-slug: ${{ env.CHANNEL_NAME }}
