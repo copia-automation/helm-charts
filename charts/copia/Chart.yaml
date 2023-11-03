@@ -2,7 +2,7 @@ apiVersion: v2
 name: copia
 description: Copia Helm chart for Kubernetes
 type: application
-version: $VERSION
+version: 1.0.0
 appVersion: v0.21.0
 dependencies:
 - name: replicated
