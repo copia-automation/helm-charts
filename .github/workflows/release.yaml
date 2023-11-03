@@ -25,8 +25,8 @@ jobs:
 
       - name: Define Channel Name
         run: |
-          echo "REF_NAME=${{ github.ref_name }}-${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
           echo "CHANNEL_NAME=$(echo ${{ github.ref_name }} | sed 's/\//\-/g')" >> $GITHUB_ENV
+          echo "REF_NAME=${{ env.CHANNEL_NAME }}-${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
 
       - name: Update the HelmChart kind
         uses: jacobtomlinson/gha-find-replace@a51bbcd94d000df9ca0fcb54ec8be69aad8374b0 # v3
