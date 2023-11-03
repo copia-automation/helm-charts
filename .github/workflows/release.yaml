@@ -24,21 +24,23 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Define Channel Name
-        run: echo "CHANNEL_NAME=${{ github.ref_name }}-${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
+        run: |
+          echo "CHANNEL_NAME=${{ github.ref_name }}-${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
+          echo "REF_NAME=$(echo ${{ github.ref_name }} | sed 's/\//\-/g')" >> $GITHUB_ENV
 
       - name: Package Helm Chart for Replicated
         id: package-helm-chart
         working-directory: charts/copia
         run: |
           helm package -u . \
-            --version=${{ github.ref_name }}
+            --version=$(echo ${{ github.ref_name }} | sed 's/\//\-/g')
 
       - name: Update the HelmChart kind
         uses: jacobtomlinson/gha-find-replace@a51bbcd94d000df9ca0fcb54ec8be69aad8374b0 # v3
         with:
           include: 'charts/copia/Chart.yaml'
           find: '$VERSION'
-          replace: '${{ github.ref_name }}'
+          replace: ${{ env.REF_NAME }}
           regex: false
 
       - name: Create Replicated Release
@@ -49,7 +51,7 @@ jobs:
           api-token: ${{ secrets.REPLICATED_API_KEY }}
           yaml-dir: ./charts/copia
           promote-channel: ${{ env.CHANNEL_NAME }}
-          version: ${{ github.ref_name }}
+          version: ${{ env.REF_NAME }}
 
   # release:
   #   runs-on: ubuntu-latest
