@@ -4,8 +4,12 @@
 - registryImages:
     namespace: {{ .Release.Namespace }}
     images:
-      - "replicated/replicated-sdk:{{ .Chart.Dependencies.replicated.version }}"
       - "{{ include "app.image" . }}"
+      {{- range .Chart.Dependencies }}
+      {{- if eq .Name "replicated" }}
+      - "replicated/replicated-sdk:{{ .Version }}"
+      {{- end }}
+      {{- end }}
 {{- end -}}
 
 {{- define "troubleshoot.analyzers.shared" -}}
