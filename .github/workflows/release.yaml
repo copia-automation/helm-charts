@@ -30,7 +30,7 @@ jobs:
         id: package-helm-chart
         working-directory: charts/copia
         run: |
-          helm package copia -u . \
+          helm package -u . \
             --version=${{ github.ref_name }}
 
       - name: Update the HelmChart kind
