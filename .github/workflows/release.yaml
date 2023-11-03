@@ -28,9 +28,9 @@ jobs:
 
       - name: Package Helm Chart for Replicated
         id: package-helm-chart
+        working-directory: charts/copia
         run: |
-          helm package copia -u -d charts/copia \
-            --app-version=${{ github.ref_name }} \
+          helm package copia -u . \
             --version=${{ github.ref_name }}
 
       - name: Update the HelmChart kind
