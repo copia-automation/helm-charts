@@ -1,27 +1,64 @@
-name: Release Charts
+name: Replicated Release
 
 on:
+  pull_request:
   push:
-    branches:
-      - main
+    tags:
+      - "v*.*.*"
 
 permissions: write-all
 
+env:
+  REPLICATED_APP: copia
+
 jobs:
-  release:
+  push-to-replicated:
     runs-on: ubuntu-latest
+    outputs:
+      channel-slug: ${{ steps.create-release.outputs.channel-slug }}
+      release-sequence: ${{ steps.create-release.outputs.release-sequence }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
-          fetch-depth: 0
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Configure Git
+      - name: PR Config
+        if: github.event_name == 'pull_request'
         run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          FILTERED_REF_NAME=$(echo ${{ github.ref_name }} | sed 's/\//\-/g')
+          echo "CHANNEL_NAME=$FILTERED_REF_NAME" >> $GITHUB_ENV
+          echo "REF_NAME=$FILTERED_REF_NAME-${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
 
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.2.1
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Release Config
+        if: github.event_name == 'push'
+        run: |
+          echo "CHANNEL_NAME=stable" >> $GITHUB_ENV
+          echo "REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      - name: Update the HelmChart kind
+        uses: jacobtomlinson/gha-find-replace@a51bbcd94d000df9ca0fcb54ec8be69aad8374b0 # v3
+        with:
+          include: 'charts/copia/Chart.yaml'
+          find: '$VERSION'
+          replace: ${{ env.REF_NAME }}
+          regex: false
+
+      - name: Package Helm Chart for Replicated
+        id: package-helm-chart
+        working-directory: charts/copia
+        run: |
+          PACKAGE=$(helm package -u . --version=${{ env.REF_NAME }})
+          echo "CHART=$(echo "$PACKAGE" | \
+            grep -oE 'Successfully packaged chart and saved it to: (.+)$' | \
+            sed 's/Successfully packaged chart and saved it to: //')" >> $GITHUB_ENV
+
+      - name: Create Replicated Release
+        id: create-release
+        uses: replicatedhq/compatibility-actions/create-release@5553df9be85049c466907f692e94cfcaf490c926 # v1.5.2
+        with:
+          app-slug: ${{ env.REPLICATED_APP }}
+          api-token: ${{ secrets.REPLICATED_API_KEY }}
+          chart: ${{ env.CHART }}
+          promote-channel: ${{ env.CHANNEL_NAME }}
+          version: ${{ env.REF_NAME }}

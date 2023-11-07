@@ -1,0 +1,61 @@
+{{- define "troubleshoot.supportBundle" -}}
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: support-bundle
+spec:
+  collectors: {{- include "troubleshoot.collectors.shared" .  | nindent 4 }}
+    - logs:
+        name: app/replicated/logs
+        selectors:
+          - app.kubernetes.io/name=replicated
+          - app.kubernetes.io/instance=copia
+        containerNames:
+          - replicated
+        limits:
+          maxAge: 720h
+    - logs:
+        name: app/copia/logs
+        selectors:
+          - app.kubernetes.io/name=copia
+          - app.kubernetes.io/instance=copia
+        containerNames:
+          - copia
+        limits:
+          maxAge: 720h
+  analyzers: {{- include "troubleshoot.analyzers.shared" .  | nindent 4 }}
+    - deploymentStatus:
+        name: replicated
+        outcomes:
+          - fail:
+              when: "absent" # note that the "absent" failure state must be listed first if used.
+              message: The replicated deployment is not present.
+          - fail:
+              when: "< 1"
+              message: The replicated deployment does not have any ready replicas.
+          - warn:
+              when: "< 1"
+              message: The replicated deployment has less than the required number of replicas.
+          - warn:
+              when: "= 1"
+              message: The replicated deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the replicated deployment ready.
+    - deploymentStatus:
+        name: copia
+        outcomes:
+          - fail:
+              when: "absent" # note that the "absent" failure state must be listed first if used.
+              message: The copia deployment is not present.
+          - fail:
+              when: "< 1"
+              message: The copia deployment does not have any ready replicas.
+          - warn:
+              when: "< 1"
+              message: The copia deployment has less than the required number of replicas.
+          - warn:
+              when: "= 1"
+              message: The copia deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the copia deployment ready.
+{{- end -}}
