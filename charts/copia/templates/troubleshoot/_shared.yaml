@@ -1,0 +1,15 @@
+{{- define "troubleshoot.collectors.shared" -}}
+- clusterInfo: {}
+- clusterResources: {}
+{{- end -}}
+
+{{- define "troubleshoot.analyzers.shared" -}}
+- storageClass:
+    checkName: Required storage classes
+    storageClassName: {{ .Values.persistence.storageClass | quote }}
+    outcomes:
+      - fail:
+          message: The required storage class was not found in the cluster.
+      - pass:
+          message: The required storage class was found in the cluster.
+{{- end -}}
