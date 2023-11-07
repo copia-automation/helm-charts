@@ -1,6 +1,7 @@
-name: Release Charts
+name: Replicated Release
 
 on:
+  pull_request:
   push:
     tags:
       - "v*.*.*"
@@ -22,22 +23,32 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Define Channel Name
-        run: echo "CHANNEL_NAME=${{ github.ref_name }}-${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
+      - name: PR Config
+        if: github.event_name == 'pull_request'
+        run: |
+          FILTERED_REF_NAME=$(echo ${{ github.ref_name }} | sed 's/\//\-/g')
+          echo "CHANNEL_NAME=$FILTERED_REF_NAME" >> $GITHUB_ENV
+          echo "REF_NAME=$FILTERED_REF_NAME-${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
+
+      - name: Release Config
+        if: github.event_name == 'push'
+        run: |
+          echo "CHANNEL_NAME=stable" >> $GITHUB_ENV
+          echo "REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
 
       - name: Update the HelmChart kind
         uses: jacobtomlinson/gha-find-replace@a51bbcd94d000df9ca0fcb54ec8be69aad8374b0 # v3
         with:
           include: 'charts/copia/Chart.yaml'
           find: '$VERSION'
-          replace: ${{ github.ref_name }}
+          replace: ${{ env.REF_NAME }}
           regex: false
 
       - name: Package Helm Chart for Replicated
         id: package-helm-chart
         working-directory: charts/copia
         run: |
-          PACKAGE=$(helm package -u . --version=${{ github.ref_name }}
+          PACKAGE=$(helm package -u . --version=${{ env.REF_NAME }})
           echo "CHART=$(echo "$PACKAGE" | \
             grep -oE 'Successfully packaged chart and saved it to: (.+)$' | \
             sed 's/Successfully packaged chart and saved it to: //')" >> $GITHUB_ENV
@@ -49,5 +60,5 @@ jobs:
           app-slug: ${{ env.REPLICATED_APP }}
           api-token: ${{ secrets.REPLICATED_API_KEY }}
           chart: ${{ env.CHART }}
-          promote-channel: stable
-          version: ${{ github.ref_name }}
+          promote-channel: ${{ env.CHANNEL_NAME }}
+          version: ${{ env.REF_NAME }}
