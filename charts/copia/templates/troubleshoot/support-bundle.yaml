@@ -5,6 +5,13 @@ metadata:
   name: support-bundle
 spec:
   collectors: {{- include "troubleshoot.collectors.shared" .  | nindent 4 }}
+    - copy:
+        namespace: copia
+        selector:
+          - app.kubernetes.io/name=copia
+          - app.kubernetes.io/instance=copia
+        containerPath: /data/gitea/conf/app.ini
+        containerName: copia
     - logs:
         name: app/copia/logs
         namespace: copia
@@ -33,4 +40,19 @@ spec:
               message: The copia deployment has only a single ready replica.
           - pass:
               message: There are multiple replicas of the copia deployment ready.
+---
+apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
+metadata:
+  name: GiteaSensitives
+spec:
+  redactors:
+  - name: Redact all Gitea APP.INI sensitve values
+    removals:
+      regex:
+      - redactor: (SECRET_KEY *\= *)(?P<mask>.*)
+      - redactor: (.*JWT_SECRET *\= *)(?P<mask>.*)
+      - redactor: (INTERNAL_TOKEN *\= *)(?P<mask>.*)
+      - redactor: (PASSWD *\= *)(?P<mask>.*)
+      - redactor: (USER_SECRETS_PRIVATE_KEY *\= *)(?P<mask>.*)
 {{- end -}}
