@@ -4,11 +4,11 @@
 
 {{- if .Values.copia -}}
 {{- if .Values.copia.config -}}
-{{- if .Values.copia.config.database -}}
-{{ $user := .Values.copia.config.database.USER | quote }}
-{{ $passwd := .Values.copia.config.database.PASSWD | quote }}
-{{ $host := .Values.copia.config.database.HOST | quote }}
-{{ $name := .Values.copia.config.database.NAME | quote }}
+{{ if .Values.copia.config.database }}
+{{ $user := .Values.copia.config.database.USER }}
+{{ $passwd := .Values.copia.config.database.PASSWD }}
+{{ $host := .Values.copia.config.database.HOST }}
+{{ $name := .Values.copia.config.database.NAME }}
 - postgres:
     collectorName: postgresql
     uri: "postgresql://{{ $user }}:{{ $passwd }}@{{ $host }}:5432/{{ $name }}"
@@ -35,7 +35,7 @@
 
 {{- if .Values.copia -}}
 {{- if .Values.copia.config -}}
-{{- if .Values.copia.config.database -}}
+{{ if .Values.copia.config.database }}
 - postgres:
     checkName: Test Database Connection
     collectorName: postgresql
@@ -47,6 +47,7 @@
           message: The PostgreSQL server is accessible.
 {{- end -}}
 {{- end -}}
+
 {{- end -}}
 
 {{- end -}}
