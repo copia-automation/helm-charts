@@ -127,16 +127,20 @@ kubectl krew install preflight
 kubectl krew install support-bundle
 ```
 
+:warning: **Note:** Pre-flights will check the connectivity to the Database from the client running the operation.
+It is recommended that you connect to the DB network if it is behind a VPN or permit your local client network access
+to the database endpoint in order to avoid potential false failure.
+
 ### Run Pre-Flight Checks
 
-Running Pre-Flight checks on the copia chart to validate the target deployment environment can be completed by running
+Running Pre-Flight checks on the Copia chart to validate the target deployment environment can be completed by running
 the following command: 
 
 `helm template copia --values values.yaml | kubectl preflight -`
 
 ### Generating Support Bundles
 
-Generating a support bundle for the copia chart can be completed by running the following command: 
+Generating a support bundle for the Copia chart can be completed by running the following command: 
 
 `kubectl support-bundle --load-cluster-specs --namespace copia`
 
