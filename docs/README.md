@@ -112,4 +112,32 @@ A service is created for the Copia application that exposes an HTTP web service 
 
 #### Persistent Storage
 
-#### SQL Database
+Copia requires a Postgres database for the application to function properly.
+
+## Troubleshooting
+
+### Install Troubleshoot.sh Packages
+
+The Copia helm chart leverages [troubleshoot.sh](https://troubleshoot.sh/) to perform pre-flight checks and generate support bundles.
+
+Pre-Flights and Support Bundles are installed with `krew`:
+
+```
+kubectl krew install preflight
+kubectl krew install support-bundle
+```
+
+### Run Pre-Flight Checks
+
+Running Pre-Flight checks on the copia chart to validate the target deployment environment can be completed by running
+the following command: 
+
+`helm template copia --values values.yaml | kubectl preflight -`
+
+### Generating Support Bundles
+
+Generating a support bundle for the copia chart can be completed by running the following command: 
+
+`kubectl support-bundle --load-cluster-specs --namespace copia`
+
+The output of the support bundle command will be a `tar.gz` file that can be reviewed before sending to Copia for support.
