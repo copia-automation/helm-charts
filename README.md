@@ -120,7 +120,7 @@ Copia requires a Postgres database for the application to function properly.
 
 The Copia helm chart leverages [troubleshoot.sh](https://troubleshoot.sh/) to perform pre-flight checks and generate support bundles.
 
-Pre-Flights and Support Bundles are installed with `krew`:
+Pre-Flights and Support Bundles are installed with [krew](https://krew.sigs.k8s.io/docs/user-guide/setup/install/):
 
 ```
 kubectl krew install preflight

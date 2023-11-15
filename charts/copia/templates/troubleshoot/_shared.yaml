@@ -48,6 +48,26 @@
 {{- end -}}
 {{- end -}}
 
+{{- if .Values.ingress -}}
+{{- if eq $.Values.ingress.enabled true -}}
+{{ if .Values.ingress.ingressClassName }}
+- clusterResource:
+    checkName: check-ingress-class
+    kind: IngressClass
+    name: {{ .Values.ingress.ingressClassName | quote }}
+    yamlPath: "spec.controller"
+    regex: .*
+    outcomes:
+      - fail:
+          when: "false"
+          message: Defined Ingress Class is not present
+      - pass:
+          when: "true"
+          message: Defined Ingress Class is available
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{- end -}}
 
 {{- end -}}
