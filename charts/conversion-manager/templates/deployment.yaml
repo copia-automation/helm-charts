@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  revisionHistoryLimit: 2
+  strategy:
+    {{- if and .Values.deployment.strategy (eq .Values.deployment.strategy "Recreate") }}
+    type: Recreate
+    {{- else }}
+    type: RollingUpdate
+    rollingUpdate:
+      {{- with .Values.deployment.rollingUpdate }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        {{- with .Values.conversionManager.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "app.labels" . | nindent 8 }}
+        {{- if .Values.deployment.labels }}
+        {{- toYaml .Values.deployment.labels | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.schedulerName }}
+      schedulerName: "{{ .Values.schedulerName }}"
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.deployment.serviceAccountName }}
+      serviceAccountName: "{{ .Values.deployment.serviceAccountName }}"
+      {{- end }}
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ include "app.image" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - "yarn run:prod"
+          env:
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_RUNTIME_METRICS_ENABLED
+              value: "true"
+            - name: DD_PROFILING_ENABLED
+              value: "true"
+            {{- if .Values.deployment.env }}
+            {{- toYaml .Values.deployment.env | nindent 12 }}
+            {{- end }}
+          ports:
+            {{- if (hasKey .Values.conversionManager "config") }}
+            - name: http
+              containerPort: {{ .Values.conversionManager.config.PORT | default "8888" }}
+            {{- else }}
+            - name: http
+              containerPort: 8888
+            {{- end }}
+          {{- if .Values.conversionManager.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: {{ .Values.conversionManager.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.conversionManager.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.conversionManager.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.conversionManager.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.conversionManager.livenessProbe.failureThreshold }}
+          {{- else if .Values.conversionManager.customLivenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.conversionManager.customLivenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.conversionManager.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: {{ .Values.conversionManager.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.conversionManager.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.conversionManager.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.conversionManager.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.conversionManager.readinessProbe.failureThreshold }}
+          {{- else if .Values.conversionManager.customReadinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.conversionManager.customReadinessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.conversionManager.startupProbe.enabled }}
+          startupProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: {{ .Values.conversionManager.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.conversionManager.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.conversionManager.startupProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.conversionManager.startupProbe.successThreshold }}
+            failureThreshold: {{ .Values.conversionManager.startupProbe.failureThreshold }}
+          {{- else if .Values.conversionManager.customStartupProbe }}
+          startupProbe:
+            {{- toYaml .Values.conversionManager.customStartupProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: temp
+              mountPath: /tmp
+            {{- if (hasKey .Values.conversionManager "config") }}
+            - name: config
+              mountPath: /usr/src/app/.env
+              subPath: .env
+            {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        {{- if (hasKey .Values.conversionManager "config") }}
+        - name: config
+          secret:
+            secretName: {{ include "app.fullname" . }}-env
+        {{- end }}
+        - name: temp
+          emptyDir: {}
