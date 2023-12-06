@@ -1,0 +1,73 @@
+{{- define "troubleshoot.collectors.shared" -}}
+- clusterInfo: {}
+- clusterResources: {}
+
+{{- if .Values.copia -}}
+{{- if .Values.copia.config -}}
+{{ if .Values.copia.config.database }}
+{{ $user := .Values.copia.config.database.USER }}
+{{ $passwd := .Values.copia.config.database.PASSWD }}
+{{ $host := .Values.copia.config.database.HOST }}
+{{ $name := .Values.copia.config.database.NAME }}
+- postgres:
+    collectorName: postgresql
+    uri: "postgresql://{{ $user }}:{{ $passwd }}@{{ $host }}:5432/{{ $name }}"
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- end -}}
+
+{{- define "troubleshoot.analyzers.shared" -}}
+
+{{- if .Values.persistence -}}
+{{- if eq $.Values.persistence.enabled true -}}
+- storageClass:
+    checkName: Required storage classes
+    storageClassName: {{ .Values.persistence.storageClass | quote }}
+    outcomes:
+      - fail:
+          message: The required storage class was not found in the cluster.
+      - pass:
+          message: The required storage class was found in the cluster.
+{{- end -}}
+{{- end -}}
+
+{{- if .Values.copia -}}
+{{- if .Values.copia.config -}}
+{{ if .Values.copia.config.database }}
+- postgres:
+    checkName: Test Database Connection
+    collectorName: postgresql
+    outcomes:
+      - fail:
+          when: connected == false
+          message: Cannot connect to PostgreSQL server.
+      - pass:
+          message: The PostgreSQL server is accessible.
+{{- end -}}
+{{- end -}}
+
+{{- if .Values.ingress -}}
+{{- if eq $.Values.ingress.enabled true -}}
+{{ if .Values.ingress.ingressClassName }}
+- clusterResource:
+    checkName: check-ingress-class
+    kind: IngressClass
+    name: {{ .Values.ingress.ingressClassName | quote }}
+    yamlPath: "spec.controller"
+    regex: .*
+    outcomes:
+      - fail:
+          when: "false"
+          message: Defined Ingress Class is not present
+      - pass:
+          when: "true"
+          message: Defined Ingress Class is available
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- end -}}
+
+{{- end -}}
