@@ -1,7 +1,7 @@
 replicaCount: 1
 clusterDomain: cluster.local
 image:
-  repository: copiaio/copia
+  repository: ghcr.io/copia-automation/copia-web-app
   pullPolicy: Always
 imagePullSecrets: []
 service:
