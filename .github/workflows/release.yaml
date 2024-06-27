@@ -16,12 +16,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.2.1
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Setup Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
+  
+      - name: Package Helm chart
+        run: helm package ./charts/copia
+  
+      - name: Log in to GitHub Container Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+  
+      - name: Push Helm chart to GitHub Container Registry
+        run: helm push copia-*.tgz oci://ghcr.io/copia-automation/helm-charts
