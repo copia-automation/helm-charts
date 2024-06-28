@@ -59,8 +59,15 @@ persistence:
 If you have already installed Helm, run the following:
 
 ```
-helm repo add copia-automation https://copia-automation.github.io/helm-charts
-helm install my-copia copia-automation/copia \
+helm upgrade --install my-copia oci://ghcr.io/copia-automation/helm-charts/copia \
+  -f values.yaml \
+  -n copia \
+  --create-namespace
+```
+
+You can also specify the chart version:
+```
+helm upgrade --install my-copia oci://ghcr.io/copia-automation/helm-charts/copia --version 0.29.0 \
   -f values.yaml \
   -n copia \
   --create-namespace
