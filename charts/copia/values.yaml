@@ -1,9 +1,10 @@
 replicaCount: 1
 clusterDomain: cluster.local
 image:
-  repository: copiaio/copia
+  repository: ghcr.io/copia-automation/copia-web-app-selfhosted-releases
   pullPolicy: Always
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-login-secret
 service:
   http:
     type: NodePort
