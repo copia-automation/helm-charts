@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+source script/util.sh
+
+main() {
+  log::exec_command helm lint charts/copia
+}
+
+main "$@"
