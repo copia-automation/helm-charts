@@ -10,13 +10,13 @@ service:
     type: NodePort
     port: 3000
     targetPort: 4001
-    # clusterIP: None
+    #clusterIP: None
     #loadBalancerIP:
     #nodePort:
     #externalTrafficPolicy:
     #externalIPs:
     loadBalancerSourceRanges: []
-    annotations:
+    annotations: {}
 ingress:
   enabled: false
   # ingressClassName: nginx
@@ -28,7 +28,7 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-  tls: []
+  tls: {}
   #  - secretName: chart-example-tls
   #    hosts:
   #      - git.example.com
@@ -43,11 +43,12 @@ resources: {}
 ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
 ##
 # schedulerName:
+securityContext: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
 deployment:
-  env:
+  env: {}
     # - name: ACD_CONVERSION_URL
     #   value: https://rockwell-tools.copia.io/convertOctetStream
     # - name: ROCKWELL_V35_CONVERSION_URL
@@ -89,16 +90,16 @@ deployment:
     maxUnavailable: 0
 persistence:
   enabled: true
-  existingClaim:
+  existingClaim: {}
   size: 10Gi
   accessModes:
     - ReadWriteOnce
   labels: {}
   annotations: {}
-  # storageClass:
+  #storageClassName:
 # additional volumes to add to the deployment.
-extraVolumes:
-extraVolumeMounts:
+extraVolumes: {}
+extraVolumeMounts: {}
 # bash shell script copied verbatim to the start of the init-container.
 initPreScript: ""
 # Configure commit/action signing prerequisites
