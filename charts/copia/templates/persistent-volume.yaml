@@ -1,9 +1,9 @@
 {{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
 ---
 apiVersion: v1
-kind      : PersistentVolumeClaim
-metadata  :
-  name     : {{ include "app.fullname" . }}-data
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "app.fullname" . }}-data
 {{- with .Values.persistence.annotations }}
   annotations:
   {{- range $key, $value := . }}
@@ -17,13 +17,13 @@ metadata  :
   {{- end }}
 {{- end }}
 spec:
-  {{- if .Values.persistence.storageClass }}
-  storageClassName: {{ .Values.persistence.storageClass | quote }}
+  {{- if .Values.persistence.storageClassName }}
+  storageClassName: {{ .Values.persistence.storageClassName | quote }}
   {{- end }}
   resources:
     requests:
       storage: {{ .Values.persistence.size | quote }}
-  volumeMode : Filesystem
+  volumeMode: Filesystem
   accessModes:
     {{- range .Values.persistence.accessModes }}
       - {{ . | quote }}

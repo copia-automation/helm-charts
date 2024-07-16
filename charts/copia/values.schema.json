@@ -1,0 +1,360 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Values",
+  "type": "object",
+  "definitions": {
+    "k8s": {
+      "resources": {
+        "type": "object",
+        "required": ["cpu", "memory"],
+        "properties": {
+          "cpu": {
+            "type": "number"
+          },
+          "memory": {
+            "type": "string",
+            "format": "([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+          }
+        }
+      }
+    }
+  },
+  "required": ["image", "replicaCount", "copia", "service"],
+  "properties": {
+    "replicaCount": {
+      "type": "number",
+      "description": "The amount of replicas to deploy."
+    },
+    "image": {
+      "type": "object",
+      "description": "Full Docker image (repo and tag) to use in Deployment & Job entities.",
+      "required": ["repository", "pullPolicy"],
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "pullPolicy": {
+          "type": "string"
+        }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "description": "Repo auth secrets."
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "requests": {
+          "$ref": "#/definitions/k8s/resources"
+        },
+        "limits": {
+          "$ref": "#/definitions/k8s/resources"
+        }
+      }
+    },
+    "securityContext": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "nodeSelector": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "tolerations": {
+      "type": "array"
+    },
+    "affinity": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["http"],
+      "properties": {
+        "http": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["port", "type", "targetPort"],
+          "properties": {
+            "port": {
+              "type": "number",
+              "description": "Expose service on this port."
+            },
+            "type": {
+              "type": "string",
+              "description": "Type of service."
+            },
+            "targetPort": {
+              "type": "number",
+              "description": "Access service on this port."
+            },
+            "clusterIP": {
+              "type": "string",
+              "description": "Fixed IP of the service."
+            },
+            "loadbalancerIP": {
+              "type": "string",
+              "description": "Fixed IP of the service."
+            },
+            "nodePort": {
+              "type": "number",
+              "description": "Access service on this port."
+            },
+            "loadBalancerSourceRanges": {
+              "type": "array",
+              "description": "IPs allowed to access the service."
+            },
+            "annotations": {
+              "type": "object",
+              "description": "Annotations for the service"
+            },
+            "externalTrafficPolicy": {
+              "type": "string",
+              "description": "External traffic policy"
+            }
+          }
+        }
+      }  
+    },
+    "ingress": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Config for expose app to the internet.",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Set to create an Ingress resource. Requires tld and path."
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Annotations for the service"
+        },
+        "ingressClassName": {
+          "type": "string"
+        },
+        "hosts": {
+          "type": "array",
+          "additionalProperties": false,
+          "description": "Hosts to expose",
+          "required": ["host"],
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "paths": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Paths",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "Path on host"
+                },
+                "pathType": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tls": {
+          "type": "object"
+        }
+      }
+    },
+    "copia": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "livenessProbe": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "readinessProbe": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "startupProbe": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "customStartupProbe": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "httpGet": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "port": {
+                  "type": "number"
+                }
+              }
+            },
+            "initialDelaySeconds": {
+              "type": "number"
+            },
+            "periodSeconds": {
+              "type": "number"
+            },
+            "timeoutSeconds": {
+              "type": "number"
+            },
+            "failureThreshold": {
+              "type": "number"
+            }
+          }
+        },
+        "customLivenessProbe": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "httpGet": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "port": {
+                  "type": "number"
+                }
+              }
+            },
+            "initialDelaySeconds": {
+              "type": "number"
+            },
+            "periodSeconds": {
+              "type": "number"
+            },
+            "timeoutSeconds": {
+              "type": "number"
+            },
+            "failureThreshold": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "App configuration.",
+      "required": [],
+      "properties": {
+        "env": {
+          "type": "object",
+          "description": "Environment variables."
+        },
+        "terminationGracePeriodSeconds": {
+          "type": "number",
+          "description": "Termination grace period"
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels."
+        },
+        "rollingUpdate": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Rolling update",
+          "required": ["maxSurge", "maxUnavailable"],
+          "properties": {
+            "maxSurge": {
+              "type": "number"
+            },
+            "maxUnavailable": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Persistence configuration.",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "existingClaim": {
+          "type": "object",
+          "description": "Existing PVC name"
+        },
+        "size": {
+          "type": "string",
+          "description": "Size."
+        },
+        "accessModes": {
+          "type": "array",
+          "description": "Access modes."
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels."
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Annotations."
+        },
+        "storageClassName": {
+          "type": "string",
+          "description": "Storage class name."
+        }
+      }
+    },
+    "extraVolumes": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Extra volumes configuration."
+    },
+    "extraVolumeMounts": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Extra volumes configuration."
+    },
+    "initPreScript": {
+      "type": "string",
+      "description": "Pre init script."
+    },
+    "signing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "gpgHome": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
