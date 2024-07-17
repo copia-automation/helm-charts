@@ -171,6 +171,34 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "config": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "server": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "SSH_LISTEN_PORT": {
+                  "type": "number"
+                },
+                "HTTP_PORT": {
+                  "type": "number"
+                },
+                "ENABLE_PPROF": {
+                  "type": "boolean"
+                },
+                "PPROF_PORT": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        "ini": {
+          "type": "object",
+          "additionalProperties": true
+        },
         "livenessProbe": {
           "type": "object",
           "additionalProperties": false,
@@ -268,7 +296,32 @@
       "properties": {
         "env": {
           "type": "object",
-          "description": "Environment variables."
+          "description": "Environment variables.",
+          "additionalProperties": true,
+          "required": ["SSH_LISTEN_PORT", "SSH_PORT", "GITEA_APP_INI", "GITEA_CUSTOM", "GITEA_WORK_DIR", "GITEA_TEMP", "TMPDIR"],
+          "properties": {
+            "SSH_LISTEN_PORT": {
+              "type": "number"
+            },
+            "SSH_PORT": {
+              "type": "number"
+            },
+            "GITEA_APP_INI": {
+              "type": "string"
+            },
+            "GITEA_CUSTOM": {
+              "type": "string"
+            },
+            "GITEA_WORK_DIR": {
+              "type": "string"
+            },
+            "GITEA_TEMP": {
+              "type": "string"
+            },
+            "TMPDIR": {
+              "type": "string"
+            }
+          }
         },
         "terminationGracePeriodSeconds": {
           "type": "number",

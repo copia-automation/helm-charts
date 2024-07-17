@@ -23,7 +23,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- with .Values.copia.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -53,51 +54,22 @@ spec:
           command:
             - gitea
           env:
-            # SSH Port values have to be set here as well for openssh configuration
-            {{- if (hasKey .Values.copia "config") }}
-            - name: SSH_LISTEN_PORT
-              value: {{ .Values.copia.config.server.SSH_LISTEN_PORT | default "22" | quote }}
-            - name: SSH_PORT
-              value: {{ .Values.copia.config.server.SSH_PORT | default "22" | quote }}
-            {{- else }}
-            - name: SSH_LISTEN_PORT
-              value: "22"
-            - name: SSH_PORT
-              value: "22"
-            {{- end }}
-            - name: GITEA_APP_INI
-              value: /data/gitea/conf/app.ini
-            - name: GITEA_CUSTOM
-              value: /data/gitea
-            - name: GITEA_WORK_DIR
-              value: /data
-            - name: GITEA_TEMP
-              value: /tmp/gitea
-            - name: TMPDIR
-              value: /tmp/gitea
             {{- if .Values.signing.enabled }}
             - name: GNUPGHOME
               value: {{ .Values.signing.gpgHome }}
             {{- end }}
-            {{- if .Values.deployment.env }}
-            {{- toYaml .Values.deployment.env | nindent 12 }}
-            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "app.fullname" . }}-configmap
           ports:
-            {{- if (hasKey .Values.copia "config") }}
             - name: ssh
-              containerPort: {{ .Values.copia.config.server.SSH_LISTEN_PORT | default "22" }}
+              containerPort: {{ .Values.copia.config.server.SSH_LISTEN_PORT }}
             - name: http
-              containerPort: {{ .Values.copia.config.server.HTTP_PORT | default "4001" }}
+              containerPort: {{ .Values.copia.config.server.HTTP_PORT }}
               {{- if .Values.copia.config.server.ENABLE_PPROF }}
             - name: profiler
-              containerPort: 6060
+              containerPort: {{ .Values.copia.config.server.PPROF_PORT }}
               {{- end }}
-            {{- else }}
-            - name: ssh
-              containerPort: 22
-            - name: http
-              containerPort: 4001
-            {{- end }}
           lifecycle:
             preStop:
               exec:
@@ -150,9 +122,9 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           volumeMounts:
             - name     : temp
-              mountPath: /tmp/gitea
+              mountPath: {{ .Values.deployment.env.GITEA_TEMP }}
             - name     : data
-              mountPath: /data
+              mountPath: {{ .Values.deployment.env.GITEA_WORK_DIR }}
             {{- if (hasKey .Values.copia "config") }}
             - name     : config
               mountPath: /data/gitea/conf/app.ini
