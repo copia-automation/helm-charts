@@ -6,7 +6,6 @@
     "k8s": {
       "resources": {
         "type": "object",
-        "required": ["cpu", "memory"],
         "properties": {
           "cpu": {
             "type": "number"
@@ -169,8 +168,68 @@
     },
     "copia": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
+        "config": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "security": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "INSTALL_LOCK": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "database": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "DB_TYPE": {
+                  "type": "string"
+                },
+                "HOST": {
+                  "type": "string"
+                },
+                "NAME": {
+                  "type": "string"
+                }
+              }
+            },
+            "job_run_results": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "MINIO_BUCKET": {
+                  "type": "string"
+                }
+              }
+            },
+            "fileconvert_cache": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "MINIO_BUCKET": {
+                  "type": "string"
+                }
+              }
+            },
+            "conversion_manager": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "ENABLED": {
+                  "type": "boolean"
+                },
+                "CONVERSION_TYPES": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
         "livenessProbe": {
           "type": "object",
           "additionalProperties": false,
@@ -267,7 +326,7 @@
       "required": [],
       "properties": {
         "env": {
-          "type": "object",
+          "type": "array",
           "description": "Environment variables."
         },
         "terminationGracePeriodSeconds": {
@@ -304,7 +363,7 @@
           "type": "boolean"
         },
         "existingClaim": {
-          "type": "object",
+          "type": "string",
           "description": "Existing PVC name"
         },
         "size": {
@@ -326,17 +385,19 @@
         "storageClassName": {
           "type": "string",
           "description": "Storage class name."
+        },
+        "storageClass": {
+          "type": "string",
+          "description": "Storage class name."
         }
       }
     },
     "extraVolumes": {
-      "type": "object",
-      "additionalProperties": true,
+      "type": "array",
       "description": "Extra volumes configuration."
     },
     "extraVolumeMounts": {
-      "type": "object",
-      "additionalProperties": true,
+      "type": "array",
       "description": "Extra volumes configuration."
     },
     "initPreScript": {

@@ -47,7 +47,7 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 deployment:
-  env: {}
+  env: []
     # - name: ACD_CONVERSION_URL
     #   value: https://rockwell-tools.copia.io/convertOctetStream
     # - name: ROCKWELL_V35_CONVERSION_URL
@@ -89,7 +89,7 @@ deployment:
     maxUnavailable: 0
 persistence:
   enabled: true
-  existingClaim: {}
+  existingClaim: ""
   size: 10Gi
   accessModes:
     - ReadWriteOnce
@@ -97,8 +97,8 @@ persistence:
   annotations: {}
   #storageClassName:
 # additional volumes to add to the deployment.
-extraVolumes: {}
-extraVolumeMounts: {}
+extraVolumes: []
+extraVolumeMounts: []
 # bash shell script copied verbatim to the start of the init-container.
 initPreScript: ""
 # Configure commit/action signing prerequisites
@@ -127,7 +127,9 @@ copia:
     periodSeconds   : 10
     timeoutSeconds  : 2
     failureThreshold: 2
-  # config:
+  config:
+    server:
+      HTTP_PORT: 4001
   #   APP_NAME: "Copia"
   #   RUN_MODE: production
   #   oauth2:
