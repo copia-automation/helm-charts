@@ -263,7 +263,7 @@
           "properties": {
             "httpGet": {
               "type": "object",
-              "additionalProperties": false,
+              "additionalProperties": true,
               "properties": {
                 "path": {
                   "type": "string"
@@ -293,7 +293,7 @@
           "properties": {
             "httpGet": {
               "type": "object",
-              "additionalProperties": false,
+              "additionalProperties": true,
               "properties": {
                 "path": {
                   "type": "string"
