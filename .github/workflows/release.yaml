@@ -22,6 +22,14 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - name: Beta build
+        if: github.event_name == 'pull_request'
+        run: |
+          sudo snap install yq
+          export CHART_VERSION=$(yq -r '.version' charts/copia/Chart.yaml)
+          export NEW_VERSION=$CHART_VERSION-beta
+          sed -i "s/version: $CHART_VERSION/version: $NEW_VERSION/g" charts/copia/Chart.yaml
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.2.1
         env:
