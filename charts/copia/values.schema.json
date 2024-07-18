@@ -329,6 +329,10 @@
           "type": "array",
           "description": "Environment variables."
         },
+        "serviceAccountName": {
+          "type": "string",
+          "description": "Service account name."
+        },
         "terminationGracePeriodSeconds": {
           "type": "number",
           "description": "Termination grace period"
