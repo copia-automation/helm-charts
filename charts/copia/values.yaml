@@ -140,6 +140,7 @@ copia:
       HTTP_PORT: 4001
       ENABLE_PPROF: false
       PPROF_PORT: 6060
+  #   LFS_JWT_SECRET: <REQUIRED>
   #   APP_NAME: "Copia"
   #   RUN_MODE: production
   #   oauth2:
