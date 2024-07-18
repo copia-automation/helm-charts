@@ -58,6 +58,9 @@ spec:
             - name: GNUPGHOME
               value: {{ .Values.signing.gpgHome }}
             {{- end }}
+            {{- if .Values.deployment.env }}
+            {{- toYaml .Values.deployment.env | nindent 12 }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "app.fullname" . }}-configmap
@@ -122,9 +125,9 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           volumeMounts:
             - name     : temp
-              mountPath: {{ .Values.deployment.env.GITEA_TEMP }}
+              mountPath: {{ .Values.copia.config.server.GITEA_TEMP }}
             - name     : data
-              mountPath: {{ .Values.deployment.env.GITEA_WORK_DIR }}
+              mountPath: {{ .Values.copia.config.server.GITEA_WORK_DIR }}
             {{- if (hasKey .Values.copia "config") }}
             - name     : config
               mountPath: /data/gitea/conf/app.ini

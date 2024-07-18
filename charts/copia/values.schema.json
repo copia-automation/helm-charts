@@ -6,7 +6,6 @@
     "k8s": {
       "resources": {
         "type": "object",
-        "required": ["cpu", "memory"],
         "properties": {
           "cpu": {
             "type": "number"
@@ -169,35 +168,67 @@
     },
     "copia": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "config": {
           "type": "object",
-          "additionalProperties": false,
+          "additionalProperties": true,
           "properties": {
-            "server": {
+            "security": {
               "type": "object",
-              "additionalProperties": false,
+              "additionalProperties": true,
               "properties": {
-                "SSH_LISTEN_PORT": {
-                  "type": "number"
+                "INSTALL_LOCK": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "database": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "DB_TYPE": {
+                  "type": "string"
                 },
-                "HTTP_PORT": {
-                  "type": "number"
+                "HOST": {
+                  "type": "string"
                 },
-                "ENABLE_PPROF": {
+                "NAME": {
+                  "type": "string"
+                }
+              }
+            },
+            "job_run_results": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "MINIO_BUCKET": {
+                  "type": "string"
+                }
+              }
+            },
+            "fileconvert_cache": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "MINIO_BUCKET": {
+                  "type": "string"
+                }
+              }
+            },
+            "conversion_manager": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "ENABLED": {
                   "type": "boolean"
                 },
-                "PPROF_PORT": {
-                  "type": "number"
+                "CONVERSION_TYPES": {
+                  "type": "string"
                 }
               }
             }
           }
-        },
-        "ini": {
-          "type": "object",
-          "additionalProperties": true
         },
         "livenessProbe": {
           "type": "object",
@@ -295,33 +326,8 @@
       "required": [],
       "properties": {
         "env": {
-          "type": "object",
-          "description": "Environment variables.",
-          "additionalProperties": true,
-          "required": ["SSH_LISTEN_PORT", "SSH_PORT", "GITEA_APP_INI", "GITEA_CUSTOM", "GITEA_WORK_DIR", "GITEA_TEMP", "TMPDIR"],
-          "properties": {
-            "SSH_LISTEN_PORT": {
-              "type": "number"
-            },
-            "SSH_PORT": {
-              "type": "number"
-            },
-            "GITEA_APP_INI": {
-              "type": "string"
-            },
-            "GITEA_CUSTOM": {
-              "type": "string"
-            },
-            "GITEA_WORK_DIR": {
-              "type": "string"
-            },
-            "GITEA_TEMP": {
-              "type": "string"
-            },
-            "TMPDIR": {
-              "type": "string"
-            }
-          }
+          "type": "array",
+          "description": "Environment variables."
         },
         "terminationGracePeriodSeconds": {
           "type": "number",
@@ -357,7 +363,7 @@
           "type": "boolean"
         },
         "existingClaim": {
-          "type": "object",
+          "type": "string",
           "description": "Existing PVC name"
         },
         "size": {
@@ -379,17 +385,19 @@
         "storageClassName": {
           "type": "string",
           "description": "Storage class name."
+        },
+        "storageClass": {
+          "type": "string",
+          "description": "Storage class name."
         }
       }
     },
     "extraVolumes": {
-      "type": "object",
-      "additionalProperties": true,
+      "type": "array",
       "description": "Extra volumes configuration."
     },
     "extraVolumeMounts": {
-      "type": "object",
-      "additionalProperties": true,
+      "type": "array",
       "description": "Extra volumes configuration."
     },
     "initPreScript": {
