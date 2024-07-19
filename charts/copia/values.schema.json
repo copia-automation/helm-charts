@@ -263,7 +263,7 @@
           "properties": {
             "httpGet": {
               "type": "object",
-              "additionalProperties": false,
+              "additionalProperties": true,
               "properties": {
                 "path": {
                   "type": "string"
@@ -293,7 +293,7 @@
           "properties": {
             "httpGet": {
               "type": "object",
-              "additionalProperties": false,
+              "additionalProperties": true,
               "properties": {
                 "path": {
                   "type": "string"
@@ -328,6 +328,10 @@
         "env": {
           "type": "array",
           "description": "Environment variables."
+        },
+        "serviceAccountName": {
+          "type": "string",
+          "description": "Service account name."
         },
         "terminationGracePeriodSeconds": {
           "type": "number",
