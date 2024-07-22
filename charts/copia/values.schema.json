@@ -325,6 +325,34 @@
       "description": "App configuration.",
       "required": [],
       "properties": {
+        "configmap": {
+          "type": "object",
+          "description": "Environment variables via configmap.",
+          "additionalProperties": true,
+          "properties": {
+            "POD_SSH_LISTEN_PORT": {
+              "type": "number"
+            },
+            "GITEA_APP_INI": {
+              "type": "string"
+            },
+            "GITEA_CUSTOM": {
+              "type": "string"
+            },
+            "GITEA_WORK_DIR": {
+              "type": "string"
+            },
+            "GITEA_TEMP": {
+              "type": "string"
+            },
+            "ENABLE_PPROF": {
+              "type": "boolean"
+            },
+            "PPROF_PORT": {
+              "type": "number"
+            }
+          }
+        },
         "env": {
           "type": "array",
           "description": "Environment variables."
