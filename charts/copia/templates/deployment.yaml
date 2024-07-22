@@ -66,12 +66,12 @@ spec:
                 name: {{ include "app.fullname" . }}-configmap
           ports:
             - name: ssh
-              containerPort: {{ .Values.deployment.configuration.POD_SSH_LISTEN_PORT }}
+              containerPort: {{ .Values.deployment.configmap.SSH_LISTEN_PORT }}
             - name: http
-              containerPort: {{ .Values.copia.config.server.HTTP_PORT }}
-              {{- if .Values.deployment.configuration.ENABLE_PPROF }}
+              containerPort: {{ .Values.copia_server_http_port }}
+              {{- if .Values.deployment.configmap.ENABLE_PPROF }}
             - name: profiler
-              containerPort: {{ .Values.deployment.configuration.PPROF_PORT }}
+              containerPort: {{ .Values.deployment.configmap.PPROF_PORT }}
               {{- end }}
           lifecycle:
             preStop:
@@ -125,12 +125,12 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           volumeMounts:
             - name     : temp
-              mountPath: {{ .Values.deployment.configuration.GITEA_TEMP }}
+              mountPath: {{ .Values.deployment.configmap.GITEA_TEMP }}
             - name     : data
-              mountPath: {{ .Values.deployment.configuration.GITEA_WORK_DIR }}
-            {{- if (hasKey .Values.deployment "configuration") }}
+              mountPath: {{ .Values.deployment.configmap.GITEA_WORK_DIR }}
+            {{- if (hasKey .Values.copia "config") }}
             - name     : config
-              mountPath: {{ .Values.deployment.configuration.GITEA_APP_INI }}
+              mountPath: {{ .Values.deployment.configmap.GITEA_APP_INI }}
               subPath  : app.ini
             {{- end }}
             {{- if .Values.extraVolumeMounts }}

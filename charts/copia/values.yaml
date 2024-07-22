@@ -1,5 +1,7 @@
 replicaCount: 1
 clusterDomain: cluster.local
+#Use this value "*copia_port" to reference the value of the copia_server_http_port when setting HTTP_PORT on the copia config.
+copia_server_http_port: &copia_port 4001
 image:
   repository: copiaio/copia
   pullPolicy: Always
@@ -8,7 +10,7 @@ service:
   http:
     type: NodePort
     port: 3000
-    targetPort: 4001
+    targetPort: *copia_port
     #clusterIP: None
     #loadBalancerIP:
     #nodePort:
@@ -47,15 +49,15 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 deployment:
-  configuration:
-    POD_SSH_LISTEN_PORT: 22
+  configmap:
+    SSH_LISTEN_PORT: 22
     GITEA_APP_INI: /data/gitea/conf/app.ini
     GITEA_CUSTOM: /data/gitea
     GITEA_WORK_DIR: /data
     GITEA_TEMP: /tmp/gitea
+    TMPDIR: /tmp/gitea
     ENABLE_PPROF: false
     PPROF_PORT: 6060
-  configmap: []
     # ACD_CONVERSION_URL: https://rockwell-tools.copia.io/convertOctetStream
     # ROCKWELL_V35_CONVERSION_URL: https://rockwell-v35.copia.io/convertOctetStream
     # ROCKWELL_V35_IMPORT_CONVERSION_URL: https://rockwell-v35.copia.io/convertL5xToAcd
@@ -107,7 +109,7 @@ copia:
   customStartupProbe:
     httpGet:
       path: /
-      port: 4001
+      port: *copia_port
     initialDelaySeconds: 10
     periodSeconds      : 5
     timeoutSeconds     : 2
@@ -115,14 +117,14 @@ copia:
   customLivenessProbe:
     httpGet:
       path: /
-      port: 4001
+      port: *copia_port
     periodSeconds   : 10
     timeoutSeconds  : 2
     failureThreshold: 2
-  config:
-    server:
-      SSH_PORT: 22
-      HTTP_PORT: 4001
+  # config:
+  #   server:
+  #     SSH_PORT: 22
+  #     HTTP_PORT: *copia_port
   #     LFS_JWT_SECRET: <REQUIRED>
   #   APP_NAME: "Copia"
   #   RUN_MODE: production

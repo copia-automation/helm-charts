@@ -325,9 +325,10 @@
       "description": "App configuration.",
       "required": [],
       "properties": {
-        "configuration": {
+        "configmap": {
           "type": "object",
-          "additionalProperties": false,
+          "description": "Environment variables via configmap.",
+          "additionalProperties": true,
           "properties": {
             "POD_SSH_LISTEN_PORT": {
               "type": "number"
@@ -351,10 +352,6 @@
               "type": "number"
             }
           }
-        },
-        "configmap": {
-          "type": "array",
-          "description": "Environment variables via configmap."
         },
         "env": {
           "type": "array",
