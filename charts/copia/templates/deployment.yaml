@@ -128,7 +128,7 @@ spec:
               mountPath: {{ .Values.deployment.configuration.GITEA_TEMP }}
             - name     : data
               mountPath: {{ .Values.deployment.configuration.GITEA_WORK_DIR }}
-            {{- if (hasKey .Values.copia "deployment") }}
+            {{- if (hasKey .Values.deployment "configuration") }}
             - name     : config
               mountPath: {{ .Values.deployment.configuration.GITEA_APP_INI }}
               subPath  : app.ini
