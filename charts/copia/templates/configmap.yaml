@@ -1,4 +1,4 @@
-{{- if .Values.copia.config.server }}
+{{- if .Values.deployment.configmap }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "app.labels" . | nindent 4 }}
 data:
-  {{- range $key, $value := .Values.copia.config.server }}
+  {{- range $key, $value := .Values.deployment.configmap }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
 {{- end }}
