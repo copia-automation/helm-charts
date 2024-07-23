@@ -53,6 +53,12 @@ install_asdf_and_plugins() {
   yes | asdf install
 }
 
+# Installs all helm plugins
+install_helm_plugins() {
+  echo -e "\n\033[1mInstalling helm plugins...\033[0m\n"
+  helm plugin install https://github.com/helm-unittest/helm-unittest.git
+}
+
 main() {
   echo -e "\n\033[1mWelcome to the Copia Automation Developer Setup for helm-charts project!\033[0m"
   echo -e "It will install Homebrew if it is not available, as it will be used for the installation of asdf and other tools."
@@ -63,6 +69,7 @@ main() {
   install_homebrew_bundle
   install_asdf_and_plugins
   install_node_deps
+  install_helm_plugins
 
   echo -e "\n\033[1mIMPORTANT SETUP INSTRUCTIONS:\033[0m\n"
   echo -e "1. Ensure asdf is sourced in your shell profile:\n"
