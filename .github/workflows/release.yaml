@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 permissions: write-all
 
@@ -20,12 +21,20 @@ jobs:
         uses: azure/setup-helm@v1
         with:
           version: v3.8.1
-  
+
+      - name: Beta build
+        if: github.event_name == 'pull_request'
+        run: |
+          sudo snap install yq
+          export CHART_VERSION=$(yq -r '.version' charts/copia/Chart.yaml)
+          export NEW_VERSION=$CHART_VERSION-beta
+          sed -i "s/version: $CHART_VERSION/version: $NEW_VERSION/g" charts/copia/Chart.yaml
+
       - name: Package Helm chart
         run: helm package ./charts/copia
-  
+
       - name: Log in to GitHub Container Registry
         run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
-  
+
       - name: Push Helm chart to GitHub Container Registry
         run: helm push copia-*.tgz oci://ghcr.io/copia-automation/helm-charts

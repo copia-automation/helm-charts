@@ -1,0 +1,16 @@
+suite: Test Deployment
+templates:
+  - deployment.yaml
+tests:
+  - it: Test Repository & Image version
+    set:
+      image.repository: copiaio/copia
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: copia
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: copiaio/copia:v\d+\.\d+\.\d+

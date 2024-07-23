@@ -14,7 +14,8 @@
   },
   "lint-staged": {
     "*.yaml": [
-      "script/lint-helm"
+      "script/lint-helm",
+      "script/test"
     ],
     "*": [
       "script/lint-shellcheck",

@@ -1,5 +1,7 @@
 replicaCount: 1
 clusterDomain: cluster.local
+#Use this value "*copia_port" to reference the value of the copia_server_http_port when setting HTTP_PORT on the copia config.
+copia_server_http_port: &copia_port 4001
 image:
   repository: ghcr.io/copia-automation/copia-web-app-selfhosted-releases
   pullPolicy: Always
@@ -9,7 +11,7 @@ service:
   http:
     type: NodePort
     port: 3000
-    targetPort: 4001
+    targetPort: *copia_port
     #clusterIP: None
     #loadBalancerIP:
     #nodePort:
@@ -48,41 +50,33 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 deployment:
-  env: {}
-    # - name: ACD_CONVERSION_URL
-    #   value: https://rockwell-tools.copia.io/convertOctetStream
-    # - name: ROCKWELL_V35_CONVERSION_URL
-    #   value: https://rockwell-v35.copia.io/convertOctetStream
-    # - name: ROCKWELL_V35_IMPORT_CONVERSION_URL
-    #   value: https://rockwell-v35.copia.io/convertL5xToAcd
-    # - name: ZAP14_CONVERSION_URL
-    #   value: http://zap2zipv14.copia.io:9694
-    # - name: ZAP15_0_CONVERSION_URL
-    #   value: http://zap2zipv15-0.copia.io:9695
-    # - name: ZAP15_CONVERSION_URL
-    #   value: http://zap2zipv15.copia.io:9695
-    # - name: ZAP16_CONVERSION_URL
-    #   value: http://zap2zip.copia.io:9696
-    # - name: ZAP17_CONVERSION_URL
-    #   value: http://zap2zipv17.copia.io:9697
-    # - name: ACD_IMPORT_CONVERSION_URL
-    #   value: https://rockwell-tools.copia.io/convertL5xToAcd
-    # - name: ZAP14_IMPORT_CONVERSION_URL
-    #   value: http://zap2zipv14.copia.io:9694/import
-    # - name: ZAP15_0_IMPORT_CONVERSION_URL
-    #   value: http://zap2zipv15-0.copia.io:9695/import
-    # - name: ZAP15_IMPORT_CONVERSION_URL
-    #   value: http://zap2zipv15.copia.io:9695/import
-    # - name: ZAP16_IMPORT_CONVERSION_URL
-    #   value: http://zap2zip.copia.io:9696/import
-    # - name: ZAP17_IMPORT_CONVERSION_URL
-    #   value: http://zap2zipv17.copia.io:9697/import
-    # - name: CODESYS_CONVERSION_URL
-    #   value: http://codesys.copia.io:8888/export
-    # - name: CODESYS_IMPORT_CONVERSION_URL
-    #   value: http://codesys.copia.io:8888/import
-    # - name: CONTROL_EXPERT_CONVERSION_URL
-    #   value: http://control-expert.copia.io:9696/export
+  configmap:
+    SSH_LISTEN_PORT: 22
+    GITEA_APP_INI: /data/gitea/conf/app.ini
+    GITEA_CUSTOM: /data/gitea
+    GITEA_WORK_DIR: /data
+    GITEA_TEMP: /tmp/gitea
+    TMPDIR: /tmp/gitea
+    ENABLE_PPROF: false
+    PPROF_PORT: 6060
+    # ACD_CONVERSION_URL: https://rockwell-tools.copia.io/convertOctetStream
+    # ROCKWELL_V35_CONVERSION_URL: https://rockwell-v35.copia.io/convertOctetStream
+    # ROCKWELL_V35_IMPORT_CONVERSION_URL: https://rockwell-v35.copia.io/convertL5xToAcd
+    # ZAP14_CONVERSION_URL: http://zap2zipv14.copia.io:9694
+    # ZAP15_0_CONVERSION_URL: http://zap2zipv15-0.copia.io:9695
+    # ZAP15_CONVERSION_URL: http://zap2zipv15.copia.io:9695
+    # ZAP16_CONVERSION_URL: http://zap2zip.copia.io:9696
+    # ZAP17_CONVERSION_URL: http://zap2zipv17.copia.io:9697
+    # ACD_IMPORT_CONVERSION_URL: https://rockwell-tools.copia.io/convertL5xToAcd
+    # ZAP14_IMPORT_CONVERSION_URL: http://zap2zipv14.copia.io:9694/import
+    # ZAP15_0_IMPORT_CONVERSION_URL: http://zap2zipv15-0.copia.io:9695/import
+    # ZAP15_IMPORT_CONVERSION_URL: http://zap2zipv15.copia.io:9695/import
+    # ZAP16_IMPORT_CONVERSION_URL: http://zap2zip.copia.io:9696/import
+    # ZAP17_IMPORT_CONVERSION_URL: http://zap2zipv17.copia.io:9697/import
+    # CODESYS_CONVERSION_URL: http://codesys.copia.io:8888/export
+    # CODESYS_IMPORT_CONVERSION_URL: http://codesys.copia.io:8888/import
+    # CONTROL_EXPERT_CONVERSION_URL: http://control-expert.copia.io:9696/export
+  env: []
   terminationGracePeriodSeconds: 60
   labels: {}
   rollingUpdate:
@@ -90,7 +84,7 @@ deployment:
     maxUnavailable: 0
 persistence:
   enabled: true
-  existingClaim: {}
+  existingClaim: ""
   size: 10Gi
   accessModes:
     - ReadWriteOnce
@@ -98,8 +92,8 @@ persistence:
   annotations: {}
   #storageClassName:
 # additional volumes to add to the deployment.
-extraVolumes: {}
-extraVolumeMounts: {}
+extraVolumes: []
+extraVolumeMounts: []
 # bash shell script copied verbatim to the start of the init-container.
 initPreScript: ""
 # Configure commit/action signing prerequisites
@@ -116,7 +110,7 @@ copia:
   customStartupProbe:
     httpGet:
       path: /
-      port: 4001
+      port: *copia_port
     initialDelaySeconds: 10
     periodSeconds      : 5
     timeoutSeconds     : 2
@@ -124,18 +118,20 @@ copia:
   customLivenessProbe:
     httpGet:
       path: /
-      port: 4001
+      port: *copia_port
     periodSeconds   : 10
     timeoutSeconds  : 2
     failureThreshold: 2
   # config:
+  #   server:
+  #     SSH_PORT: 22
+  #     HTTP_PORT: *copia_port
+  #     LFS_JWT_SECRET: <REQUIRED>
   #   APP_NAME: "Copia"
   #   RUN_MODE: production
   #   oauth2:
   #     JWT_SECRET: <REQUIRED>
   #   security:
   #     INTERNAL_TOKEN: <REQUIRED>
-  #   server:
-  #     LFS_JWT_SECRET: <REQUIRED>
   #   copia:
   #     LICENSE_KEY: <REQUIRED>
