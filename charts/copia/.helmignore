@@ -21,3 +21,6 @@ a[b-d].txt
 
 */*/temp*
 temp?
+
+# Unit tests
+tests/
