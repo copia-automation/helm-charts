@@ -6,10 +6,16 @@ metadata:
     {{- include "app.labels" . | nindent 4 }}
   annotations:
     {{- toYaml .Values.service.annotations | nindent 4 }}
+    {{- if .Values.service.http.annotations }}
+    {{- toYaml .Values.service.http.annotations | nindent 4 }}
+    {{- end }}
 spec:
   type: {{ .Values.service.http.type }}
   {{- if and .Values.service.loadBalancerIP (eq .Values.service.http.type "LoadBalancer") }}
   loadBalancerIP: {{ .Values.service.loadBalancerIP  }}
+  {{- end }}
+  {{- if and .Values.service.http.loadBalancerIP (eq .Values.service.http.type "LoadBalancer") }}
+  loadBalancerIP: {{ .Values.service.http.loadBalancerIP  }}
   {{- end }}
   {{- if .Values.service.loadBalancerSourceRanges }}
   loadBalancerSourceRanges:
@@ -17,15 +23,31 @@ spec:
     - {{ . }}
   {{- end }}
   {{- end }}
+  {{- if .Values.service.http.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range .Values.service.http.loadBalancerSourceRanges }}
+    - {{ . }}
+  {{- end }}
+  {{- end }}
   {{- if .Values.service.externalIPs }}
   externalIPs:
     {{- toYaml .Values.service.externalIPs | nindent 4 }}
   {{- end }}
+  {{- if .Values.service.http.externalIPs }}
+  externalIPs:
+    {{- toYaml .Values.service.http.externalIPs | nindent 4 }}
+  {{- end }}
   {{- if .Values.service.externalTrafficPolicy }}
   externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
   {{- end }}
+  {{- if .Values.service.http.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.service.http.externalTrafficPolicy }}
+  {{- end }}
   {{- if and .Values.service.clusterIP (eq .Values.service.http.type "ClusterIP") }}
   clusterIP: {{ .Values.service.clusterIP }}
+  {{- end }}
+  {{- if and .Values.service.http.clusterIP (eq .Values.service.http.type "ClusterIP") }}
+  clusterIP: {{ .Values.service.http.clusterIP }}
   {{- end }}
   ports:
   - name: http

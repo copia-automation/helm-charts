@@ -18,6 +18,7 @@ service:
     port: 3000
     targetPort: *copia_port
     #nodePort:
+    annotations: {}
 ingress:
   enabled: false
   # ingressClassName: nginx

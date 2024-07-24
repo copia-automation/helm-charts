@@ -95,11 +95,12 @@
           "description": "External IPs"
         },
         "annotations": {
-          "type": "object"
+          "type": "object",
+          "description": "Annotations."
         },
         "http": {
           "type": "object",
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": ["port", "type", "targetPort"],
           "properties": {
             "port": {
