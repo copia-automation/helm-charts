@@ -47,6 +47,38 @@ spec:
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
+      initContainers:
+        - name: {{ .Chart.Name }}-init
+          image: "{{ include "app.image" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - gitea doctor check --all
+          env:
+            {{- if .Values.signing.enabled }}
+            - name: GNUPGHOME
+              value: {{ .Values.signing.gpgHome }}
+            {{- end }}
+            {{- if .Values.deployment.env }}
+            {{- toYaml .Values.deployment.env | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "app.fullname" . }}-configmap
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name     : temp
+              mountPath: {{ .Values.deployment.configmap.GITEA_TEMP }}
+            - name     : data
+              mountPath: {{ .Values.deployment.configmap.GITEA_WORK_DIR }}
+            {{- if (hasKey .Values.copia "config") }}
+            - name     : config
+              mountPath: {{ .Values.deployment.configmap.GITEA_APP_INI }}
+              subPath  : app.ini
+            {{- end }}
+            {{- if .Values.extraVolumeMounts }}
+            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+            {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ include "app.image" . }}"
