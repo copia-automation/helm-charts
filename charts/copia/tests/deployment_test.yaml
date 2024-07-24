@@ -2,9 +2,7 @@ suite: Test Deployment
 templates:
   - deployment.yaml
 tests:
-  - it: Test Repository & Image version
-    set:
-      image.repository: copiaio/copia
+  - it: Test Repository, Image version & Pull policy
     asserts:
       - isKind:
           of: Deployment
@@ -14,3 +12,43 @@ tests:
       - matchRegex:
           path: spec.template.spec.containers[0].image
           pattern: copiaio/copia:v\d+\.\d+\.\d+
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+  - it: Test default values
+    set:
+      deployment.configmap.ENABLE_PPROF: true
+      copia.config: {}
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: copia
+      - equal:
+          path: spec.strategy.rollingUpdate.maxSurge
+          value: 1
+      - equal:
+          path: spec.strategy.rollingUpdate.maxUnavailable
+          value: 0
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 60
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 22
+      - equal:
+          path: spec.template.spec.containers[0].ports[1].containerPort
+          value: 4001
+      - equal:
+          path: spec.template.spec.containers[0].ports[2].containerPort
+          value: 6060
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /tmp/gitea
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[1].mountPath
+          value: /data
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[2].mountPath
+          value: /data/gitea/conf/app.ini

@@ -7,17 +7,17 @@ image:
   pullPolicy: Always
 imagePullSecrets: []
 service:
+  #clusterIP: None
+  #loadBalancerIP:
+  #externalTrafficPolicy:
+  #externalIPs: []
+  loadBalancerSourceRanges: []
+  annotations: []
   http:
     type: NodePort
     port: 3000
     targetPort: *copia_port
-    #clusterIP: None
-    #loadBalancerIP:
     #nodePort:
-    #externalTrafficPolicy:
-    #externalIPs:
-    loadBalancerSourceRanges: []
-    annotations: {}
 ingress:
   enabled: false
   # ingressClassName: nginx
