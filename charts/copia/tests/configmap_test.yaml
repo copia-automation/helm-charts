@@ -1,0 +1,42 @@
+suite: Test ConfigMap
+templates:
+  - configmap.yaml
+tests:
+  - it: Test ConfigMap name
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-configmap
+  - it: Test ConfigMap default values
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-configmap
+      - equal:
+          path: data.SSH_LISTEN_PORT
+          value: "22"
+      - equal:
+          path: data.GITEA_APP_INI
+          value: "/data/gitea/conf/app.ini"
+      - equal:
+          path: data.GITEA_CUSTOM
+          value: "/data/gitea"
+      - equal:
+          path: data.GITEA_WORK_DIR
+          value: "/data"
+      - equal:
+          path: data.GITEA_TEMP
+          value: "/tmp/gitea"
+      - equal:
+          path: data.TMPDIR
+          value: "/tmp/gitea"
+      - equal:
+          path: data.ENABLE_PPROF
+          value: "false"
+      - equal:
+          path: data.PPROF_PORT
+          value: "6060"

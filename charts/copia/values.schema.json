@@ -74,9 +74,33 @@
       "additionalProperties": false,
       "required": ["http"],
       "properties": {
+        "clusterIP": {
+          "type": "string",
+          "description": "Fixed IP of the service."
+        },
+        "loadBalancerIP": {
+          "type": "string",
+          "description": "Fixed IP of the loadbalancer."
+        },
+        "loadBalancerSourceRanges": {
+          "type": "array",
+          "description": "IPs allowed to access the service."
+        },
+        "externalTrafficPolicy": {
+          "type": "string",
+          "description": "External traffic policy"
+        },
+        "externalIPs": {
+          "type": "array",
+          "description": "External IPs"
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Annotations."
+        },
         "http": {
           "type": "object",
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": ["port", "type", "targetPort"],
           "properties": {
             "port": {
@@ -91,29 +115,9 @@
               "type": "number",
               "description": "Access service on this port."
             },
-            "clusterIP": {
-              "type": "string",
-              "description": "Fixed IP of the service."
-            },
-            "loadbalancerIP": {
-              "type": "string",
-              "description": "Fixed IP of the service."
-            },
             "nodePort": {
               "type": "number",
               "description": "Access service on this port."
-            },
-            "loadBalancerSourceRanges": {
-              "type": "array",
-              "description": "IPs allowed to access the service."
-            },
-            "annotations": {
-              "type": "object",
-              "description": "Annotations for the service"
-            },
-            "externalTrafficPolicy": {
-              "type": "string",
-              "description": "External traffic policy"
             }
           }
         }
