@@ -1,0 +1,24 @@
+suite: Test Persistent Volume Claim
+templates:
+  - persistent-volume.yaml
+tests:
+  - it: Test pv name
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-data
+  - it: Test PVC default values
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-data
+      - equal:
+          path: spec.resources.requests.storage
+          value: 10Gi
+      - equal:
+          path: spec.accessModes[0]
+          value: ReadWriteOnce
