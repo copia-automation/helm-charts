@@ -12,7 +12,7 @@ service:
   #externalTrafficPolicy:
   #externalIPs: []
   loadBalancerSourceRanges: []
-  annotations: []
+  annotations: {}
   http:
     type: NodePort
     port: 3000

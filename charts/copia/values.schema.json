@@ -95,7 +95,7 @@
           "description": "External IPs"
         },
         "annotations": {
-          "type": "array"
+          "type": "object"
         },
         "http": {
           "type": "object",
