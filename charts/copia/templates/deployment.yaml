@@ -52,7 +52,7 @@ spec:
           image: "{{ include "app.image" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - gitea doctor check --all
+            - /usr/local/bin/gitea doctor check --all
           env:
             {{- if .Values.signing.enabled }}
             - name: GNUPGHOME
