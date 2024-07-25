@@ -91,7 +91,7 @@ This installation covers installing to EKS (Elastic Kubernetes Service) on AWS.
 
 #### Prerequisites
 - [Elastic Kubernetes Service](https://aws.amazon.com/eks/) cluster with available EC2 worker nodes
-- [Elastic Bean Stalk Container Storage Interface](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) installed to leverage EBS volume storage
+- [Elastic Block Store Container Storage Interface](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) installed to leverage EBS volume storage
 
 #### Compute Resourcing
 ##### OS
@@ -125,4 +125,36 @@ A service is created for the Copia application that exposes an HTTP web service 
 
 #### Persistent Storage
 
-#### SQL Database
+Copia requires a Postgres database for the application to function properly.
+
+## Troubleshooting
+
+### Install Troubleshoot.sh Packages
+
+The Copia helm chart leverages [troubleshoot.sh](https://troubleshoot.sh/) to perform pre-flight checks and generate support bundles.
+
+Pre-Flights and Support Bundles are installed with `krew`:
+
+```
+kubectl krew install preflight
+kubectl krew install support-bundle
+```
+
+:warning: **Note:** Pre-flights will check the connectivity to the Database from the client running the operation.
+It is recommended that you connect to the DB network if it is behind a VPN or permit your local client network access
+to the database endpoint in order to avoid potential false failure.
+
+### Run Pre-Flight Checks
+
+Running Pre-Flight checks on the Copia chart to validate the target deployment environment can be completed by running
+the following command: 
+
+`helm template copia --values values.yaml | kubectl preflight -`
+
+### Generating Support Bundles
+
+Generating a support bundle for the Copia chart can be completed by running the following command: 
+
+`kubectl support-bundle --load-cluster-specs --namespace copia`
+
+The output of the support bundle command will be a `tar.gz` file that can be reviewed before sending to Copia for support.
