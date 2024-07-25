@@ -31,6 +31,6 @@ jobs:
           sed -i "s/version: $CHART_VERSION/version: $NEW_VERSION/g" charts/copia/Chart.yaml
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.2.1
+        uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
