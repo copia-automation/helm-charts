@@ -1,0 +1,58 @@
+{{- define "troubleshoot.supportBundle" -}}
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: support-bundle
+spec:
+  collectors: {{- include "troubleshoot.collectors.shared" .  | nindent 4 }}
+    - copy:
+        namespace: copia
+        selector:
+          - app.kubernetes.io/name=copia
+          - app.kubernetes.io/instance=copia
+        containerPath: /data/gitea/conf/app.ini
+        containerName: copia
+    - logs:
+        name: app/copia/logs
+        namespace: copia
+        selector:
+          - app.kubernetes.io/name=copia
+          - app.kubernetes.io/instance=copia
+        containerNames:
+          - copia
+        limits:
+          maxAge: 720h
+  analyzers: {{- include "troubleshoot.analyzers.shared" .  | nindent 4 }}
+    - deploymentStatus:
+        name: copia
+        outcomes:
+          - fail:
+              when: "absent" # note that the "absent" failure state must be listed first if used.
+              message: The copia deployment is not present.
+          - fail:
+              when: "< 1"
+              message: The copia deployment does not have any ready replicas.
+          - warn:
+              when: "< 1"
+              message: The copia deployment has less than the required number of replicas.
+          - warn:
+              when: "= 1"
+              message: The copia deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the copia deployment ready.
+---
+apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
+metadata:
+  name: GiteaSensitives
+spec:
+  redactors:
+  - name: Redact all Gitea APP.INI sensitve values
+    removals:
+      regex:
+      - redactor: (SECRET_KEY *\= *)(?P<mask>.*)
+      - redactor: (.*JWT_SECRET *\= *)(?P<mask>.*)
+      - redactor: (INTERNAL_TOKEN *\= *)(?P<mask>.*)
+      - redactor: (PASSWD *\= *)(?P<mask>.*)
+      - redactor: (USER_SECRETS_PRIVATE_KEY *\= *)(?P<mask>.*)
+{{- end -}}

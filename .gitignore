@@ -1,3 +1,5 @@
 .DS_Store
 .dccache
+*.tgz
+Chart.lock
 node_modules
