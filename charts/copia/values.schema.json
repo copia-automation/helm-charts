@@ -6,7 +6,6 @@
     "k8s": {
       "resources": {
         "type": "object",
-        "required": ["cpu", "memory"],
         "properties": {
           "cpu": {
             "type": "number"
@@ -75,9 +74,33 @@
       "additionalProperties": false,
       "required": ["http"],
       "properties": {
+        "clusterIP": {
+          "type": "string",
+          "description": "Fixed IP of the service."
+        },
+        "loadBalancerIP": {
+          "type": "string",
+          "description": "Fixed IP of the loadbalancer."
+        },
+        "loadBalancerSourceRanges": {
+          "type": "array",
+          "description": "IPs allowed to access the service."
+        },
+        "externalTrafficPolicy": {
+          "type": "string",
+          "description": "External traffic policy"
+        },
+        "externalIPs": {
+          "type": "array",
+          "description": "External IPs"
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Annotations."
+        },
         "http": {
           "type": "object",
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": ["port", "type", "targetPort"],
           "properties": {
             "port": {
@@ -92,29 +115,9 @@
               "type": "number",
               "description": "Access service on this port."
             },
-            "clusterIP": {
-              "type": "string",
-              "description": "Fixed IP of the service."
-            },
-            "loadbalancerIP": {
-              "type": "string",
-              "description": "Fixed IP of the service."
-            },
             "nodePort": {
               "type": "number",
               "description": "Access service on this port."
-            },
-            "loadBalancerSourceRanges": {
-              "type": "array",
-              "description": "IPs allowed to access the service."
-            },
-            "annotations": {
-              "type": "object",
-              "description": "Annotations for the service"
-            },
-            "externalTrafficPolicy": {
-              "type": "string",
-              "description": "External traffic policy"
             }
           }
         }
@@ -169,8 +172,68 @@
     },
     "copia": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
+        "config": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "security": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "INSTALL_LOCK": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "database": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "DB_TYPE": {
+                  "type": "string"
+                },
+                "HOST": {
+                  "type": "string"
+                },
+                "NAME": {
+                  "type": "string"
+                }
+              }
+            },
+            "job_run_results": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "MINIO_BUCKET": {
+                  "type": "string"
+                }
+              }
+            },
+            "fileconvert_cache": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "MINIO_BUCKET": {
+                  "type": "string"
+                }
+              }
+            },
+            "conversion_manager": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "ENABLED": {
+                  "type": "boolean"
+                },
+                "CONVERSION_TYPES": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
         "livenessProbe": {
           "type": "object",
           "additionalProperties": false,
@@ -204,7 +267,7 @@
           "properties": {
             "httpGet": {
               "type": "object",
-              "additionalProperties": false,
+              "additionalProperties": true,
               "properties": {
                 "path": {
                   "type": "string"
@@ -234,7 +297,7 @@
           "properties": {
             "httpGet": {
               "type": "object",
-              "additionalProperties": false,
+              "additionalProperties": true,
               "properties": {
                 "path": {
                   "type": "string"
@@ -266,9 +329,41 @@
       "description": "App configuration.",
       "required": [],
       "properties": {
-        "env": {
+        "configmap": {
           "type": "object",
+          "description": "Environment variables via configmap.",
+          "additionalProperties": true,
+          "properties": {
+            "POD_SSH_LISTEN_PORT": {
+              "type": "number"
+            },
+            "GITEA_APP_INI": {
+              "type": "string"
+            },
+            "GITEA_CUSTOM": {
+              "type": "string"
+            },
+            "GITEA_WORK_DIR": {
+              "type": "string"
+            },
+            "GITEA_TEMP": {
+              "type": "string"
+            },
+            "ENABLE_PPROF": {
+              "type": "boolean"
+            },
+            "PPROF_PORT": {
+              "type": "number"
+            }
+          }
+        },
+        "env": {
+          "type": "array",
           "description": "Environment variables."
+        },
+        "serviceAccountName": {
+          "type": "string",
+          "description": "Service account name."
         },
         "terminationGracePeriodSeconds": {
           "type": "number",
@@ -304,7 +399,7 @@
           "type": "boolean"
         },
         "existingClaim": {
-          "type": "object",
+          "type": "string",
           "description": "Existing PVC name"
         },
         "size": {
@@ -326,17 +421,19 @@
         "storageClassName": {
           "type": "string",
           "description": "Storage class name."
+        },
+        "storageClass": {
+          "type": "string",
+          "description": "Storage class name."
         }
       }
     },
     "extraVolumes": {
-      "type": "object",
-      "additionalProperties": true,
+      "type": "array",
       "description": "Extra volumes configuration."
     },
     "extraVolumeMounts": {
-      "type": "object",
-      "additionalProperties": true,
+      "type": "array",
       "description": "Extra volumes configuration."
     },
     "initPreScript": {
