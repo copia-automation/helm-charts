@@ -2,3 +2,4 @@
 .dccache
 *.tgz
 Chart.lock
+node_modules
