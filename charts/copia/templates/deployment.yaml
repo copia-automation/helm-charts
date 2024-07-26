@@ -51,8 +51,7 @@ spec:
         - name: {{ .Chart.Name }}-init
           image: "{{ include "app.image" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command:
-            - /app/gitea/gitea doctor check --all
+          command: ['/app/gitea/gitea', 'doctor', 'check', '--all']
           env:
             {{- if .Values.signing.enabled }}
             - name: GNUPGHOME
