@@ -1,0 +1,27 @@
+name: Test Charts
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions: write-all
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install software
+        run: |
+          sudo snap install helm --classic
+          helm plugin install https://github.com/helm-unittest/helm-unittest.git
+
+      - name: Test copia chart
+        run: |
+          bash script/test

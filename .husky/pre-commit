@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC1091
+source "$(dirname -- "$0")/_/husky.sh"
+
+set -euo pipefail
+
+npx lint-staged
