@@ -71,13 +71,34 @@ persistence:
   storageClass: azuredisk-csi
 ```
 
+## Prerequisites
+
+Github Container Registry authentication
+GHCR is our docker image repository. Authentication is required to pull our images. 
+
+Create a Github account and follow the official [documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) to create a token with package read permissions. Speak to your Copia customer success representative to grant access to the newly created user.
+
+To grant access from your kubernetes cluster, run the following command replacing variables with your credentials:
+
+```
+kubectl create ns copia
+kubectl -n copia create secret docker-registry ghcr-login-secret --docker-server=https://ghcr.io --docker-username=$YOUR_GITHUB_USERNAME --docker-password=$YOUR_GITHUB_TOKEN --docker-email=$YOUR_EMAIL
+```
+
 ## Install the Helm chart
 
 If you have already installed Helm, run the following:
 
 ```
-helm repo add copia-automation https://copia-automation.github.io/helm-charts
-helm install my-copia copia-automation/copia \
+helm upgrade --install my-copia oci://ghcr.io/copia-automation/helm-charts/copia \
+  -f values.yaml \
+  -n copia \
+  --create-namespace
+```
+
+You can also specify the chart version:
+```
+helm upgrade --install my-copia oci://ghcr.io/copia-automation/helm-charts/copia --version 0.29.0 \
   -f values.yaml \
   -n copia \
   --create-namespace

@@ -3,9 +3,10 @@ clusterDomain: cluster.local
 #Use this value "*copia_port" to reference the value of the copia_server_http_port when setting HTTP_PORT on the copia config.
 copia_server_http_port: &copia_port 4001
 image:
-  repository: copiaio/copia
+  repository: ghcr.io/copia-automation/copia-web-app-selfhosted-releases
   pullPolicy: Always
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-login-secret
 service:
   #clusterIP: None
   #loadBalancerIP:
