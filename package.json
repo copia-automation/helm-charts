@@ -10,7 +10,7 @@
     "husky": "^4.2.5",
     "lint-staged": "^10.2.11",
     "prettier": "^2.8.0",
-    "prettier-plugin-sh": "^0.5.0"
+    "prettier-plugin-sh": "^0.14.0"
   },
   "lint-staged": {
     "*.yaml": [
