@@ -1,0 +1,141 @@
+{{- if .Values.copia.conversionManager.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.conversion-manager.fullname" . }}
+  labels:
+    {{- include "app.conversion-manager.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.conversionManager.replicaCount | default 1 }}
+  revisionHistoryLimit: 2
+  strategy:
+    {{- if and .Values.conversionManager.deployment.strategy (eq .Values.conversionManager.deployment.strategy "Recreate") }}
+    type: Recreate
+    {{- else }}
+    type: RollingUpdate
+    rollingUpdate:
+      {{- with .Values.conversionManager.deployment.rollingUpdate }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "app.conversion-manager.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ (print $.Template.BasePath "/configmap.yaml") | sha256sum }}
+        checksum/secret: {{ (print $.Template.BasePath "/secret.yaml") | sha256sum }}
+        {{- with .Values.conversionManager.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "app.labels" . | nindent 8 }}
+        {{- if .Values.conversionManager.deployment.labels }}
+        {{- toYaml .Values.conversionManager.deployment.labels | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.conversionManager.schedulerName }}
+      schedulerName: "{{ .Values.conversionManager.schedulerName }}"
+      {{- end }}
+      {{- with .Values.conversionManager.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.conversionManager.deployment.serviceAccountName }}
+      serviceAccountName: "{{ .Values.conversionManager.deployment.serviceAccountName }}"
+      {{- end }}
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: {{ .Values.conversionManager.deployment.terminationGracePeriodSeconds }}
+      containers:
+        - name: {{ include "app.conversion-manager.name" }}
+          image: "{{ include "app.image" . }}"
+          imagePullPolicy: {{ .Values.conversionManager.image.pullPolicy }}
+          env:
+            {{- if .Values.conversionManager.deployment.env }}
+            {{- toYaml .Values.conversionManager.deployment.env | nindent 12 }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.conversionManager.server_http_port }}
+          {{- if .Values.conversionManager.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /api/vi/ping
+              port: {{ .Values.conversionManager.server_http_port }}
+              {{- if .Values.conversionManager.httpsEnabled -}}
+              scheme: HTTPS
+              {{- else -}}
+              scheme: HTTP
+              {{- end }}
+            periodSeconds: {{ .Values.conversionManager.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.conversionManager.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.conversionManager.livenessProbe.failureThreshold }}
+          {{- else if .Values.conversionManager.customLivenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.conversionManager.customLivenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.conversionManager.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /api/v1/ping
+              port: {{ .Values.conversionManager.server_http_port }}
+              {{- if .Values.conversionManager.httpsEnabled -}}
+              scheme: HTTPS
+              {{- else -}}
+              scheme: HTTP
+              {{- end }}
+            initialDelaySeconds: {{ .Values.conversionManager.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.conversionManager.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.conversionManager.startupProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.conversionManager.startupProbe.successThreshold }}
+            failureThreshold: {{ .Values.conversionManager.startupProbe.failureThreshold }}
+          {{- else if .Values.conversionManager.customStartupProbe }}
+          startupProbe:
+            {{- toYaml .Values.conversionManager.customStartupProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.conversionManager.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.conversionManager.securityContext | nindent 12 }}
+          volumeMounts:
+            - name     : ephemeral-storage
+              mountPath: /tmp/conversion-manager
+            {{- if .Values.conversionManager.httpsEnabled -}}
+            - name     : tls
+              mountPath: /etc/pki/tls
+              readOnly : true
+            {{- end }}
+      {{- with .Values.conversionManager.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.conversionManager.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.conversionManager.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      volumes:
+        - name: ephemeral-storage
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                labels:
+                  type: conversion-manager-ephemeral-data
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                storageClass: {{ .Values.conversionManager.storageClass }}
+        {{- if .Values.conversionManager.httpsEnabled -}}
+        - name: tls
+          secret:
+            secretName: {{ .Values.conversionManager.tlsSecretName }}
+            items:
+              - key: tls.crt
+                path: certs/conversion-manager.crt
+              - key: tls.key
+                path: private/conversion-manager.key
+        {{- end }}
+{{- end }}

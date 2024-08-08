@@ -1,0 +1,15 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: conversion-manager-ebs-gp3
+  namespace: copia
+provisioner: ebs.csi.aws.com
+parameters:
+  type: "gp3"
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+allowedTopologies:
+  - matchLabelExpressions:
+      - key: com.amazon.aws.csi.ebs/zone
+        values:
+          - us-east-2a
