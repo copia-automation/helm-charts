@@ -166,7 +166,7 @@
           }
         },
         "tls": {
-          "type": "object"
+          "type": "array"
         }
       }
     },
