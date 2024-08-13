@@ -136,3 +136,9 @@ copia:
   #     INTERNAL_TOKEN: <REQUIRED>
   #   copia:
   #     LICENSE_KEY: <REQUIRED>
+conversionManager:
+  enabled: true
+  ingress:
+    enabled: false
+  service:
+    annotations: {}

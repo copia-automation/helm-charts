@@ -170,6 +170,16 @@
         }
       }
     },
+    "conversionManager": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
     "copia": {
       "type": "object",
       "additionalProperties": true,

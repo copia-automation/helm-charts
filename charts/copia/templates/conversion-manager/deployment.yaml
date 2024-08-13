@@ -1,4 +1,4 @@
-{{- if .Values.copia.conversionManager.enabled -}}
+{{- if .Values.conversionManager.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

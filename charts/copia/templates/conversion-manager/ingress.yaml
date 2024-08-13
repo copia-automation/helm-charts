@@ -1,4 +1,4 @@
-{{- if .Values.copia.conversionManager.enabled -}}
+{{- if .Values.conversionManager.enabled -}}
 {{- if .Values.conversionManager.ingress.enabled -}}
 {{- $fullName := include "app.conversion-manager.fullname" . -}}
 {{- $httpPort := .Values.conversionManager.service.http.port -}}
