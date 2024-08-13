@@ -2,6 +2,7 @@ replicaCount: 1
 clusterDomain: cluster.local
 #Use this value "*copia_port" to reference the value of the copia_server_http_port when setting HTTP_PORT on the copia config.
 copia_server_http_port: &copia_port 4001
+conversion_manager_http_port: &cm_port 8888
 image:
   repository: ghcr.io/copia-automation/copia-web-app-selfhosted-releases
   pullPolicy: Always
@@ -139,7 +140,7 @@ copia:
 conversion_manager:
   enabled: true
   deployment:
-    port: 8080
+    port: *cm_port
     image:
       repository: ghcr.io/copia-automation/conversion-manager
       imagePullPolicy: Always
@@ -167,4 +168,19 @@ conversion_manager:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
-  configmap: {}
+  configmap:
+    LOGGER_LEVEL: debug
+    NODE_ENV: production
+    PORT: *cm_port
+    HOST: localhost
+    ADMIN_ID: admin
+    COPIA_USER_ID: copiaUser
+    COPIA_TEAM_ID: copiaTeam
+    DB_USER: postgres
+    DB_HOST: localhost:5441
+    DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/conversion_manager?schema=public"
+  secret:
+    DB_PASSWORD: password
+    ADMIN_KEY: testAdminKey
+    COPIA_USER_KEY: testCopiaUserKey
+    COPIA_TEAM_KEY: testCopiaTeamKey

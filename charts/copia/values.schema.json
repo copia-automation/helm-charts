@@ -118,7 +118,56 @@
         "configmap": {
           "type": "object",
           "additionalProperties": true,
-          "properties": {}
+          "properties": {
+            "LOGGER_LEVEL": {
+              "type": "string"
+            },
+            "NODE_ENV": {
+              "type": "string"
+            },
+            "PORT": {
+              "type": "number"
+            },
+            "HOST": {
+              "type": "string"
+            },
+            "ADMIN_ID": {
+              "type": "string"
+            },
+            "COPIA_USER_ID": {
+              "type": "string"
+            },
+            "COPIA_TEAM_ID": {
+              "type": "string"
+            },
+            "DB_USER": {
+              "type": "string"
+            },
+            "DB_HOST": {
+              "type": "string"
+            },
+            "DATABASE_URL": {
+              "type": "string"
+            }
+          }
+        },
+        "secret": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "DB_PASSWORD": {
+              "type": "string"
+            },
+            "ADMIN_KEY": {
+              "type": "string"
+            },
+            "COPIA_USER_KEY": {
+              "type": "string"
+            },
+            "COPIA_TEAM_KEY": {
+              "type": "string"
+            }
+          }
         }
       }
     },

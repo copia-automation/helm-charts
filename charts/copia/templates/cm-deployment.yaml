@@ -53,6 +53,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "app.fullname" . }}-cm-configmap
+            - secretRef:
+                name: {{ include "app.fullname" . }}-cm-secret
           ports:
             - name: http
               containerPort: {{ .Values.conversion_manager.deployment.port }}
