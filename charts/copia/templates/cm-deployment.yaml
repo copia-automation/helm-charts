@@ -58,15 +58,15 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.conversion_manager.deployment.port }}
-          {{- if .Values.conversion_manager.deployment.livenessProbe.enabled }}
+          {{- if .Values.conversion_manager.deployment.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.conversion_manager.deployment.livenessProbe | nindent 12 }}
           {{- end }}
-          {{- if .Values.conversion_manager.deployment.readinessProbe.enabled }}
+          {{- if .Values.conversion_manager.deployment.readinessProbe }}
           readinessProbe:
             {{- toYaml .Values.conversion_manager.deployment.readinessProbe | nindent 12 }}
           {{- end }}
-          {{- if .Values.conversion_manager.deployment.startupProbe.enabled }}
+          {{- if .Values.conversion_manager.deployment.startupProbe }}
           startupProbe:
             {{- toYaml .Values.conversion_manager.deployment.startupProbe | nindent 12 }}
           {{- end }}

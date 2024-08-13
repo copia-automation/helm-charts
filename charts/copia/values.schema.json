@@ -23,6 +23,7 @@
     "conversion_manager": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["deployment", "service", "configmap", "secret"],
       "properties": {
         "enabled": {
           "type": "boolean"
@@ -90,8 +91,32 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "enabled": {
-                  "type": "boolean"
+                "httpGet": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "port": {
+                      "type": "number"
+                    },
+                    "scheme": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "initialDelaySeconds": {
+                  "type": "number"
+                },
+                "periodSeconds": {
+                  "type": "number"
+                },
+                "timeoutSeconds": {
+                  "type": "number"
+                },
+                "failureThreshold": {
+                  "type": "number"
                 }
               }
             },
@@ -99,8 +124,32 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "enabled": {
-                  "type": "boolean"
+                "httpGet": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "port": {
+                      "type": "number"
+                    },
+                    "scheme": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "initialDelaySeconds": {
+                  "type": "number"
+                },
+                "periodSeconds": {
+                  "type": "number"
+                },
+                "timeoutSeconds": {
+                  "type": "number"
+                },
+                "failureThreshold": {
+                  "type": "number"
                 }
               }
             },
@@ -108,8 +157,35 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "enabled": {
-                  "type": "boolean"
+                "httpGet": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "port": {
+                      "type": "number"
+                    },
+                    "scheme": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "initialDelaySeconds": {
+                  "type": "number"
+                },
+                "periodSeconds": {
+                  "type": "number"
+                },
+                "timeoutSeconds": {
+                  "type": "number"
+                },
+                "failureThreshold": {
+                  "type": "number"
+                },
+                "successThreshold": {
+                  "type": "number"
                 }
               }
             },
@@ -122,6 +198,60 @@
               "description": "Termination grace period"
             }
           }
+        },
+        "service": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["http"],
+          "properties": {
+            "clusterIP": {
+              "type": "string",
+              "description": "Fixed IP of the service."
+            },
+            "loadBalancerIP": {
+              "type": "string",
+              "description": "Fixed IP of the loadbalancer."
+            },
+            "loadBalancerSourceRanges": {
+              "type": "array",
+              "description": "IPs allowed to access the service."
+            },
+            "externalTrafficPolicy": {
+              "type": "string",
+              "description": "External traffic policy"
+            },
+            "externalIPs": {
+              "type": "array",
+              "description": "External IPs"
+            },
+            "annotations": {
+              "type": "object",
+              "description": "Annotations."
+            },
+            "http": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["port", "type", "targetPort"],
+              "properties": {
+                "port": {
+                  "type": "number",
+                  "description": "Expose service on this port."
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Type of service."
+                },
+                "targetPort": {
+                  "type": "number",
+                  "description": "Access service on this port."
+                },
+                "nodePort": {
+                  "type": "number",
+                  "description": "Access service on this port."
+                }
+              }
+            }
+          }  
         },
         "configmap": {
           "type": "object",

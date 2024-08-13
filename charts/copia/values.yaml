@@ -156,19 +156,45 @@ conversion_manager:
     labels: {}
     imagePullSecrets:
       - name: ghcr-login-secret
-    livenessProbe:
-      enabled: false
-    readinessProbe:
-      enabled: false
     startupProbe:
-      enabled: false
-    resources: {}
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+      httpGet:
+        path: /api/v1/ping
+        port: *cm_port
+        scheme: HTTPS
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 10
+      successThreshold: 1
+    livenessProbe:
+      httpGet:
+        path: /api/v1/ping
+        port: *cm_port
+        scheme: HTTPS
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 2
+    readinessProbe: {}
+    resources:
+      limits:
+        cpu: 2
+        memory: 512Mi
+      requests:
+        cpu: 0.5
+        memory: 128Mi
+  service:
+    #clusterIP: None
+    #loadBalancerIP:
+    #externalTrafficPolicy:
+    #externalIPs: []
+    loadBalancerSourceRanges: []
+    annotations: {}
+    http:
+      type: NodePort
+      port: 3010
+      targetPort: *cm_port
+      #nodePort:
+      annotations: {}
   configmap:
     LOGGER_LEVEL: debug
     NODE_ENV: production
