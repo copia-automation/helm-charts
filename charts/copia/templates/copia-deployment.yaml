@@ -1,3 +1,4 @@
+# Copia deployment template
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,8 +24,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ (print $.Template.BasePath "/configmap.yaml") | sha256sum }}
-        checksum/secret: {{ (print $.Template.BasePath "/secret.yaml") | sha256sum }}
+        checksum/config: {{ (print $.Template.BasePath "/copia-configmap.yaml") | sha256sum }}
+        checksum/secret: {{ (print $.Template.BasePath "/copia-secret.yaml") | sha256sum }}
         {{- with .Values.copia.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

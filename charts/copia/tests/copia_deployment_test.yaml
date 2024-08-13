@@ -1,6 +1,6 @@
-suite: Test Deployment
+suite: Test Copia Deployment
 templates:
-  - deployment.yaml
+  - copia-deployment.yaml
 tests:
   - it: Test Repository, Image version & Pull policy
     asserts:

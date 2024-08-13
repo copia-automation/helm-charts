@@ -1,6 +1,6 @@
-suite: Test Ingress
+suite: Test Copia Ingress
 templates:
-  - ingress.yaml
+  - copia-ingress.yaml
 tests:
   - it: Test ingress name
     set:

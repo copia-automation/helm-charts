@@ -1,6 +1,6 @@
-suite: Test ConfigMap
+suite: Test Copia ConfigMap
 templates:
-  - configmap.yaml
+  - copia-configmap.yaml
 tests:
   - it: Test ConfigMap name
     asserts:

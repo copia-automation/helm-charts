@@ -136,3 +136,35 @@ copia:
   #     INTERNAL_TOKEN: <REQUIRED>
   #   copia:
   #     LICENSE_KEY: <REQUIRED>
+conversion_manager:
+  enabled: true
+  deployment:
+    port: 8080
+    image:
+      repository: ghcr.io/copia-automation/conversion-manager
+      imagePullPolicy: Always
+      tag: latest
+    # serviceAccountName: ""
+    # terminationGracePeriodSeconds: 60
+    replicaCount: 1
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    podAnnotations: {}
+    labels: {}
+    imagePullSecrets:
+      - name: ghcr-login-secret
+    livenessProbe:
+      enabled: false
+    readinessProbe:
+      enabled: false
+    startupProbe:
+      enabled: false
+    resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  configmap: {}

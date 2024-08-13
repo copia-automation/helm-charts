@@ -20,6 +20,108 @@
   },
   "required": ["image", "replicaCount", "copia", "service"],
   "properties": {
+    "conversion_manager": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "port": {
+              "type": "number"
+            },
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "repository": {
+                  "type": "string"
+                },
+                "imagePullPolicy": {
+                  "type": "string"
+                },
+                "tag": {
+                  "type": "string"
+                }
+              }
+            },
+            "replicaCount": {
+              "type": "number"
+            },
+            "rollingUpdate": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "maxSurge": {
+                  "type": "number"
+                },
+                "maxUnavailable": {
+                  "type": "number"
+                }
+              }
+            },
+            "podAnnotations": {
+              "type": "object"
+            },
+            "labels": {
+              "type": "object"
+            },
+            "imagePullSecrets": {
+              "type": "array"
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [],
+              "properties": {
+                "requests": {
+                  "$ref": "#/definitions/k8s/resources"
+                },
+                "limits": {
+                  "$ref": "#/definitions/k8s/resources"
+                }
+              }
+            },
+            "livenessProbe": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "readinessProbe": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "startupProbe": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "configmap": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {}
+        }
+      }
+    },
     "replicaCount": {
       "type": "number",
       "description": "The amount of replicas to deploy."

@@ -1,6 +1,6 @@
-suite: Test Service
+suite: Test Copia Service
 templates:
-  - http-svc.yaml
+  - copia-service.yaml
 tests:
   - it: Test service name
     asserts:

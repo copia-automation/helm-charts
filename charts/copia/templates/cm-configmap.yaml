@@ -1,0 +1,12 @@
+{{- if .Values.conversion_manager.configmap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "app.fullname" . }}-cm-configmap
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.conversion_manager.configmap }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}

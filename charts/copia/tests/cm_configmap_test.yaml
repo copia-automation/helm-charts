@@ -1,0 +1,25 @@
+suite: Test Conversion Manager ConfigMap
+templates:
+  - cm-configmap.yaml
+tests:
+  - it: Test ConfigMap name
+    set:
+      conversion_manager.configmap.TEST: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-cm-configmap
+  - it: Test ConfigMap default values
+    set:
+      conversion_manager.configmap.TEST: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-cm-configmap
+      - equal:
+          path: data.TEST
+          value: "true"
