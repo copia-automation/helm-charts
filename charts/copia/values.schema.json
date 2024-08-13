@@ -112,6 +112,14 @@
                   "type": "boolean"
                 }
               }
+            },
+            "serviceAccountName": {
+              "type": "string",
+              "description": "Service account name."
+            },
+            "terminationGracePeriodSeconds": {
+              "type": "number",
+              "description": "Termination grace period"
             }
           }
         },

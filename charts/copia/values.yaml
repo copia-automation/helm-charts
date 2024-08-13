@@ -137,8 +137,9 @@ copia:
   #     INTERNAL_TOKEN: <REQUIRED>
   #   copia:
   #     LICENSE_KEY: <REQUIRED>
+
 conversion_manager:
-  enabled: true
+  enabled: false
   deployment:
     port: *cm_port
     image:

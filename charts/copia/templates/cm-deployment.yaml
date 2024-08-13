@@ -1,5 +1,5 @@
 # Conversion Manager deployment template
-{{- if .Values.conversion_manager.enabled }}
+{{- if (eq .Values.conversion_manager.enabled true)}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

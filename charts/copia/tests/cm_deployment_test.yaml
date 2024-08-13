@@ -1,0 +1,37 @@
+suite: Test Conversion Manager Deployment
+templates:
+  - cm-deployment.yaml
+tests:
+  - it: Test Repository, Image version & Pull policy
+    set:
+      conversion_manager.enabled: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-cm
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: ghcr.io/copia-automation/conversion-manager:latest
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+  - it: Test default values
+    set:
+      conversion_manager.enabled: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-cm
+      - equal:
+          path: spec.strategy.rollingUpdate.maxSurge
+          value: 1
+      - equal:
+          path: spec.strategy.rollingUpdate.maxUnavailable
+          value: 0
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 8888

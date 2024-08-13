@@ -3,6 +3,8 @@ templates:
   - cm-configmap.yaml
 tests:
   - it: Test ConfigMap name
+    set:
+      conversion_manager.enabled: true
     asserts:
       - isKind:
           of: ConfigMap
@@ -10,6 +12,8 @@ tests:
           path: metadata.name
           pattern: copia-cm-configmap
   - it: Test ConfigMap default values
+    set:
+      conversion_manager.enabled: true
     asserts:
       - isKind:
           of: ConfigMap
