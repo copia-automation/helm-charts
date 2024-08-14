@@ -200,6 +200,21 @@ conversion_manager:
       targetPort: *cm_port
       #nodePort:
       annotations: {}
+  ingress:
+    enabled: false
+    # ingressClassName: nginx
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: git.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - git.example.com
   configmap:
     LOGGER_LEVEL: debug
     NODE_ENV: production

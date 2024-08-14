@@ -1,0 +1,31 @@
+suite: Test Conversion Manager Ingress
+templates:
+  - cm-ingress.yaml
+tests:
+  - it: Test ingress name
+    set:
+      conversion_manager.ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Ingress
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-cm
+  - it: Test ingress default values
+    set:
+      conversion_manager.ingress.enabled: true
+    asserts:
+      - isKind:
+          of: Ingress
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-cm
+      - equal:
+          path: spec.rules[0].host
+          value: git.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: Prefix

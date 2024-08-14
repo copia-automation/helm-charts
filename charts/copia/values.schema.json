@@ -270,6 +270,53 @@
             }
           }  
         },
+        "ingress": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Config for expose app to the internet.",
+          "required": ["enabled"],
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Set to create an Ingress resource. Requires tld and path."
+            },
+            "annotations": {
+              "type": "object",
+              "description": "Annotations for the service"
+            },
+            "ingressClassName": {
+              "type": "string"
+            },
+            "hosts": {
+              "type": "array",
+              "additionalProperties": false,
+              "description": "Hosts to expose",
+              "required": ["host"],
+              "properties": {
+                "host": {
+                  "type": "string"
+                },
+                "paths": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "Paths",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Path on host"
+                    },
+                    "pathType": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "tls": {
+              "type": "array"
+            }
+          }
+        },
         "configmap": {
           "type": "object",
           "additionalProperties": true,
