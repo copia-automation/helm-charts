@@ -70,20 +70,26 @@ spec:
           startupProbe:
             {{- toYaml .Values.conversion_manager.deployment.startupProbe | nindent 12 }}
           {{- end }}
+          {{- if .Values.conversion_manager.deployment.volumeMounts }}
+          volumeMounts:
+            {{- toYaml .Values.conversion_manager.deployment.volumeMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.conversion_manager.deployment.resources | nindent 12 }}
-          securityContext:
-            {{- toYaml .Values.conversion_manager.deployment.securityContext | nindent 12 }}
-      {{- with .Values.conversion_manager.deployment.nodeSelector }}
+      {{- if .Values.conversion_manager.deployment.nodeSelector }}
       nodeSelector:
         {{- toYaml .Values.conversion_manager.deployment.nodeSelector | nindent 8 }}
       {{- end }}
-    {{- with .Values.conversion_manager.deployment.affinity }}
+      {{- if .Values.conversion_manager.deployment.affinity }}
       affinity:
         {{- toYaml .Values.conversion_manager.deployment.affinity | nindent 8 }}
-    {{- end }}
-    {{- with .Values.conversion_manager.deployment.tolerations }}
+      {{- end }}
+      {{- if .Values.conversion_manager.deployment.tolerations }}
       tolerations:
         {{- toYaml .Values.conversion_manager.deployment.tolerations | nindent 8 }}
-    {{- end }}
+      {{- end }}
+      {{- if .Values.conversion_manager.deployment.volumes }}
+      volumes:
+        {{- toYaml .Values.conversion_manager.deployment.volumes | nindent 8 }}
+      {{- end }}
 {{- end }}

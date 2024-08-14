@@ -87,6 +87,12 @@
                 }
               }
             },
+            "volumes": {
+              "type": "array"
+            },
+            "volumeMounts": {
+              "type": "array"
+            },
             "livenessProbe": {
               "type": "object",
               "additionalProperties": false,
@@ -196,6 +202,17 @@
             "terminationGracePeriodSeconds": {
               "type": "number",
               "description": "Termination grace period"
+            },
+            "nodeSelector": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "tolerations": {
+              "type": "array"
+            },
+            "affinity": {
+              "type": "object",
+              "additionalProperties": true
             }
           }
         },

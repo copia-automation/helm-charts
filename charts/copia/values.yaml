@@ -139,7 +139,7 @@ copia:
   #     LICENSE_KEY: <REQUIRED>
 
 conversion_manager:
-  enabled: false
+  enabled: true
   deployment:
     port: *cm_port
     image:
@@ -175,6 +175,11 @@ conversion_manager:
       timeoutSeconds: 5
       failureThreshold: 2
     readinessProbe: {}
+    nodeSelector: {}
+    affinity: {}
+    tolerations: []
+    volumeMounts: []
+    volumes: []
     resources:
       limits:
         cpu: 2
