@@ -320,6 +320,7 @@
         "configmap": {
           "type": "object",
           "additionalProperties": true,
+          "required": ["DATABASE_URL","DB_USER","DB_HOST","COPIA_TEAM_ID","COPIA_USER_ID","ADMIN_ID","HOST","PORT","NODE_ENV","LOGGER_LEVEL"],
           "properties": {
             "LOGGER_LEVEL": {
               "type": "string"
@@ -350,12 +351,19 @@
             },
             "DATABASE_URL": {
               "type": "string"
+            },
+            "CERT_FILE": {
+              "type": "string"
+            },
+            "KEY_FILE": {
+              "type": "string"
             }
           }
         },
         "secret": {
           "type": "object",
           "additionalProperties": true,
+          "required": ["DB_PASSWORD","ADMIN_KEY","COPIA_USER_KEY","COPIA_TEAM_KEY"],
           "properties": {
             "DB_PASSWORD": {
               "type": "string"
