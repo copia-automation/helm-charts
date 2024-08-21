@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "app.fullname" . }}-cm
+  name: {{ include "app.conversion-manager.fullname" . }}
   labels:
-    {{- include "app.labels" . | nindent 4 }}
+    {{- include "app.conversion-manager.labels" . | nindent 4 }}
   annotations:
     {{- toYaml .Values.conversion_manager.service.annotations | nindent 4 }}
     {{- if .Values.conversion_manager.service.http.annotations }}
@@ -59,4 +59,4 @@ spec:
     targetPort: {{ .Values.conversion_manager.service.http.targetPort }}
     {{- end }}
   selector:
-    {{- include "app.selectorLabels" . | nindent 4 }}
+    {{- include "app.conversion-manager.selectorLabels" . | nindent 4 }}

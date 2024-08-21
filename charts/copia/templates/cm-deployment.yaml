@@ -3,9 +3,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "app.fullname" . }}-cm
+  name: {{ include "app.conversion-manager.fullname" . }}
   labels:
-    {{- include "app.labels" . | nindent 4 }}
+    {{- include "app.conversion-manager.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.conversion_manager.deployment.replicaCount | default 1 }}
   revisionHistoryLimit: {{ .Values.conversion_manager.deployment.revisionHistoryLimit | default 2 }}
@@ -21,7 +21,7 @@ spec:
     {{- end }}
   selector:
     matchLabels:
-      {{- include "app.selectorLabels" . | nindent 6 }}
+      {{- include "app.conversion-manager.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -31,7 +31,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "app.labels" . | nindent 8 }}
+        {{- include "app.conversion-manager.labels" . | nindent 8 }}
         {{- if .Values.conversion_manager.deployment.labels }}
         {{- toYaml .Values.conversion_manager.deployment.labels | nindent 8 }}
         {{- end }}
@@ -47,14 +47,14 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.conversion_manager.deployment.terminationGracePeriodSeconds }}
       {{- end }}
       containers:
-        - name: {{ .Chart.Name }}-cm
+        - name: {{ .Chart.Name }}
           image: "{{ .Values.conversion_manager.deployment.image.repository }}:{{ .Values.conversion_manager.deployment.image.tag }}"
           imagePullPolicy: {{ .Values.conversion_manager.deployment.image.imagePullPolicy }}
           envFrom:
             - configMapRef:
-                name: {{ include "app.fullname" . }}-cm-configmap
+                name: {{ include "app.conversion-manager.fullname" . }}-configmap
             - secretRef:
-                name: {{ include "app.fullname" . }}-cm-secret
+                name: {{ include "app.conversion-manager.fullname" . }}-secret
           ports:
             - name: http
               containerPort: {{ .Values.conversion_manager.deployment.port }}

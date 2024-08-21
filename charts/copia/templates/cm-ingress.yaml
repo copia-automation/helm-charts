@@ -1,5 +1,5 @@
 {{- if (eq .Values.conversion_manager.ingress.enabled true) -}}
-{{- $fullName := include "app.fullname" . -}}
+{{- $fullName := include "app.conversion-manager.fullname" . -}}
 {{- $httpPort := .Values.conversion_manager.service.http.port -}}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" -}}
 apiVersion: networking.k8s.io/v1
@@ -10,9 +10,9 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $fullName }}-cm
+  name: {{ $fullName }}
   labels:
-    {{- include "app.labels" . | nindent 4 }}
+    {{- include "app.conversion-manager.labels" . | nindent 4 }}
   {{- with .Values.conversion_manager.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
