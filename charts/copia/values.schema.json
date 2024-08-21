@@ -320,7 +320,7 @@
         "configmap": {
           "type": "object",
           "additionalProperties": true,
-          "required": ["DATABASE_URL","DB_USER","DB_HOST","COPIA_TEAM_ID","COPIA_USER_ID","ADMIN_ID","HOST","PORT","NODE_ENV","LOGGER_LEVEL"],
+          "required": ["DATABASE_URL","DB_USER","DB_HOST","COPIA_TEAM_ID","COPIA_USER_ID","ADMIN_ID","HOST","PORT","NODE_ENV","LOGGER_LEVEL","ENABLE_HTTPS"],
           "properties": {
             "LOGGER_LEVEL": {
               "type": "string"
@@ -357,6 +357,9 @@
             },
             "KEY_FILE": {
               "type": "string"
+            },
+            "ENABLE_HTTPS": {
+              "type": "boolean"
             }
           }
         },

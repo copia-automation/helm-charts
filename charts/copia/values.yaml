@@ -226,6 +226,7 @@ conversion_manager:
     DB_USER: postgres
     DB_HOST: localhost:5441
     DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/conversion_manager?schema=public"
+    ENABLE_HTTPS: false
   secret:
     DB_PASSWORD: password
     ADMIN_KEY: testAdminKey
