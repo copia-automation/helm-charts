@@ -1,0 +1,55 @@
+suite: Test Conversion Manager ConfigMap
+templates:
+  - cm-configmap.yaml
+tests:
+  - it: Test ConfigMap name
+    set:
+      conversion_manager.enabled: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-cm-configmap
+  - it: Test ConfigMap default values
+    set:
+      conversion_manager.enabled: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-cm-configmap
+      - equal:
+          path: data.LOGGER_LEVEL
+          value: "debug"
+      - equal:
+          path: data.NODE_ENV
+          value: "production"
+      - equal:
+          path: data.PORT
+          value: "8888"
+      - equal:
+          path: data.HOST
+          value: "localhost"
+      - equal:
+          path: data.ADMIN_ID
+          value: "admin"
+      - equal:
+          path: data.COPIA_USER_ID
+          value: "copiaUser"
+      - equal:
+          path: data.COPIA_TEAM_ID
+          value: "copiaTeam"
+      - equal:
+          path: data.DB_USER
+          value: "postgres"
+      - equal:
+          path: data.DB_HOST
+          value: "localhost:5441"
+      - equal:
+          path: data.DATABASE_URL
+          value: "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/conversion_manager?schema=public"
+      - equal:
+          path: data.ENABLE_HTTPS
+          value: "false"
