@@ -76,7 +76,7 @@ Create image name and tag used by the deployment.
 {{- else if hasKey .Values.conversion_manager.deployment.image "tag" -}}
 {{- printf "%s:%s" $name .Values.conversion_manager.deployment.image.tag -}}
 {{- else -}}
-{{- printf "%s:%s" $name .Chart.AppVersion -}}
+{{- printf "%s:%s" $name .Chart.cmVersion -}}
 {{- end -}}
 {{- end -}}
 
@@ -114,8 +114,8 @@ version: {{ .Values.conversion_manager.deployment.image.version| quote }}
 app.kubernetes.io/version: {{ .Values.conversion_manager.deployment.image.tag| quote }}
 version: {{ .Values.conversion_manager.deployment.image.tag| quote }}
 {{- else }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-version: {{ .Chart.AppVersion | quote }}
+app.kubernetes.io/version: {{ .Chart.cmVersion | quote }}
+version: {{ .Chart.cmVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
