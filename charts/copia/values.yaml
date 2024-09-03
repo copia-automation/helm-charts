@@ -52,6 +52,7 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 deployment:
+  preflight: true
   configmap:
     SSH_LISTEN_PORT: 22
     GITEA_APP_INI: /data/gitea/conf/app.ini

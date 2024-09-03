@@ -52,3 +52,31 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[2].mountPath
           value: /data/gitea/conf/app.ini
+  - it: Test preflight check
+    set:
+      deployment.preflight: true
+      copia.config.database.HOST: localhost
+      copia.config.database.USER: postgres
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: copia
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].image
+          pattern: postgres:latest
+      - equal:
+          path: spec.template.spec.initContainers[0].env.PGHOST
+          value: localhost
+      - equal:
+          path: spec.template.spec.initContainers[0].env.PGUSER
+          value: postgres
+      - equal:
+          path: spec.template.spec.initContainers[0].env.PGDATABASE
+          value: copia
+      - equal:
+          path: spec.template.spec.initContainers[0].env.PGPASSWORD
+          value: password

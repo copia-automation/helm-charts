@@ -693,6 +693,10 @@
       "description": "App configuration.",
       "required": [],
       "properties": {
+        "preflight": {
+          "type": "boolean",
+          "description": "Enables/Disables preflight checks."
+        },
         "configmap": {
           "type": "object",
           "description": "Environment variables via configmap.",

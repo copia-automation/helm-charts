@@ -48,6 +48,25 @@ spec:
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
+      {{- if and .Values.copia.config .Values.deployment.preflight }}
+      initContainers:
+        - name: {{ .Chart.Name }}-init
+          image: postgres:latest
+          imagePullPolicy: Always
+          command: ['psql', '-c', '"\q"']
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          env:
+            PGHOST: {{ .Values.copia.config.database.HOST }}
+            PGUSER: {{ .Values.copia.config.database.USER }}
+            PGPASSWORD: {{ .Values.copia.config.database.PASSWD }}
+            PGDATABASE: {{ .Values.copia.config.database.NAME }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ include "app.image" . }}"
