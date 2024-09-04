@@ -8,7 +8,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Adds preflight check init container 
+* Adds preflight check init container (#71) 
 
 ### Default value changes
 
