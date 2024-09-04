@@ -1,5 +1,58 @@
 # Change Log
 
+## Next Release 
+
+![AppVersion: v0.31.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.31.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Set preflight check to false by default 
+
+### Default value changes
+
+```diff
+diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
+index 3bd8deb..0175e95 100644
+--- a/charts/copia/values.yaml
++++ b/charts/copia/values.yaml
+@@ -52,7 +52,7 @@ nodeSelector: {}
+ tolerations: []
+ affinity: {}
+ deployment:
+-  preflight: true
++  preflight: false
+   configmap:
+     SSH_LISTEN_PORT: 22
+     GITEA_APP_INI: /data/gitea/conf/app.ini
+```
+
+## 0.33.0 
+
+**Release date:** 2024-09-03
+
+![AppVersion: v0.31.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.31.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Adds preflight checks for Database 
+
+### Default value changes
+
+```diff
+diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
+index 1ebc769..3bd8deb 100644
+--- a/charts/copia/values.yaml
++++ b/charts/copia/values.yaml
+@@ -52,6 +52,7 @@ nodeSelector: {}
+ tolerations: []
+ affinity: {}
+ deployment:
++  preflight: true
+   configmap:
+     SSH_LISTEN_PORT: 22
+     GITEA_APP_INI: /data/gitea/conf/app.ini
+```
+
 ## 0.32.0 
 
 **Release date:** 2024-08-22
