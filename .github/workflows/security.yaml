@@ -9,7 +9,7 @@ on:
 permissions: write-all
 
 jobs:
-  tests:
+  security:
     runs-on: ubuntu-latest
     steps:
       - name: Run Trivy vulnerability scanner on postgres image
