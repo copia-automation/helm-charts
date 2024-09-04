@@ -6,6 +6,8 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
+* fix command 
+* fix envs 
 * Set preflight check to false by default 
 
 ### Default value changes
