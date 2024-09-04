@@ -53,7 +53,7 @@ spec:
         - name: {{ .Chart.Name }}-init
           image: postgres:latest
           imagePullPolicy: Always
-          command: ['psql', '-c', '"\q"']
+          command: ['psql', '-c', '\q']
           resources:
             limits:
               cpu: 100m
