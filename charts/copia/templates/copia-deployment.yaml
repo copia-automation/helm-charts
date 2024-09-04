@@ -62,10 +62,14 @@ spec:
               cpu: 100m
               memory: 128Mi
           env:
-            PGHOST: {{ .Values.copia.config.database.HOST }}
-            PGUSER: {{ .Values.copia.config.database.USER }}
-            PGPASSWORD: {{ .Values.copia.config.database.PASSWD }}
-            PGDATABASE: {{ .Values.copia.config.database.NAME }}
+            - name: PGHOST
+              value: {{ .Values.copia.config.database.HOST }}
+            - name: PGUSER
+              value: {{ .Values.copia.config.database.USER }}
+            - name: PGPASSWORD
+              value: {{ .Values.copia.config.database.PASSWD }}
+            - name: PGDATABASE
+              value: {{ .Values.copia.config.database.NAME }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}

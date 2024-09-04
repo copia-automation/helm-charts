@@ -69,14 +69,14 @@ tests:
           path: spec.template.spec.initContainers[0].image
           pattern: postgres:latest
       - equal:
-          path: spec.template.spec.initContainers[0].env.PGHOST
+          path: spec.template.spec.initContainers[0].env[0].value
           value: localhost
       - equal:
-          path: spec.template.spec.initContainers[0].env.PGUSER
+          path: spec.template.spec.initContainers[0].env[1].value
           value: postgres
       - equal:
-          path: spec.template.spec.initContainers[0].env.PGDATABASE
-          value: copia
-      - equal:
-          path: spec.template.spec.initContainers[0].env.PGPASSWORD
+          path: spec.template.spec.initContainers[0].env[2].value
           value: password
+      - equal:
+          path: spec.template.spec.initContainers[0].env[3].value
+          value: copia
