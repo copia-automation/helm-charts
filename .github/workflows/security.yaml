@@ -1,0 +1,21 @@
+name: Security Scan
+
+on:
+  push:
+    branches:
+      - main
+
+permissions: write-all
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Trivy vulnerability scanner on postgres image
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # 0.24.0
+        with:
+          image-ref: 'docker.io/postgres:latest'
+          format: 'table'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
