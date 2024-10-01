@@ -1,0 +1,95 @@
+# Conversion Manager deployment template
+{{- if (eq .Values.conversion_manager.enabled true)}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.conversion-manager.fullname" . }}
+  labels:
+    {{- include "app.conversion-manager.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.conversion_manager.deployment.replicaCount | default 1 }}
+  revisionHistoryLimit: {{ .Values.conversion_manager.deployment.revisionHistoryLimit | default 2 }}
+  strategy:
+    {{- if and .Values.conversion_manager.deployment.strategy (eq .Values.conversion_manager.deployment.strategy "Recreate") }}
+    type: Recreate
+    {{- else }}
+    type: RollingUpdate
+    rollingUpdate:
+      {{- with .Values.conversion_manager.deployment.rollingUpdate }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "app.conversion-manager.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ (print $.Template.BasePath "/cm-configmap.yaml") | sha256sum }}
+        checksum/secret: {{ (print $.Template.BasePath "/cm-secret.yaml") | sha256sum }}
+        {{- with .Values.conversion_manager.deployment.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "app.conversion-manager.labels" . | nindent 8 }}
+        {{- if .Values.conversion_manager.deployment.labels }}
+        {{- toYaml .Values.conversion_manager.deployment.labels | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.conversion_manager.deployment.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.conversion_manager.deployment.serviceAccountName }}
+      serviceAccountName: "{{ .Values.conversion_manager.deployment.serviceAccountName }}"
+      {{- end }}
+      {{- if .Values.conversion_manager.deployment.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.conversion_manager.deployment.terminationGracePeriodSeconds }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.conversion_manager.deployment.image.repository }}:{{ .Values.conversion_manager.deployment.image.tag }}"
+          imagePullPolicy: {{ .Values.conversion_manager.deployment.image.imagePullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "app.conversion-manager.fullname" . }}-configmap
+            - secretRef:
+                name: {{ include "app.conversion-manager.fullname" . }}-secret
+          ports:
+            - name: http
+              containerPort: {{ .Values.conversion_manager.deployment.port }}
+          {{- if .Values.conversion_manager.deployment.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.conversion_manager.deployment.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.conversion_manager.deployment.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.conversion_manager.deployment.readinessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.conversion_manager.deployment.startupProbe }}
+          startupProbe:
+            {{- toYaml .Values.conversion_manager.deployment.startupProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.conversion_manager.deployment.volumeMounts }}
+          volumeMounts:
+            {{- toYaml .Values.conversion_manager.deployment.volumeMounts | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.conversion_manager.deployment.resources | nindent 12 }}
+      {{- if .Values.conversion_manager.deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.conversion_manager.deployment.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.conversion_manager.deployment.affinity }}
+      affinity:
+        {{- toYaml .Values.conversion_manager.deployment.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.conversion_manager.deployment.tolerations }}
+      tolerations:
+        {{- toYaml .Values.conversion_manager.deployment.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.conversion_manager.deployment.volumes }}
+      volumes:
+        {{- toYaml .Values.conversion_manager.deployment.volumes | nindent 8 }}
+      {{- end }}
+{{- end }}

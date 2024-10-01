@@ -20,7 +20,9 @@
     "*": [
       "script/lint-shellcheck",
       "script/lint-editorconfig",
-      "prettier --write"
+      "script/changelog",
+      "prettier --write",
+      "git add"
     ]
   },
   "husky": {

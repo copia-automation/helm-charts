@@ -1,0 +1,61 @@
+suite: Test Copia Service
+templates:
+  - copia-service.yaml
+tests:
+  - it: Test service name
+    asserts:
+      - isKind:
+          of: Service
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-http
+  - it: Test service default values (NodePort)
+    asserts:
+      - isKind:
+          of: Service
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-http
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].port
+          value: 3000
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 4001
+  - it: Test Service type; LoadBalancer
+    set:
+      service.http.type: LoadBalancer
+      service.clusterIP: 10.0.0.1
+      service.loadBalancerIP: 10.0.0.1
+    asserts:
+      - isKind:
+          of: Service
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-http
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - matchRegex:
+          path: spec.loadBalancerIP
+          pattern: \d+\.\d+\.\d+\.\d+
+  - it: Test Service type; ClusterIP
+    set:
+      service.http.type: ClusterIP
+      service.clusterIP: 10.0.0.1
+      service.loadBalancerIP: 10.0.0.1
+    asserts:
+      - isKind:
+          of: Service
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-http
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - matchRegex:
+          path: spec.clusterIP
+          pattern: \d+\.\d+\.\d+\.\d+

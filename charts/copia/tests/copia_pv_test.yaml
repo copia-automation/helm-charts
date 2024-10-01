@@ -1,6 +1,6 @@
-suite: Test Persistent Volume Claim
+suite: Test Copia Persistent Volume Claim
 templates:
-  - persistent-volume.yaml
+  - copia-persistent-volume.yaml
 tests:
   - it: Test pv name
     asserts:

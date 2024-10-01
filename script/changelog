@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+source script/util.sh
+
+main() {
+  log::exec_command docker run --rm --platform linux/amd64 -v "$(pwd):/data" mogensen/helm-changelog:latest
+}
+
+main "$@"

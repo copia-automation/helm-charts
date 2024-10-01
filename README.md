@@ -74,7 +74,7 @@ persistence:
 ## Prerequisites
 
 Github Container Registry authentication
-GHCR is our docker image repository. Authentication is required to pull our images. 
+GHCR is our docker image repository. Authentication is required to pull our images.
 
 Create a Github account and follow the official [documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) to create a token with package read permissions. Speak to your Copia customer success representative to grant access to the newly created user.
 
@@ -97,6 +97,7 @@ helm upgrade --install my-copia oci://ghcr.io/copia-automation/helm-charts/copia
 ```
 
 You can also specify the chart version:
+
 ```
 helm upgrade --install my-copia oci://ghcr.io/copia-automation/helm-charts/copia --version 0.29.0 \
   -f values.yaml \
@@ -181,14 +182,27 @@ to the database endpoint in order to avoid potential false failure.
 ### Run Pre-Flight Checks
 
 Running Pre-Flight checks on the Copia chart to validate the target deployment environment can be completed by running
-the following command: 
+the following command:
 
 `helm template copia --values values.yaml | kubectl preflight -`
 
 ### Generating Support Bundles
 
-Generating a support bundle for the Copia chart can be completed by running the following command: 
+Generating a support bundle for the Copia chart can be completed by running the following command:
 
 `kubectl support-bundle --load-cluster-specs --namespace copia`
 
 The output of the support bundle command will be a `tar.gz` file that can be reviewed before sending to Copia for support.
+
+## Changelog
+
+### Generating changelog
+
+Run in the root folder of this repo the following command:
+
+`docker run --user $UID -it --rm --platform linux/amd64 -v $(pwd):/data mogensen/helm-changelog:latest`
+
+This automatically generates the Changelog.md file inside the chart.
+For more information see: https://github.com/traefik/helm-changelog
+
+Note: this process has been automated as a pre-commit hook.
