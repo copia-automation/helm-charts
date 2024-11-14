@@ -3,3 +3,4 @@
 .shellcheckrc
 Brewfile
 charts
+.husky/pre-commit
