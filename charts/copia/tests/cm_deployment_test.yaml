@@ -78,6 +78,21 @@ tests:
       - equal:
           path: spec.template.spec.volumes[0].ephemeral.volumeClaimTemplate.spec.resources.requests.storage
           value: "100Gi"
+  - it: Test environment
+    set:
+      conversion_manager.enabled: true
+      conversion_manager.deployment.env:
+        - name: DD_AGENT_HOST
+          value: "10.0.0.1"
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: "DD_AGENT_HOST"
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: "10.0.0.1"
   - it: Test nodeSelector, affinity & tolerations
     set:
       conversion_manager.enabled: true
