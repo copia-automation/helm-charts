@@ -4,6 +4,7 @@ templates:
 tests:
   - it: Test ingress name
     set:
+      conversion_manager.enabled: true
       conversion_manager.ingress.enabled: true
     asserts:
       - isKind:
@@ -13,6 +14,7 @@ tests:
           pattern: copia-cm
   - it: Test ingress default values
     set:
+      conversion_manager.enabled: true
       conversion_manager.ingress.enabled: true
     asserts:
       - isKind:

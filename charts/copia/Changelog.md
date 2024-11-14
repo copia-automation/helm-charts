@@ -1,5 +1,53 @@
 # Change Log
 
+## 0.36.0 
+
+**Release date:** 2024-10-15
+
+![AppVersion: v0.34.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.34.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Bump gitea to v0.34.0 and infra to v0.36.0 (#78) 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
+## 0.35.0 
+
+**Release date:** 2024-10-09
+
+![AppVersion: v0.33.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.33.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Bump gitea to v0.33.0 and infra to  v0.35.0 (#76) 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
+## 0.34.0 
+
+**Release date:** 2024-09-24
+
+![AppVersion: v0.32.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.32.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Bump app and infra version. These two versions have diverged. (#73) 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.33.0 
 
 **Release date:** 2024-09-04

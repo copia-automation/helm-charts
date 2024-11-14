@@ -1,4 +1,4 @@
-{{- if (eq .Values.conversion_manager.ingress.enabled true) -}}
+{{- if and .Values.conversion_manager.ingress (eq .Values.conversion_manager.ingress.enabled true) (eq .Values.conversion_manager.enabled true)}}
 {{- $fullName := include "app.conversion-manager.fullname" . -}}
 {{- $httpPort := .Values.conversion_manager.service.http.port -}}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" -}}

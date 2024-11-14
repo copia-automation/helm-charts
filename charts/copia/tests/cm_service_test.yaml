@@ -3,6 +3,8 @@ templates:
   - cm-service.yaml
 tests:
   - it: Test service name
+    set:
+      conversion_manager.enabled: true
     asserts:
       - isKind:
           of: Service
@@ -10,6 +12,8 @@ tests:
           path: metadata.name
           pattern: copia-cm
   - it: Test service default values (NodePort)
+    set:
+      conversion_manager.enabled: true
     asserts:
       - isKind:
           of: Service
@@ -27,6 +31,7 @@ tests:
           value: 8888
   - it: Test Service type; LoadBalancer
     set:
+      conversion_manager.enabled: true
       conversion_manager.service.http.type: LoadBalancer
       conversion_manager.service.clusterIP: 10.0.0.1
       conversion_manager.service.loadBalancerIP: 10.0.0.1
@@ -44,6 +49,7 @@ tests:
           pattern: \d+\.\d+\.\d+\.\d+
   - it: Test Service type; ClusterIP
     set:
+      conversion_manager.enabled: true
       conversion_manager.service.http.type: ClusterIP
       conversion_manager.service.clusterIP: 10.0.0.1
       conversion_manager.service.loadBalancerIP: 10.0.0.1

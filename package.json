@@ -21,13 +21,15 @@
       "script/lint-shellcheck",
       "script/lint-editorconfig",
       "script/changelog",
-      "prettier --write",
-      "git add"
+      "prettier --write"
     ]
   },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
     }
+  },
+  "scripts": {
+    "prepare": "husky"
   }
 }
