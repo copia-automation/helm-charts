@@ -88,10 +88,10 @@ tests:
       - isKind:
           of: Deployment
       - equal:
-          path: spec.template.spec.initContainers[0].env[0].name
+          path: spec.template.spec.containers[0].env[0].name
           value: "DD_AGENT_HOST"
       - equal:
-          path: spec.template.spec.initContainers[0].env[0].value
+          path: spec.template.spec.containers[0].env[0].value
           value: "10.0.0.1"
   - it: Test nodeSelector, affinity & tolerations
     set:
