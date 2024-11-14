@@ -1,3 +1,4 @@
+{{- if and .Values.conversion_manager.service (eq .Values.conversion_manager.enabled true)}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -60,3 +61,4 @@ spec:
     {{- end }}
   selector:
     {{- include "app.conversion-manager.selectorLabels" . | nindent 4 }}
+{{- end }}
