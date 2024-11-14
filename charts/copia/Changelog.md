@@ -1,11 +1,14 @@
 # Change Log
 
-## Next Release 
+## 0.37.0 
+
+**Release date:** 2024-11-14
 
 ![AppVersion: v0.34.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.34.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
+* Fixes conversion manager conditionals 
 * fix 
 
 ### Default value changes
