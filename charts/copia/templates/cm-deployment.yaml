@@ -56,8 +56,8 @@ spec:
             - secretRef:
                 name: {{ include "app.conversion-manager.fullname" . }}-secret
           env:
-            {{- if .Values.deployment.env }}
-            {{- toYaml .Values.deployment.env | nindent 12 }}
+            {{- if .Values.conversion_manager.deployment.env }}
+            {{- toYaml .Values.conversion_manager.deployment.env | nindent 12 }}
             {{- end }}
           ports:
             - name: http
