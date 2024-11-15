@@ -55,6 +55,10 @@ spec:
                 name: {{ include "app.conversion-manager.fullname" . }}-configmap
             - secretRef:
                 name: {{ include "app.conversion-manager.fullname" . }}-secret
+          env:
+            {{- if .Values.conversion_manager.deployment.env }}
+            {{- toYaml .Values.conversion_manager.deployment.env | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.conversion_manager.deployment.port }}

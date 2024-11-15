@@ -32,6 +32,9 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "env": {
+              "type": "array"
+            },
             "port": {
               "type": "number"
             },
