@@ -2,13 +2,13 @@
 
 ## 0.37.1 
 
-**Release date:** 2024-11-14
+**Release date:** 2024-11-15
 
 ![AppVersion: v0.34.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.34.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Adds environment to conversion manager deployment
+* add deployment env to conversion manager (#81) 
 
 ### Default value changes
 
@@ -24,8 +24,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Fixes conversion manager conditionals 
-* fix 
+* Fixes conversion manager conditions (#80) 
 
 ### Default value changes
 
