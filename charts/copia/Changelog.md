@@ -1,5 +1,21 @@
 # Change Log
 
+## 0.38.0 
+
+**Release date:** 2024-11-18
+
+![AppVersion: v0.35.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.35.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* update Chart.yaml and Changelog.md 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.37.1 
 
 **Release date:** 2024-11-15
