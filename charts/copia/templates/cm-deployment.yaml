@@ -47,7 +47,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.conversion_manager.deployment.terminationGracePeriodSeconds }}
       {{- end }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: "conversion-manager"
           image: "{{ .Values.conversion_manager.deployment.image.repository }}:{{ .Values.conversion_manager.deployment.image.tag }}"
           imagePullPolicy: {{ .Values.conversion_manager.deployment.image.imagePullPolicy }}
           envFrom:
