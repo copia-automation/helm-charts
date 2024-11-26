@@ -29,4 +29,5 @@ spec:
       containers:
       - name: pre-install-job-ghcr
         image: "{{ include "app.image" . }}"
+        imagePullPolicy: Always
         command: ["/bin/sleep","{{ default '5' }}"]
