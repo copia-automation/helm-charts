@@ -1,5 +1,55 @@
 # Change Log
 
+## 0.39.2 
+
+**Release date:** 2024-11-26
+
+![AppVersion: v0.35.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.35.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* bump chart version 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
+## 0.39.1 
+
+**Release date:** 2024-11-26
+
+![AppVersion: v0.35.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.35.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* bump chart version ensures hook was deleted prior run 
+* ensures hook was deleted prior run 
+* force pull policy 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
+## 0.39.0 
+
+**Release date:** 2024-11-26
+
+![AppVersion: v0.35.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.35.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Adds pre-install hook 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.38.1 
 
 **Release date:** 2024-11-18
@@ -8,8 +58,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* update Chart.yaml and Changelog.md 
-* update conversion manager container name
+* update conversion manager container name (#84) 
 
 ### Default value changes
 
@@ -25,7 +74,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* update Chart.yaml and Changelog.md 
+* Update Chart.yaml for self-hosted release v0.35.0 (#83) 
 
 ### Default value changes
 
