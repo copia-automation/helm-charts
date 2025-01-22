@@ -1,48 +1,46 @@
 # Change Log
 
+## 0.41.0 
+
+**Release date:** 2025-01-21
+
+![AppVersion: v0.37.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.37.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* self-hosted release copia v0.37.0 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
+## 0.40.0 
+
+**Release date:** 2025-01-07
+
+![AppVersion: v0.36.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.36.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* [CU86a643dnt] Bump gitea to v0.36.0 and infra to v0.40.0 (#91) 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.39.2 
 
-**Release date:** 2024-11-26
+**Release date:** 2024-11-27
 
 ![AppVersion: v0.35.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.35.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* bump chart version 
-
-### Default value changes
-
-```diff
-# No changes in this release
-```
-
-## 0.39.1 
-
-**Release date:** 2024-11-26
-
-![AppVersion: v0.35.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.35.0&color=success&logo=)
-![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
-
-
-* bump chart version ensures hook was deleted prior run 
-* ensures hook was deleted prior run 
-* force pull policy 
-
-### Default value changes
-
-```diff
-# No changes in this release
-```
-
-## 0.39.0 
-
-**Release date:** 2024-11-26
-
-![AppVersion: v0.35.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.35.0&color=success&logo=)
-![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
-
-
-* Adds pre-install hook 
+* Validations (ghcr secrets) (#87) 
 
 ### Default value changes
 
