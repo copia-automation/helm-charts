@@ -1,5 +1,19 @@
 # Change Log
 
+## Next Release 
+
+![AppVersion: v0.39.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.39.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Trigger a deployment rollout on configmap or secret changes 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.43.0 
 
 **Release date:** 2025-03-04
@@ -8,7 +22,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Self-hosted release Copia v0.39.0 
+* [CU-86a72bg60] Update Copia self-hosted to 0.39.0 (#97) 
 
 ### Default value changes
 
@@ -24,7 +38,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Self-hosted release Copia v0.38.0 
+* Update Copia to 0.38.0 (#93) 
 
 ### Default value changes
 
@@ -34,13 +48,13 @@
 
 ## 0.41.0 
 
-**Release date:** 2025-01-21
+**Release date:** 2025-01-22
 
 ![AppVersion: v0.37.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.37.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* self-hosted release copia v0.37.0 
+* [CU-86a6ah1gy] update copia helm version (#92) 
 
 ### Default value changes
 
