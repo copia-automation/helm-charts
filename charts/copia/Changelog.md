@@ -1,11 +1,14 @@
 # Change Log
 
-## Next Release 
+## 0.44.0 
 
-![AppVersion: v0.39.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.39.0&color=success&logo=)
+**Release date:** 2025-04-02
+
+![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.39.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
+* Self-hosted release Copia v0.41.0 
 * Trigger a deployment rollout on configmap or secret changes 
 
 ### Default value changes
