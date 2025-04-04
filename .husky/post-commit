@@ -1,5 +1,2 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
 echo "✅ Commit successful! Have a nice day 😎"
 echo "⚠️ Don't forget to run task changelog to update the changelog"
