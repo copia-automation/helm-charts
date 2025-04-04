@@ -1,5 +1,21 @@
 # Change Log
 
+## 0.44.3 
+
+**Release date:** 2025-04-04
+
+![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.41.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Adds Taskfile and a changelog task 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.44.2 
 
 **Release date:** 2025-04-04
