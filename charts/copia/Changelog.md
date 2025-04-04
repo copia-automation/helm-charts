@@ -1,5 +1,39 @@
 # Change Log
 
+## 0.44.2 
+
+**Release date:** 2025-04-04
+
+![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.41.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* bump chart version 
+* Adds Changelog 
+
+### Default value changes
+
+```diff
+diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
+index bc191e3..e792214 100644
+--- a/charts/copia/values.yaml
++++ b/charts/copia/values.yaml
+@@ -1,5 +1,3 @@
+-cmVersion: v0.1.0
+-
+ #Copia configuration
+ replicaCount: 1
+ clusterDomain: cluster.local
+@@ -143,6 +141,7 @@ copia:
+   #     LICENSE_KEY: <REQUIRED>
+ 
+ #Conversion manager service configuration
++cmVersion: v0.1.0
+ conversion_manager:
+   enabled: false
+   deployment:
+```
+
 ## 0.44.1 
 
 **Release date:** 2025-04-04
