@@ -16,7 +16,7 @@ jobs:
       - name: Check version in changelog
         run: |
           # Get all Chart.yaml files that were modified
-          for chart_yaml in $(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep Chart.yaml); do
+          for chart_yaml in $(find charts/*/Chart.yaml); do
             # Extract chart version
             chart_version=$(grep '^version:' $chart_yaml | awk '{print $2}')
             
