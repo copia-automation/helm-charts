@@ -1,5 +1,3 @@
-cmVersion: v0.1.0
-
 #Copia configuration
 replicaCount: 1
 clusterDomain: cluster.local
@@ -143,6 +141,7 @@ copia:
   #     LICENSE_KEY: <REQUIRED>
 
 #Conversion manager service configuration
+cmVersion: v0.1.0
 conversion_manager:
   enabled: false
   deployment:

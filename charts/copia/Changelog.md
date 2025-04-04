@@ -1,15 +1,72 @@
 # Change Log
 
-## 0.44.0 
+## 0.44.1 
 
-**Release date:** 2025-04-02
+**Release date:** 2025-04-04
 
-![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.39.0&color=success&logo=)
+![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.41.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Self-hosted release Copia v0.41.0 
-* Trigger a deployment rollout on configmap or secret changes 
+* Use a helper to set cm image 
+
+### Default value changes
+
+```diff
+diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
+index 0175e95..bc191e3 100644
+--- a/charts/copia/values.yaml
++++ b/charts/copia/values.yaml
+@@ -1,3 +1,6 @@
++cmVersion: v0.1.0
++
++#Copia configuration
+ replicaCount: 1
+ clusterDomain: cluster.local
+ #Use this value "*copia_port" to reference the value of the copia_server_http_port when setting HTTP_PORT on the copia config.
+@@ -139,6 +142,7 @@ copia:
+   #   copia:
+   #     LICENSE_KEY: <REQUIRED>
+ 
++#Conversion manager service configuration
+ conversion_manager:
+   enabled: false
+   deployment:
+@@ -146,7 +150,6 @@ conversion_manager:
+     image:
+       repository: ghcr.io/copia-automation/conversion-manager
+       imagePullPolicy: Always
+-      tag: latest
+     # serviceAccountName: ""
+     # terminationGracePeriodSeconds: 60
+     replicaCount: 1
+```
+
+## 0.44.0 
+
+**Release date:** 2025-04-03
+
+![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.41.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Helm release 0.44.0 for Copia self-hosted 0.41.0 (#99) 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
+## 0.43.1 
+
+**Release date:** 2025-03-27
+
+![AppVersion: v0.39.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.39.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Fix: Trigger rollout on configmap or secret changes (#98) 
 
 ### Default value changes
 
