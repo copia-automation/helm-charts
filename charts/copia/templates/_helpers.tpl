@@ -69,14 +69,14 @@ Create image name and tag used by the deployment.
 {{/*
 Create image name and tag used by the deployment.
 */}}
-{{- define "app.conversion-manager.image" -}}
+{{- define "cm.image" -}}
 {{- $name := .Values.conversion_manager.deployment.image.repository -}}
 {{- if hasKey .Values.conversion_manager.deployment.image "version" -}}
 {{- printf "%s:%s" $name .Values.conversion_manager.deployment.image.version -}}
 {{- else if hasKey .Values.conversion_manager.deployment.image "tag" -}}
 {{- printf "%s:%s" $name .Values.conversion_manager.deployment.image.tag -}}
 {{- else -}}
-{{- printf "%s:%s" $name .Chart.cmVersion -}}
+{{- printf "%s:%s" $name .Values.cmVersion -}}
 {{- end -}}
 {{- end -}}
 
@@ -114,8 +114,8 @@ version: {{ .Values.conversion_manager.deployment.image.version| quote }}
 app.kubernetes.io/version: {{ .Values.conversion_manager.deployment.image.tag| quote }}
 version: {{ .Values.conversion_manager.deployment.image.tag| quote }}
 {{- else }}
-app.kubernetes.io/version: {{ .Chart.cmVersion | quote }}
-version: {{ .Chart.cmVersion | quote }}
+app.kubernetes.io/version: {{ .Values.cmVersion | quote }}
+version: {{ .Values.cmVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
