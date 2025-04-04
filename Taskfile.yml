@@ -1,0 +1,9 @@
+---
+version: '3'
+
+tasks:
+  changelog:
+    desc: Generate changelog
+    cmds:
+      - script/changelog {{ .CLI_ARGS }}
+    silent: true

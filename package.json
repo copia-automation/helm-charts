@@ -20,8 +20,8 @@
     "*": [
       "script/lint-shellcheck",
       "script/lint-editorconfig",
-      "script/changelog",
-      "prettier --write --ignore-unknown"
+      "prettier --write --ignore-unknown",
+      "echo 'Don't forget to run task changelog to update the changelog'"
     ]
   },
   "husky": {
