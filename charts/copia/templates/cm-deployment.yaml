@@ -48,7 +48,7 @@ spec:
       {{- end }}
       containers:
         - name: "conversion-manager"
-          image: "{{ .Values.conversion_manager.deployment.image.repository }}:{{ .Values.conversion_manager.deployment.image.tag }}"
+          image: "{{ include "cm.image" . }}"
           imagePullPolicy: {{ .Values.conversion_manager.deployment.image.imagePullPolicy }}
           envFrom:
             - configMapRef:

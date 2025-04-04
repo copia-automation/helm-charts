@@ -13,7 +13,7 @@ tests:
           pattern: copia-cm
       - matchRegex:
           path: spec.template.spec.containers[0].image
-          pattern: ghcr.io/copia-automation/conversion-manager:latest
+          pattern: ghcr.io/copia-automation/conversion-manager:v\d+\.\d+\.\d+
       - equal:
           path: spec.template.spec.containers[0].imagePullPolicy
           value: Always
