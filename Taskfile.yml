@@ -5,5 +5,5 @@ tasks:
   changelog:
     desc: Generate changelog
     cmds:
-      - script/changelog {{ .CLI_ARGS }}
+      - docker run --rm --platform linux/amd64 -v "$(pwd):/data" mogensen/helm-changelog:latest
     silent: true

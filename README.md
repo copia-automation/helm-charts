@@ -200,9 +200,7 @@ The output of the support bundle command will be a `tar.gz` file that can be rev
 
 Run in the root folder of this repo the following command:
 
-`docker run --user $UID -it --rm --platform linux/amd64 -v $(pwd):/data mogensen/helm-changelog:latest`
+`task changelog`
 
 This automatically generates the Changelog.md file inside the chart.
 For more information see: https://github.com/traefik/helm-changelog
-
-Note: this process has been automated as a pre-commit hook.
