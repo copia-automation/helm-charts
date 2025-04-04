@@ -1,0 +1,33 @@
+name: Check Changelog
+
+on:
+  pull_request:
+    paths:
+      - 'charts/*/Chart.yaml'
+
+permissions: write-all
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check version in changelog
+        run: |
+          # Get all Chart.yaml files that were modified
+          for chart_yaml in $(find charts/*/Chart.yaml); do
+            # Extract chart version
+            chart_version=$(grep '^version:' $chart_yaml | awk '{print $2}')
+            
+            # Get chart directory
+            chart_dir=$(dirname $chart_yaml)
+            changelog_file="$chart_dir/Changelog.md"
+            
+            # Check if version exists in changelog
+            if ! grep -q "$chart_version" "$changelog_file"; then
+              echo "Error: Version $chart_version from $chart_yaml not found in $changelog_file"
+              echo "Please run task changelog"
+              exit 1
+            fi
+          done

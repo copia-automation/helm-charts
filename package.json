@@ -20,7 +20,6 @@
     "*": [
       "script/lint-shellcheck",
       "script/lint-editorconfig",
-      "script/changelog",
       "prettier --write --ignore-unknown"
     ]
   },
