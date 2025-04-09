@@ -6,6 +6,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
+* Fix pre install hook labels 
 * Fix values.schema.json 
 
 ### Default value changes
