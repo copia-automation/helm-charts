@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ .Release.Name }}-ghcr"
+  name: "{{ .Release.Name | regexReplaceAll "[^A-Za-z0-9_.-]" "-" }}-ghcr"
   labels:
     {{- include "app.labels" . | nindent 4 }}
   annotations:
@@ -12,7 +12,7 @@ metadata:
 spec:
   template:
     metadata:
-      name: "{{ .Release.Name }}-ghcr"
+      name: "{{ .Release.Name | regexReplaceAll "[^A-Za-z0-9_.-]" "-" }}-ghcr"
       labels:
         {{- include "app.labels" . | nindent 8 }}
     spec:
