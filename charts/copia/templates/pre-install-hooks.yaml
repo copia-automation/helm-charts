@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ .Release.Name | regexReplaceAll "[^A-Za-z0-9_.-]" "-" }}-ghcr"
+  name: "copia-ghcr-check"
   labels:
     {{- include "app.labels" . | nindent 4 }}
   annotations:
@@ -12,7 +12,7 @@ metadata:
 spec:
   template:
     metadata:
-      name: "{{ .Release.Name | regexReplaceAll "[^A-Za-z0-9_.-]" "-" }}-ghcr"
+      name: "copia-ghcr-check"
       labels:
         {{- include "app.labels" . | nindent 8 }}
     spec:
@@ -25,4 +25,4 @@ spec:
       - name: pre-install-job-ghcr
         image: "{{ include "app.image" . }}"
         imagePullPolicy: Always
-        command: ["/bin/sleep","{{ default '5' }}"]
+        command: ["/bin/sleep", "{{ .Values.sleepTime | default "5" }}"]
