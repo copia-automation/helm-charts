@@ -1,0 +1,64 @@
+{{- if and .Values.conversion_manager_service.service (eq .Values.conversion_manager_service.enabled true)}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "app.conversion-manager.fullname" . }}
+  labels:
+    {{- include "app.conversion-manager.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.conversion_manager_service.service.annotations | nindent 4 }}
+    {{- if .Values.conversion_manager_service.service.http.annotations }}
+    {{- toYaml .Values.conversion_manager_service.service.http.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.conversion_manager_service.service.http.type }}
+  {{- if and .Values.conversion_manager_service.service.loadBalancerIP (eq .Values.conversion_manager_service.service.http.type "LoadBalancer") }}
+  loadBalancerIP: {{ .Values.conversion_manager_service.service.loadBalancerIP  }}
+  {{- end }}
+  {{- if and .Values.conversion_manager_service.service.http.loadBalancerIP (eq .Values.conversion_manager_service.service.http.type "LoadBalancer") }}
+  loadBalancerIP: {{ .Values.conversion_manager_service.service.http.loadBalancerIP  }}
+  {{- end }}
+  {{- if .Values.conversion_manager_service.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range .Values.conversion_manager_service.service.loadBalancerSourceRanges }}
+    - {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.conversion_manager_service.service.http.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range .Values.conversion_manager_service.service.http.loadBalancerSourceRanges }}
+    - {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.conversion_manager_service.service.externalIPs }}
+  externalIPs:
+    {{- toYaml .Values.conversion_manager_service.service.externalIPs | nindent 4 }}
+  {{- end }}
+  {{- if .Values.conversion_manager_service.service.http.externalIPs }}
+  externalIPs:
+    {{- toYaml .Values.conversion_manager_service.service.http.externalIPs | nindent 4 }}
+  {{- end }}
+  {{- if .Values.conversion_manager_service.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.conversion_manager_service.service.externalTrafficPolicy }}
+  {{- end }}
+  {{- if .Values.conversion_manager_service.service.http.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.conversion_manager_service.service.http.externalTrafficPolicy }}
+  {{- end }}
+  {{- if and .Values.conversion_manager_service.service.clusterIP (eq .Values.conversion_manager_service.service.http.type "ClusterIP") }}
+  clusterIP: {{ .Values.conversion_manager_service.service.clusterIP }}
+  {{- end }}
+  {{- if and .Values.conversion_manager_service.service.http.clusterIP (eq .Values.conversion_manager_service.service.http.type "ClusterIP") }}
+  clusterIP: {{ .Values.conversion_manager_service.service.http.clusterIP }}
+  {{- end }}
+  ports:
+  - name: http
+    port: {{ .Values.conversion_manager_service.service.http.port }}
+    {{- if  .Values.conversion_manager_service.service.http.nodePort }}
+    nodePort: {{ .Values.conversion_manager_service.service.http.nodePort }}
+    {{- end }}
+    {{- if .Values.conversion_manager_service.service.http.targetPort }}
+    targetPort: {{ .Values.conversion_manager_service.service.http.targetPort }}
+    {{- end }}
+  selector:
+    {{- include "app.conversion-manager.selectorLabels" . | nindent 4 }}
+{{- end }}

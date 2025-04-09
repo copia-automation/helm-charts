@@ -1,25 +1,25 @@
 suite: Test Conversion Manager ConfigMap
 templates:
-  - cm-configmap.yaml
+  - conversion-manager-configmap.yaml
 tests:
   - it: Test ConfigMap name
     set:
-      conversion_manager.enabled: true
+      conversion_manager_service.enabled: true
     asserts:
       - isKind:
           of: ConfigMap
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm-configmap
+          pattern: conversion-manager-configmap
   - it: Test ConfigMap default values
     set:
-      conversion_manager.enabled: true
+      conversion_manager_service.enabled: true
     asserts:
       - isKind:
           of: ConfigMap
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm-configmap
+          pattern: conversion-manager-configmap
       - equal:
           path: data.LOGGER_LEVEL
           value: "debug"

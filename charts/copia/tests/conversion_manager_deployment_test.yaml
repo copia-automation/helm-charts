@@ -1,16 +1,16 @@
 suite: Test Conversion Manager Deployment
 templates:
-  - cm-deployment.yaml
+  - conversion-manager-deployment.yaml
 tests:
   - it: Test Repository, Image version & Pull policy
     set:
-      conversion_manager.enabled: true
+      conversion_manager_service.enabled: true
     asserts:
       - isKind:
           of: Deployment
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
       - matchRegex:
           path: spec.template.spec.containers[0].image
           pattern: ghcr.io/copia-automation/conversion-manager:v\d+\.\d+\.\d+
@@ -19,13 +19,13 @@ tests:
           value: Always
   - it: Test default values
     set:
-      conversion_manager.enabled: true
+      conversion_manager_service.enabled: true
     asserts:
       - isKind:
           of: Deployment
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
       - equal:
           path: spec.strategy.rollingUpdate.maxSurge
           value: 1
@@ -40,11 +40,11 @@ tests:
           value: "conversion-manager"
   - it: Test volume mounts & volumes
     set:
-      conversion_manager.enabled: true
-      conversion_manager.deployment.volumeMounts:
+      conversion_manager_service.enabled: true
+      conversion_manager_service.deployment.volumeMounts:
         - name: ephemeral-storage
           mountPath: /tmp/conversion-manager
-      conversion_manager.deployment.volumes:
+      conversion_manager_service.deployment.volumes:
         - name: ephemeral-storage
           ephemeral:
             volumeClaimTemplate:
@@ -62,7 +62,7 @@ tests:
           of: Deployment
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[0].name
           value: "ephemeral-storage"
@@ -83,8 +83,8 @@ tests:
           value: "100Gi"
   - it: Test environment
     set:
-      conversion_manager.enabled: true
-      conversion_manager.deployment.env:
+      conversion_manager_service.enabled: true
+      conversion_manager_service.deployment.env:
         - name: DD_AGENT_HOST
           value: "10.0.0.1"
     asserts:
@@ -98,10 +98,10 @@ tests:
           value: "10.0.0.1"
   - it: Test nodeSelector, affinity & tolerations
     set:
-      conversion_manager.enabled: true
-      conversion_manager.deployment.nodeSelector:
+      conversion_manager_service.enabled: true
+      conversion_manager_service.deployment.nodeSelector:
         copia-nodegroup: copia-workers
-      conversion_manager.deployment.affinity:
+      conversion_manager_service.deployment.affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -111,7 +111,7 @@ tests:
                 values:
                 - us-east-1
                 - us-west-1
-      conversion_manager.deployment.tolerations:
+      conversion_manager_service.deployment.tolerations:
         - key: "dedicated"
           operator: "Equal"
           value: "copia-workers"
@@ -121,7 +121,7 @@ tests:
           of: Deployment
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
       - equal:
           path: spec.template.spec.nodeSelector.copia-nodegroup
           value: "copia-workers"

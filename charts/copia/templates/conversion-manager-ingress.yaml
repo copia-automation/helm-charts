@@ -1,6 +1,6 @@
-{{- if and .Values.conversion_manager.ingress (eq .Values.conversion_manager.ingress.enabled true) (eq .Values.conversion_manager.enabled true)}}
+{{- if and .Values.conversion_manager_service.ingress (eq .Values.conversion_manager_service.ingress.enabled true) (eq .Values.conversion_manager_service.enabled true)}}
 {{- $fullName := include "app.conversion-manager.fullname" . -}}
-{{- $httpPort := .Values.conversion_manager.service.http.port -}}
+{{- $httpPort := .Values.conversion_manager_service.service.http.port -}}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" -}}
 apiVersion: networking.k8s.io/v1
 {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1/Ingress" -}}
@@ -13,17 +13,17 @@ metadata:
   name: {{ $fullName }}
   labels:
     {{- include "app.conversion-manager.labels" . | nindent 4 }}
-  {{- with .Values.conversion_manager.ingress.annotations }}
+  {{- with .Values.conversion_manager_service.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-{{- if .Values.conversion_manager.ingress.ingressClassName }}
-  ingressClassName: {{ .Values.conversion_manager.ingress.ingressClassName }}
+{{- if .Values.conversion_manager_service.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.conversion_manager_service.ingress.ingressClassName }}
 {{- end }}
-{{- if .Values.conversion_manager.ingress.tls }}
+{{- if .Values.conversion_manager_service.ingress.tls }}
   tls:
-  {{- range .Values.conversion_manager.ingress.tls }}
+  {{- range .Values.conversion_manager_service.ingress.tls }}
     - hosts:
       {{- range .hosts }}
         - {{ . | quote }}
@@ -32,7 +32,7 @@ spec:
   {{- end }}
 {{- end }}
   rules:
-    {{- range .Values.conversion_manager.ingress.hosts }}
+    {{- range .Values.conversion_manager_service.ingress.hosts }}
     - host: {{ .host | quote }}
       http:
         paths:
