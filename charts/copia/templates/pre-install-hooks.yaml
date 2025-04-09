@@ -4,10 +4,7 @@ kind: Job
 metadata:
   name: "{{ .Release.Name }}-ghcr"
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-    app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    {{- include "app.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-5"
@@ -17,9 +14,7 @@ spec:
     metadata:
       name: "{{ .Release.Name }}-ghcr"
       labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-        app.kubernetes.io/instance: {{ .Release.Name | quote }}
-        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        {{- include "app.labels" . | nindent 8 }}
     spec:
       restartPolicy: Never
       {{- with .Values.imagePullSecrets }}
