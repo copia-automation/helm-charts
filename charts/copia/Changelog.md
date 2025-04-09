@@ -6,6 +6,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
+* Fix pre-install-hooks.yaml 
 * Fix pre install hook labels 
 * Fix values.schema.json 
 
@@ -72,33 +73,7 @@ index e792214..4800376 100644
 ### Default value changes
 
 ```diff
-diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
-index 0175e95..e792214 100644
---- a/charts/copia/values.yaml
-+++ b/charts/copia/values.yaml
-@@ -1,3 +1,4 @@
-+#Copia configuration
- replicaCount: 1
- clusterDomain: cluster.local
- #Use this value "*copia_port" to reference the value of the copia_server_http_port when setting HTTP_PORT on the copia config.
-@@ -139,6 +140,8 @@ copia:
-   #   copia:
-   #     LICENSE_KEY: <REQUIRED>
- 
-+#Conversion manager service configuration
-+cmVersion: v0.1.0
- conversion_manager:
-   enabled: false
-   deployment:
-@@ -146,7 +149,6 @@ conversion_manager:
-     image:
-       repository: ghcr.io/copia-automation/conversion-manager
-       imagePullPolicy: Always
--      tag: latest
-     # serviceAccountName: ""
-     # terminationGracePeriodSeconds: 60
-     replicaCount: 1
-```
+err```
 
 ## 0.44.1 
 
@@ -193,8 +168,7 @@ index 0175e95..e792214 100644
 ### Default value changes
 
 ```diff
-# No changes in this release
-```
+err```
 
 ## 0.40.0 
 
