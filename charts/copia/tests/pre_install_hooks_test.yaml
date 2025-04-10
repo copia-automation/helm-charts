@@ -1,0 +1,40 @@
+suite: Test Copia pre-install hooks
+templates:
+  - pre-install-hooks.yaml
+tests:
+  - it: should create a pre-install job with correct metadata
+    set:
+      image:
+        repository: ghcr.io/test/image
+        tag: latest
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.annotations
+          value:
+            helm.sh/hook: pre-install
+            helm.sh/hook-weight: "-5"
+            helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+      - matchRegex:
+          path: metadata.name
+          pattern: copia-ghcr-check
+
+  - it: should set correct container spec
+    set:
+      image:
+        repository: ghcr.io/test/image
+        tag: latest
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: pre-install-job-ghcr
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value: ["/bin/sleep","5"]

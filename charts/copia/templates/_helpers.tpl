@@ -10,7 +10,7 @@ Expand the name of the chart.
 Expand the name of the chart.
 */}}
 {{- define "app.conversion-manager.name" -}}
-{{- default "conversion-manager" .Values.conversion_manager.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- default "conversion-manager" .Values.conversion_manager_service.nameOverride | trunc 43 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -35,13 +35,13 @@ The longest name that gets created adds an extra 20 characters, so truncation sh
 
 {{/*
 Fullname suffixed with -cm
-Adds the 20 char truncation to app.fullname
+Adds the 43 char truncation to app.fullname
 */}}
 {{- define "app.conversion-manager.fullname" -}}
-{{- if .Values.conversion_manager.fullnameOverride -}}
-{{- .Values.conversion_manager.fullnameOverride | trunc 20 | trimSuffix "-" -}}
+{{- if .Values.conversion_manager_service.fullnameOverride -}}
+{{- .Values.conversion_manager_service.fullnameOverride | trunc 43 | trimSuffix "-" -}}
 {{- else -}}
-{{- printf "%s-cm" (include "app.fullname" .) -}}
+{{- default "conversion-manager" -}}
 {{- end }}
 {{- end }}
 
@@ -70,11 +70,11 @@ Create image name and tag used by the deployment.
 Create image name and tag used by the deployment.
 */}}
 {{- define "cm.image" -}}
-{{- $name := .Values.conversion_manager.deployment.image.repository -}}
-{{- if hasKey .Values.conversion_manager.deployment.image "version" -}}
-{{- printf "%s:%s" $name .Values.conversion_manager.deployment.image.version -}}
-{{- else if hasKey .Values.conversion_manager.deployment.image "tag" -}}
-{{- printf "%s:%s" $name .Values.conversion_manager.deployment.image.tag -}}
+{{- $name := .Values.conversion_manager_service.deployment.image.repository -}}
+{{- if hasKey .Values.conversion_manager_service.deployment.image "version" -}}
+{{- printf "%s:%s" $name .Values.conversion_manager_service.deployment.image.version -}}
+{{- else if hasKey .Values.conversion_manager_service.deployment.image "tag" -}}
+{{- printf "%s:%s" $name .Values.conversion_manager_service.deployment.image.tag -}}
 {{- else -}}
 {{- printf "%s:%s" $name .Values.cmVersion -}}
 {{- end -}}
@@ -107,12 +107,12 @@ Conversion-manager labels
 helm.sh/chart: {{ include "app.chart" . }}
 app: {{ include "app.conversion-manager.name" . }}
 {{ include "app.conversion-manager.selectorLabels" . }}
-{{- if hasKey .Values.conversion_manager.deployment.image "version" -}}
-app.kubernetes.io/version: {{ .Values.conversion_manager.deployment.image.version| quote }}
-version: {{ .Values.conversion_manager.deployment.image.version| quote }}
-{{- else if hasKey .Values.conversion_manager.deployment.image "tag" }}
-app.kubernetes.io/version: {{ .Values.conversion_manager.deployment.image.tag| quote }}
-version: {{ .Values.conversion_manager.deployment.image.tag| quote }}
+{{- if hasKey .Values.conversion_manager_service.deployment.image "version" -}}
+app.kubernetes.io/version: {{ .Values.conversion_manager_service.deployment.image.version| quote }}
+version: {{ .Values.conversion_manager_service.deployment.image.version| quote }}
+{{- else if hasKey .Values.conversion_manager_service.deployment.image "tag" }}
+app.kubernetes.io/version: {{ .Values.conversion_manager_service.deployment.image.tag| quote }}
+version: {{ .Values.conversion_manager_service.deployment.image.tag| quote }}
 {{- else }}
 app.kubernetes.io/version: {{ .Values.cmVersion | quote }}
 version: {{ .Values.cmVersion | quote }}

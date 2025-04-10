@@ -1,4 +1,4 @@
-{{- if and .Values.conversion_manager.configmap (eq .Values.conversion_manager.enabled true)}}
+{{- if and .Values.conversion_manager_service.configmap (eq .Values.conversion_manager_service.enabled true)}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "app.conversion-manager.labels" . | nindent 4 }}
 data:
-  {{- range $key, $value := .Values.conversion_manager.configmap }}
+  {{- range $key, $value := .Values.conversion_manager_service.configmap }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
 {{- end }}

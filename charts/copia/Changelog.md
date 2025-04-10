@@ -1,5 +1,50 @@
 # Change Log
 
+## Next Release 
+
+![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.41.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Fixes the name of the pre-install hook and adds unittests 
+* Fix pre-install-hooks.yaml 
+* Fix pre install hook labels 
+* Fix values.schema.json 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
+## 0.44.4 
+
+**Release date:** 2025-04-09
+
+![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.41.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* File renaming and root values change for conversion manager service 
+
+### Default value changes
+
+```diff
+diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
+index e792214..4800376 100644
+--- a/charts/copia/values.yaml
++++ b/charts/copia/values.yaml
+@@ -142,7 +142,7 @@ copia:
+ 
+ #Conversion manager service configuration
+ cmVersion: v0.1.0
+-conversion_manager:
++conversion_manager_service:
+   enabled: false
+   deployment:
+     port: *cm_port
+```
+
 ## 0.44.3 
 
 **Release date:** 2025-04-04
@@ -8,7 +53,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Adds Taskfile and a changelog task 
+* Changelog enhancements (#102) 
 
 ### Default value changes
 
