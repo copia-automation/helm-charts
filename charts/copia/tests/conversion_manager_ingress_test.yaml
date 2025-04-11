@@ -1,27 +1,27 @@
 suite: Test Conversion Manager Ingress
 templates:
-  - cm-ingress.yaml
+  - conversion-manager-ingress.yaml
 tests:
   - it: Test ingress name
     set:
-      conversion_manager.enabled: true
-      conversion_manager.ingress.enabled: true
+      conversion_manager_service.enabled: true
+      conversion_manager_service.ingress.enabled: true
     asserts:
       - isKind:
           of: Ingress
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
   - it: Test ingress default values
     set:
-      conversion_manager.enabled: true
-      conversion_manager.ingress.enabled: true
+      conversion_manager_service.enabled: true
+      conversion_manager_service.ingress.enabled: true
     asserts:
       - isKind:
           of: Ingress
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
       - equal:
           path: spec.rules[0].host
           value: git.example.com

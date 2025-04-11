@@ -20,7 +20,7 @@
   },
   "required": ["image", "replicaCount", "copia", "service"],
   "properties": {
-    "conversion_manager": {
+    "conversion_manager_service": {
       "type": "object",
       "additionalProperties": false,
       "required": ["deployment", "service", "configmap", "secret"],

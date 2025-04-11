@@ -1,25 +1,25 @@
 suite: Test Conversion Manager Service
 templates:
-  - cm-service.yaml
+  - conversion-manager-service.yaml
 tests:
   - it: Test service name
     set:
-      conversion_manager.enabled: true
+      conversion_manager_service.enabled: true
     asserts:
       - isKind:
           of: Service
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
   - it: Test service default values (NodePort)
     set:
-      conversion_manager.enabled: true
+      conversion_manager_service.enabled: true
     asserts:
       - isKind:
           of: Service
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
       - equal:
           path: spec.type
           value: NodePort
@@ -31,16 +31,16 @@ tests:
           value: 8888
   - it: Test Service type; LoadBalancer
     set:
-      conversion_manager.enabled: true
-      conversion_manager.service.http.type: LoadBalancer
-      conversion_manager.service.clusterIP: 10.0.0.1
-      conversion_manager.service.loadBalancerIP: 10.0.0.1
+      conversion_manager_service.enabled: true
+      conversion_manager_service.service.http.type: LoadBalancer
+      conversion_manager_service.service.clusterIP: 10.0.0.1
+      conversion_manager_service.service.loadBalancerIP: 10.0.0.1
     asserts:
       - isKind:
           of: Service
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
       - equal:
           path: spec.type
           value: LoadBalancer
@@ -49,16 +49,16 @@ tests:
           pattern: \d+\.\d+\.\d+\.\d+
   - it: Test Service type; ClusterIP
     set:
-      conversion_manager.enabled: true
-      conversion_manager.service.http.type: ClusterIP
-      conversion_manager.service.clusterIP: 10.0.0.1
-      conversion_manager.service.loadBalancerIP: 10.0.0.1
+      conversion_manager_service.enabled: true
+      conversion_manager_service.service.http.type: ClusterIP
+      conversion_manager_service.service.clusterIP: 10.0.0.1
+      conversion_manager_service.service.loadBalancerIP: 10.0.0.1
     asserts:
       - isKind:
           of: Service
       - matchRegex:
           path: metadata.name
-          pattern: copia-cm
+          pattern: conversion-manager
       - equal:
           path: spec.type
           value: ClusterIP

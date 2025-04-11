@@ -142,7 +142,7 @@ copia:
 
 #Conversion manager service configuration
 cmVersion: v0.1.0
-conversion_manager:
+conversion_manager_service:
   enabled: false
   deployment:
     port: *cm_port
