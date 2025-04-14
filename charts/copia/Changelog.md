@@ -1,15 +1,14 @@
 # Change Log
 
-## Next Release 
+## 0.44.5 
+
+**Release date:** 2025-04-14
 
 ![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.41.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Fixes the name of the pre-install hook and adds unittests 
-* Fix pre-install-hooks.yaml 
-* Fix pre install hook labels 
-* Fix values.schema.json 
+* Update Chart.yaml 
 
 ### Default value changes
 
@@ -19,13 +18,13 @@
 
 ## 0.44.4 
 
-**Release date:** 2025-04-09
+**Release date:** 2025-04-10
 
 ![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.41.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* File renaming and root values change for conversion manager service 
+* File renaming and root values change for conversion manager service (#104) 
 
 ### Default value changes
 
