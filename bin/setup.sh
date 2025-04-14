@@ -46,7 +46,7 @@ install_asdf_and_plugins() {
 
   echo -e "\n\033[1mAdding asdf plugins...\033[0m\n"
   while IFS=' ' read -r tool _; do
-    asdf plugin-add "$tool" || echo "Failed to add plugin $tool"
+    asdf plugin add "$tool" || echo "Failed to add plugin $tool"
   done < <(sed '/^[[:blank:]]*#/d;s/#.*//' "$PROJECT_ROOT/.tool-versions")
 
   echo -e "\n\033[1mInstalling asdf tools...\033[0m\n"
@@ -56,7 +56,11 @@ install_asdf_and_plugins() {
 # Installs all helm plugins
 install_helm_plugins() {
   echo -e "\n\033[1mInstalling helm plugins...\033[0m\n"
-  helm plugin install https://github.com/helm-unittest/helm-unittest.git
+  if ! helm plugin list | grep -q "unittest"; then
+    helm plugin install https://github.com/helm-unittest/helm-unittest.git
+  else
+    echo -e "\033[1mHelm unittest plugin is already installed, skipping...\033[0m\n"
+  fi
 }
 
 main() {
@@ -71,18 +75,16 @@ main() {
   install_node_deps
   install_helm_plugins
 
-  echo -e "\n\033[1mIMPORTANT SETUP INSTRUCTIONS:\033[0m\n"
-  echo -e "1. Ensure asdf is sourced in your shell profile:\n"
-  echo -e "   Add this to ~/.bash_profile, ~/.profile, or ~/.zshrc:\n"
-  echo -e "   \033[32mif [ -f $ASDF_DIR/asdf.sh ]; then\033[0m"
-  echo -e "   \033[32m	export ASDF_DIR=$ASDF_DIR/\033[0m"
-  echo -e "   \033[32m	. $ASDF_DIR/asdf.sh\033[0m"
-  echo -e "   \033[32mfi\033[0m\n"
-  echo -e "2. Source your profile:\n"
-  echo -e "   \033[36msource ~/.bash_profile\033[0m (for Bash)"
-  echo -e "   \033[36msource ~/.profile\033[0m (if .bash_profile is not used)"
-  echo -e "   \033[36msource ~/.zshrc\033[0m (for Zsh)\n"
-  echo -e "Visit \033[34mhttps://brew.sh/\033[0m and \033[34mhttps://asdf-vm.com/\033[0m for more details.\n"
+	echo -e "\n\033[1mIMPORTANT SETUP INSTRUCTIONS:\033[0m\n"
+	echo -e "1. Ensure asdf is sourced in your shell profile:\n"
+	echo -e "   Add this to ~/.bash_profile, ~/.profile, or ~/.zshrc:\n"
+	echo -e "   \033[32m# ASDF\033[0m"
+	echo -e "   \033[32mexport PATH=\"\${ASDF_DATA_DIR:-\$HOME/.asdf}/shims:\$PATH\"\033[0m\n"
+	echo -e "2. Source your profile:\n"
+	echo -e "   \033[36msource ~/.bash_profile\033[0m (for Bash)"
+	echo -e "   \033[36msource ~/.profile\033[0m (if .bash_profile is not used)"
+	echo -e "   \033[36msource ~/.zshrc\033[0m (for Zsh)\n"
+	echo -e "Visit \033[34mhttps://brew.sh/\033[0m and \033[34mhttps://asdf-vm.com/\033[0m for more details.\n"
 }
 
 main
