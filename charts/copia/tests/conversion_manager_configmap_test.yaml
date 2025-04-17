@@ -49,7 +49,7 @@ tests:
           value: "localhost:5441"
       - equal:
           path: data.DATABASE_URL
-          value: "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/conversion_manager?schema=public"
+          value: "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}?schema=public"
       - equal:
           path: data.ENABLE_HTTPS
           value: "false"
