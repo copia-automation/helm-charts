@@ -1,5 +1,43 @@
 # Change Log
 
+## 0.44.6 
+
+**Release date:** 2025-04-17
+
+![AppVersion: v0.41.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.41.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Update tests 
+
+### Default value changes
+
+```diff
+diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
+index 4800376..13f88f9 100644
+--- a/charts/copia/values.yaml
++++ b/charts/copia/values.yaml
+@@ -141,7 +141,7 @@ copia:
+   #     LICENSE_KEY: <REQUIRED>
+ 
+ #Conversion manager service configuration
+-cmVersion: v0.1.0
++cmVersion: v0.1.3
+ conversion_manager_service:
+   enabled: false
+   deployment:
+@@ -228,7 +228,8 @@ conversion_manager_service:
+     COPIA_TEAM_ID: copiaTeam
+     DB_USER: postgres
+     DB_HOST: localhost:5441
+-    DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/conversion_manager?schema=public"
++    DB_NAME: conversion_manager
++    DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}?schema=public"
+     ENABLE_HTTPS: false
+   secret:
+     DB_PASSWORD: password
+```
+
 ## 0.44.5 
 
 **Release date:** 2025-04-14
@@ -8,7 +46,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Update Chart.yaml 
+* Tooling improvements (#105) 
 
 ### Default value changes
 
