@@ -1,5 +1,15 @@
 # Change Log
 
+## 0.45.0
+
+**Release date:** 2025-04-24
+
+![AppVersion: v0.42.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.42.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Self-Hosted Release v0.42.0
+
 ## 0.44.6 
 
 **Release date:** 2025-04-17
