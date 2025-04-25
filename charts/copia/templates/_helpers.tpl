@@ -133,5 +133,5 @@ Selector labels
 */}}
 {{- define "app.conversion-manager.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "app.conversion-manager.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/instance: {{ include "app.conversion-manager.name" . }}
 {{- end -}}
