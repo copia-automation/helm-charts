@@ -1,6 +1,22 @@
 # Change Log
 
-## 0.45.0
+## 0.45.1 
+
+**Release date:** 2025-04-25
+
+![AppVersion: v0.42.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.42.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Fix labels for conversion-manager 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
+## 0.45.0 
 
 **Release date:** 2025-04-24
 
@@ -8,7 +24,13 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Self-Hosted Release v0.42.0
+* SelfHost Release v0.42.0 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
 
 ## 0.44.6 
 
@@ -18,7 +40,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Update tests 
+* Conversion Manager variables (#106) 
 
 ### Default value changes
 
