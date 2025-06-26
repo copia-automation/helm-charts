@@ -1,5 +1,31 @@
 # Change Log
 
+## Next Release 
+
+![AppVersion: v0.43.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.43.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* conversion manager v0.1.7 
+
+### Default value changes
+
+```diff
+diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
+index 13f88f9..e501138 100644
+--- a/charts/copia/values.yaml
++++ b/charts/copia/values.yaml
+@@ -141,7 +141,7 @@ copia:
+   #     LICENSE_KEY: <REQUIRED>
+ 
+ #Conversion manager service configuration
+-cmVersion: v0.1.3
++cmVersion: v0.1.7
+ conversion_manager_service:
+   enabled: false
+   deployment:
+```
+
 ## 0.46.0 
 
 **Release date:** 2025-06-10
@@ -8,7 +34,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* SelfHost Release v0.43.0 
+* SelfHost Release v0.43.0 (#110) 
 
 ### Default value changes
 
@@ -24,7 +50,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Fix labels for conversion-manager 
+* Fixes conversion manager labels (#108) 
 
 ### Default value changes
 
