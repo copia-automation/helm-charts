@@ -1,12 +1,15 @@
 # Change Log
 
-## Next Release 
+## 0.47.0 
 
-![AppVersion: v0.43.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.43.0&color=success&logo=)
+**Release date:** 2025-07-01
+
+![AppVersion: v0.44.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.44.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* conversion manager v0.1.7 
+* update copia version to v0.44.0 
+* Conversion Manager v0.1.7 (#111) 
 
 ### Default value changes
 
