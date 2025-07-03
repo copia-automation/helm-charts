@@ -77,6 +77,11 @@
             "imagePullSecrets": {
               "type": "array"
             },
+            "ghcrCheck": {
+              "type": "boolean",
+              "default": true,
+              "description": "Controls whether the GHCR image pull pre-install hook runs"
+            },
             "resources": {
               "type": "object",
               "additionalProperties": false,
