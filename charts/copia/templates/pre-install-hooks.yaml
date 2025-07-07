@@ -1,5 +1,4 @@
 ---
-{{- if .Values.ghcrCheck }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -27,4 +26,3 @@ spec:
         image: "{{ include "app.image" . }}"
         imagePullPolicy: Always
         command: ["/bin/sleep", "{{ .Values.sleepTime | default "5" }}"]
-{{- end }}
