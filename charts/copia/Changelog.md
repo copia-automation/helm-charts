@@ -1,5 +1,23 @@
 # Change Log
 
+## 0.48.0 
+
+**Release date:** 2025-07-22
+
+![AppVersion: v0.45.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.45.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* update copia version to v0.45.0 
+* Revert "boolean value to feature flag ghcr check so it can be disabled when u…" (#114) 
+* boolean value to feature flag ghcr check so it can be disabled when using a local image (#113) 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.47.0 
 
 **Release date:** 2025-07-01
@@ -8,7 +26,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* update copia version to v0.44.0 
+* [CU-86a9vnef5] Update Copia version to v0.44.0 (#112) 
 * Conversion Manager v0.1.7 (#111) 
 
 ### Default value changes
