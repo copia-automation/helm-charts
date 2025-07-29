@@ -1,21 +1,63 @@
 # Change Log
 
-## 0.48.0 
+## 0.48.1 
 
-**Release date:** 2025-07-22
+**Release date:** 2025-07-29
 
-![AppVersion: v0.45.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.45.0&color=success&logo=)
+![AppVersion: v0.44.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.44.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* update copia version to v0.45.0 
-* Revert "boolean value to feature flag ghcr check so it can be disabled when u…" (#114) 
-* boolean value to feature flag ghcr check so it can be disabled when using a local image (#113) 
+* boolean value to feature flag ghcr check so it can be disabled when using a local image 
 
 ### Default value changes
 
 ```diff
 # No changes in this release
+```
+
+## 0.47.1 
+
+**Release date:** 2025-07-29
+
+![AppVersion: v0.44.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.44.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* boolean value to feature flag ghcr check so it can be disabled when using a local image 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
+## 0.47.1-beta.1 
+
+**Release date:** 2025-07-23
+
+![AppVersion: v0.44.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.44.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* ghcr check 
+* boolean value to feature flag ghcr check so it can be disabled when using a local image 
+
+### Default value changes
+
+```diff
+diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
+index e501138..858869c 100644
+--- a/charts/copia/values.yaml
++++ b/charts/copia/values.yaml
+@@ -9,6 +9,7 @@ image:
+   pullPolicy: Always
+ imagePullSecrets:
+   - name: ghcr-login-secret
++ghcrCheck: true
+ service:
+   #clusterIP: None
+   #loadBalancerIP:
 ```
 
 ## 0.47.0 
