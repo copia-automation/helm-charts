@@ -8,7 +8,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* version 
+* boolean value to feature flag ghcr check so it can be disabled when using a local image 
 
 ### Default value changes
 
@@ -24,7 +24,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* version 
+* boolean value to feature flag ghcr check so it can be disabled when using a local image 
 
 ### Default value changes
 
