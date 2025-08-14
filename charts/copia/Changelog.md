@@ -1,47 +1,30 @@
 # Change Log
 
+## 0.49.0 
+
+**Release date:** 2025-08-14
+
+![AppVersion: v0.46.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.46.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* new updated copia version to v0.46.0 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.48.1 
 
 **Release date:** 2025-07-29
 
-![AppVersion: v0.44.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.44.0&color=success&logo=)
+![AppVersion: v0.45.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.45.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* boolean value to feature flag ghcr check so it can be disabled when using a local image 
-
-### Default value changes
-
-```diff
-# No changes in this release
-```
-
-## 0.47.1 
-
-**Release date:** 2025-07-29
-
-![AppVersion: v0.44.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.44.0&color=success&logo=)
-![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
-
-
-* boolean value to feature flag ghcr check so it can be disabled when using a local image 
-
-### Default value changes
-
-```diff
-# No changes in this release
-```
-
-## 0.47.1-beta.1 
-
-**Release date:** 2025-07-23
-
-![AppVersion: v0.44.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.44.0&color=success&logo=)
-![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
-
-
-* ghcr check 
-* boolean value to feature flag ghcr check so it can be disabled when using a local image 
+* boolean value to feature flag ghcr check so it can be disabled when u… (#115) 
 
 ### Default value changes
 
@@ -58,6 +41,24 @@ index e501138..858869c 100644
  service:
    #clusterIP: None
    #loadBalancerIP:
+```
+
+## 0.48.0 
+
+**Release date:** 2025-07-22
+
+![AppVersion: v0.45.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.45.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* update copia version to v0.45.0 
+* Revert "boolean value to feature flag ghcr check so it can be disabled when u…" (#114) 
+* boolean value to feature flag ghcr check so it can be disabled when using a local image (#113) 
+
+### Default value changes
+
+```diff
+# No changes in this release
 ```
 
 ## 0.47.0 
