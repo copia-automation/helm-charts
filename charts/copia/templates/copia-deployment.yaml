@@ -48,8 +48,9 @@ spec:
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
-      {{- if and .Values.copia.config .Values.deployment.preflight }}
+      {{- if .Values.copia.config }}
       initContainers:
+        {{- if and .Values.copia.config .Values.deployment.preflight }}
         - name: {{ .Chart.Name }}-init
           image: postgres:latest
           imagePullPolicy: Always
@@ -70,6 +71,45 @@ spec:
               value: {{ .Values.copia.config.database.PASSWD }}
             - name: PGDATABASE
               value: {{ .Values.copia.config.database.NAME }}
+        {{- end }}
+        {{- if .Values.copia.config }}
+        - name: {{ .Chart.Name }}-config-merge
+          image: python:3.13-alpine
+          imagePullPolicy: Always
+          command:
+            - /bin/sh
+            - -c
+            - |
+              #!/bin/sh
+              set -e
+              
+              # Install deps
+              apk add --no-cache git
+              pip install \
+                git+https://github.com/candlepin/python-iniparse.git@0f3da0a21e933e4a7327fd6a2b8e2218315df0ef#egg=iniparse \
+                git+https://github.com/pixelb/crudini.git@f3811bc0b2c19be373d0cdaf85378c823ecc8187#egg=crudini
+              
+              # Create directory if it doesn't exist
+              mkdir -p "$(dirname '{{ .Values.deployment.configmap.GITEA_APP_INI }}')"
+              
+              # Check for existing app.ini
+              if [ -f "{{ .Values.deployment.configmap.GITEA_APP_INI }}" ]; then
+                echo "Existing app.ini found, merging with secret content..."
+                crudini --merge "{{ .Values.deployment.configmap.GITEA_APP_INI }}" < /tmp/app.ini
+                echo "app.ini merge completed successfully"
+              else
+                echo "No existing app.ini found, copying secret content..."
+                cp /tmp/app.ini "{{ .Values.deployment.configmap.GITEA_APP_INI }}"
+              fi
+              
+              echo "app.ini ready at {{ .Values.deployment.configmap.GITEA_APP_INI }}"
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.deployment.configmap.GITEA_WORK_DIR }}
+            - name: temp-config
+              mountPath: /tmp/app.ini
+              subPath: app.ini
+        {{- end }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -152,11 +192,6 @@ spec:
               mountPath: {{ .Values.deployment.configmap.GITEA_TEMP }}
             - name     : data
               mountPath: {{ .Values.deployment.configmap.GITEA_WORK_DIR }}
-            {{- if (hasKey .Values.copia "config") }}
-            - name     : config
-              mountPath: {{ .Values.deployment.configmap.GITEA_APP_INI }}
-              subPath  : app.ini
-            {{- end }}
             {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
             {{- end }}
@@ -174,7 +209,7 @@ spec:
     {{- end }}
       volumes:
         {{- if (hasKey .Values.copia "config") }}
-        - name: config
+        - name: temp-config
           secret:
             secretName: {{ include "app.fullname" . }}-ini
         {{- end }}
