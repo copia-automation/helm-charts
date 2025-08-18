@@ -95,7 +95,7 @@ spec:
               # Check for existing app.ini
               if [ -f "{{ .Values.deployment.configmap.GITEA_APP_INI }}" ]; then
                 echo "Existing app.ini found, merging with secret content..."
-                crudini --merge "{{ .Values.deployment.configmap.GITEA_APP_INI }}" < /tmp/app.ini
+                crudini --merge --inplace --verbose "{{ .Values.deployment.configmap.GITEA_APP_INI }}" < /tmp/app.ini
                 echo "app.ini merge completed successfully"
               else
                 echo "No existing app.ini found, copying secret content..."

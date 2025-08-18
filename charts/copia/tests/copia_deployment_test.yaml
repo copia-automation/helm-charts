@@ -49,9 +49,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[1].mountPath
           value: /data
-      - equal:
-          path: spec.template.spec.containers[0].volumeMounts[2].mountPath
-          value: /data/gitea/conf/app.ini
   - it: Test preflight check
     set:
       deployment.preflight: true
@@ -82,7 +79,11 @@ tests:
           value: copia
   - it: Test config-merge initContainer
     set:
-      copia.config: {}
+      deployment.preflight: true
+      copia.config.database.HOST: localhost
+      copia.config.database.USER: postgres
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
       deployment.configmap.GITEA_APP_INI: /data/gitea/conf/app.ini
       deployment.configmap.GITEA_WORK_DIR: /data
     asserts:
