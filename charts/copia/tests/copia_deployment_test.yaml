@@ -102,7 +102,10 @@ tests:
           value: data
       - equal:
           path: spec.template.spec.initContainers[1].volumeMounts[0].mountPath
-          value: /data
+          value: /data/gitea/conf/app.ini
+      - equal:
+          path: spec.template.spec.initContainers[1].volumeMounts[0].subPath
+          value: gitea/conf/app.ini
       - equal:
           path: spec.template.spec.initContainers[1].volumeMounts[1].name
           value: temp-config

@@ -104,8 +104,10 @@ spec:
               
               echo "app.ini ready at {{ .Values.deployment.configmap.GITEA_APP_INI }}"
           volumeMounts:
+            # Mount only the app.ini file from the copia data volume
             - name: data
-              mountPath: {{ .Values.deployment.configmap.GITEA_WORK_DIR }}
+              mountPath: {{ .Values.deployment.configmap.GITEA_APP_INI }}
+              subPath: {{ trimPrefix .Values.deployment.configmap.GITEA_WORK_DIR .Values.deployment.configmap.GITEA_APP_INI | trimPrefix "/" }}
             - name: temp-config
               mountPath: /tmp/app.ini
               subPath: app.ini
