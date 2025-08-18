@@ -80,3 +80,35 @@ tests:
       - equal:
           path: spec.template.spec.initContainers[0].env[3].value
           value: copia
+  - it: Test config-merge initContainer
+    set:
+      copia.config: {}
+      deployment.configmap.GITEA_APP_INI: /data/gitea/conf/app.ini
+      deployment.configmap.GITEA_WORK_DIR: /data
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: copia
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: copia-config-merge
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: python:3.13-alpine
+      - equal:
+          path: spec.template.spec.initContainers[1].volumeMounts[0].name
+          value: data
+      - equal:
+          path: spec.template.spec.initContainers[1].volumeMounts[0].mountPath
+          value: /data
+      - equal:
+          path: spec.template.spec.initContainers[1].volumeMounts[1].name
+          value: temp-config
+      - equal:
+          path: spec.template.spec.initContainers[1].volumeMounts[1].mountPath
+          value: /tmp/app.ini
+      - equal:
+          path: spec.template.spec.initContainers[1].volumeMounts[1].subPath
+          value: app.ini
