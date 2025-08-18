@@ -89,19 +89,8 @@ spec:
                 git+https://github.com/candlepin/python-iniparse.git@0f3da0a21e933e4a7327fd6a2b8e2218315df0ef#egg=iniparse \
                 git+https://github.com/pixelb/crudini.git@f3811bc0b2c19be373d0cdaf85378c823ecc8187#egg=crudini
               
-              # Create directory if it doesn't exist
-              mkdir -p "$(dirname '{{ .Values.deployment.configmap.GITEA_APP_INI }}')"
-              
-              # Check for existing app.ini
-              if [ -f "{{ .Values.deployment.configmap.GITEA_APP_INI }}" ]; then
-                echo "Existing app.ini found, merging with secret content..."
-                crudini --merge --inplace --verbose "{{ .Values.deployment.configmap.GITEA_APP_INI }}" < /tmp/app.ini
-                echo "app.ini merge completed successfully"
-              else
-                echo "No existing app.ini found, copying secret content..."
-                cp /tmp/app.ini "{{ .Values.deployment.configmap.GITEA_APP_INI }}"
-              fi
-              
+              # Merge helm secret into gitea app.ini
+              crudini --merge --inplace --verbose "{{ .Values.deployment.configmap.GITEA_APP_INI }}" < /tmp/app.ini              
               echo "app.ini ready at {{ .Values.deployment.configmap.GITEA_APP_INI }}"
           volumeMounts:
             # Mount only the app.ini file from the copia data volume
