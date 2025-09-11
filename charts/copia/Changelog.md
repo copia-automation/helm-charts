@@ -1,5 +1,21 @@
 # Change Log
 
+## 0.50.0 
+
+**Release date:** 2025-09-11
+
+![AppVersion: v0.47.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.47.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* update copia version to v0.47.0 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.49.0 
 
 **Release date:** 2025-08-14
@@ -8,7 +24,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* new updated copia version to v0.46.0 
+* Updated Copia version to v0.46.0 (#118) 
 
 ### Default value changes
 
