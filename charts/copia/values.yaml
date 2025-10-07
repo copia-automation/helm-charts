@@ -142,7 +142,7 @@ copia:
   #     LICENSE_KEY: <REQUIRED>
 
 #Conversion manager service configuration
-cmVersion: v0.1.7
+cmVersion: v0.1.10
 conversion_manager_service:
   enabled: false
   deployment:
