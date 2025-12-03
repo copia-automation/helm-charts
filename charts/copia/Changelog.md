@@ -1,19 +1,49 @@
 # Change Log
 
-## 0.52.0 
+## 0.53.0 
 
-**Release date:** 2025-10-28
+**Release date:** 2025-12-02
 
-![AppVersion: v0.49.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.49.0&color=success&logo=)
+![AppVersion: v0.50.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.50.0&color=success&logo=)
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* update copia version to v0.52.0 
+* update copia version v0.50.0 
 
 ### Default value changes
 
 ```diff
 # No changes in this release
+```
+
+## 0.52.0 
+
+**Release date:** 2025-10-29
+
+![AppVersion: v0.49.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.49.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* fix dupe (#125) 
+* [CU-86acnjeyb] Update Copia version to v0.49.0 (#124) 
+* conversion-manager v0.1.10 (#121) 
+
+### Default value changes
+
+```diff
+diff --git a/charts/copia/values.yaml b/charts/copia/values.yaml
+index 858869c..919a00f 100644
+--- a/charts/copia/values.yaml
++++ b/charts/copia/values.yaml
+@@ -142,7 +142,7 @@ copia:
+   #     LICENSE_KEY: <REQUIRED>
+ 
+ #Conversion manager service configuration
+-cmVersion: v0.1.7
++cmVersion: v0.1.10
+ conversion_manager_service:
+   enabled: false
+   deployment:
 ```
 
 ## 0.51.0 
@@ -24,7 +54,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* update copia version to v0.48.0 
+* [CU-86ac89bbm] Update Copia Veresion to v0.48.0 (#122) 
 
 ### Default value changes
 
