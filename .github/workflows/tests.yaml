@@ -20,7 +20,7 @@ jobs:
       - name: Install software
         run: |
           sudo snap install helm --classic
-          helm plugin install https://github.com/helm-unittest/helm-unittest.git
+          helm plugin install https://github.com/helm-unittest/helm-unittest.git --verify=false
 
       - name: Test copia chart
         run: |
