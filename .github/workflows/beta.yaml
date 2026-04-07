@@ -1,0 +1,33 @@
+name: Beta Charts
+
+on:
+  pull_request:
+
+permissions: write-all
+
+jobs:
+  beta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.8.1
+
+      - name: Set beta version
+        run: |
+          sed -i 's/version: 0.0.0/version: 0.0.0-beta/' charts/copia/Chart.yaml
+
+      - name: Package Helm chart
+        run: helm package ./charts/copia
+
+      - name: Log in to GitHub Container Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+      - name: Push Helm chart to GitHub Container Registry
+        run: helm push copia-*.tgz oci://ghcr.io/copia-automation/helm-charts-dev

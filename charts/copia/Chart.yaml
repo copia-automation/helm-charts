@@ -2,5 +2,5 @@ apiVersion: v2
 name: copia
 description: Copia Helm chart for Kubernetes
 type: application
-version: 0.57.0
+version: 0.0.0 # placeholder - set during release
 appVersion: v0.54.0
