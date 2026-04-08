@@ -1,5 +1,21 @@
 # Change Log
 
+## 0.57.0 
+
+**Release date:** 2026-04-08
+
+![AppVersion: v0.54.0](https://img.shields.io/static/v1?label=AppVersion&message=v0.54.0&color=success&logo=)
+![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
+
+
+* Bump copia chart to 0.57.0 and app to v0.54.0 
+
+### Default value changes
+
+```diff
+# No changes in this release
+```
+
 ## 0.56.0 
 
 **Release date:** 2026-03-13
@@ -8,7 +24,7 @@
 ![Helm: v3](https://img.shields.io/static/v1?label=Helm&message=v3&color=informational&logo=helm)
 
 
-* Bump copia chart and app versions 
+* [CU-86ag4wgug] Update Charts version to v0.56.0 and Copia appVersion to v0.53.0 (#133) 
 
 ### Default value changes
 
