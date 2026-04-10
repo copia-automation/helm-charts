@@ -1,10 +1,13 @@
 name: Release Charts
 
 on:
+  # TODO: uncomment release trigger and remove push, workflow_dispatch triggers
+  # release:
+  #   types: [published]
   push:
     branches:
-      - main
-  pull_request:
+      - '04-07-automate_helm_chart_releases'
+  workflow_dispatch:
 
 permissions: write-all
 
@@ -12,29 +15,5 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: v3.8.1
-
-      - name: Beta build
-        if: github.event_name == 'pull_request'
-        run: |
-          sudo snap install yq
-          export CHART_VERSION=$(yq -r '.version' charts/copia/Chart.yaml)
-          export NEW_VERSION=$CHART_VERSION-beta
-          sed -i "s/version: $CHART_VERSION/version: $NEW_VERSION/g" charts/copia/Chart.yaml
-
-      - name: Package Helm chart
-        run: helm package ./charts/copia
-
-      - name: Log in to GitHub Container Registry
-        run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
-
-      - name: Push Helm chart to GitHub Container Registry
-        run: helm push copia-*.tgz oci://ghcr.io/copia-automation/helm-charts
+      - name: Placeholder
+        run: echo "placeholder"
