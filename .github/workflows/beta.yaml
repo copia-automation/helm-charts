@@ -19,17 +19,18 @@ jobs:
         with:
           version: v3.8.1
 
-      - name: Resolve next release version
+      - name: Draft beta release
         id: release_drafter
         uses: release-drafter/release-drafter@139054aeaa9adc52ab36ddf67437541f039b88e2 # v7.1.1
         with:
-          dry-run: true
+          prerelease: true
+          prerelease-identifier: beta
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set beta version
         run: |
-          BETA_VERSION="${{ steps.release_drafter.outputs.resolved_version }}-beta"
+          BETA_VERSION="${{ steps.release_drafter.outputs.resolved_version }}"
           sed -i "s/version: 0.0.0/version: $BETA_VERSION/" charts/copia/Chart.yaml
 
       - name: Package Helm chart
