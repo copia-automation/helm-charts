@@ -23,7 +23,7 @@ jobs:
       - name: Set chart version from tag
         run: |
           TAG_VERSION="${{ github.event.release.tag_name }}"
-          CHART_VERSION="${TAG_VERSION#v}"
+          CHART_VERSION="${TAG_VERSION#copia-}"
           echo "CHART_VERSION=$CHART_VERSION" >> $GITHUB_ENV
           sudo snap install yq
           sed -i "s/version: 0.0.0/version: $CHART_VERSION/" charts/copia/Chart.yaml
