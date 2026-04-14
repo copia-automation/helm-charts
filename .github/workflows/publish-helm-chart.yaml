@@ -1,4 +1,4 @@
-name: Publish Helm Chart
+name: Publish Production Helm Chart to Production Container Registry
 
 on:
   workflow_call:
