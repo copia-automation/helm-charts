@@ -29,7 +29,7 @@ jobs:
 
       - name: Set beta version
         run: |
-          BETA_VERSION="${{ steps.release_drafter.outputs.resolved_version }}-beta"
+          BETA_VERSION="${{ steps.release_drafter.outputs.resolved_version }}-beta.pr${{ github.event.pull_request.number }}"
           sed -i "s/version: 0.0.0/version: $BETA_VERSION/" charts/copia/Chart.yaml
 
       - name: Package Helm chart
