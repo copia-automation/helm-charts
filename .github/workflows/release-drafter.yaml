@@ -17,6 +17,9 @@ jobs:
     steps:
       - uses: release-drafter/release-drafter@139054aeaa9adc52ab36ddf67437541f039b88e2 # v7.1.1
         with:
-          commitish: main
+          # TODO: switch commitish to main once done testing
+          # commitish: main
+          commitish: 04-07-automate_helm_chart_releases
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
