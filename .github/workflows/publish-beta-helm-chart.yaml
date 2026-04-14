@@ -1,4 +1,4 @@
-name: Beta Charts
+name: Publish Beta Helm Chart to Development Container Registry
 
 on:
   pull_request:
