@@ -7,21 +7,22 @@ on:
         description: Chart version (overrides Chart.yaml if set)
         required: false
         type: string
-      registry:
-        description: OCI registry to push to
-        required: true
-        type: string
+      production:
+        description: Push to production registry (default dev)
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       version:
         description: Chart version (leave empty to use Chart.yaml as-is)
         required: false
         type: string
-      registry:
-        description: OCI registry to push to
-        required: true
-        default: oci://ghcr.io/copia-automation/helm-charts
-        type: string
+      production:
+        description: Push to production registry (default dev)
+        required: false
+        type: boolean
+        default: false
 
 permissions: write-all
 
@@ -31,6 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Helm
         uses: azure/setup-helm@v4
@@ -42,11 +45,20 @@ jobs:
         run: |
           sed -i "s/version: 0.0.0/version: ${{ inputs.version }}/" charts/copia/Chart.yaml
 
+      - name: Generate changelog
+        run: docker run --rm --platform linux/amd64 -v "$(pwd):/data" mogensen/helm-changelog:latest
+
       - name: Package Helm chart
         run: helm package ./charts/copia
+
+      - name: Upload chart artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-chart
+          path: copia-*.tgz
 
       - name: Log in to GitHub Container Registry
         run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
 
       - name: Push Helm chart
-        run: helm push copia-*.tgz ${{ inputs.registry }}
+        run: helm push copia-*.tgz oci://ghcr.io/copia-automation/${{ inputs.production && 'helm-charts' || 'helm-charts-dev' }}

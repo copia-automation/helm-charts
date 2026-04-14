@@ -23,4 +23,4 @@ jobs:
     uses: ./.github/workflows/publish-helm-chart.yaml
     with:
       version: ${{ needs.prepare.outputs.chart-version }}
-      registry: oci://ghcr.io/copia-automation/helm-charts
+      production: true
