@@ -1,9 +1,10 @@
-name: Release Drafter
+name: Draft Release
 
 on:
   push:
-    branches:
-      - main
+    # TODO: limit to pushes on main when done testing
+    # branches:
+    #   - main
 
 permissions:
   contents: read
