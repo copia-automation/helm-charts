@@ -46,7 +46,7 @@ jobs:
           sed -i "s/version: 0.0.0/version: ${{ inputs.version }}/" charts/copia/Chart.yaml
 
       - name: Generate changelog
-        run: docker run --rm --platform linux/amd64 -v "$(pwd):/data" mogensen/helm-changelog:latest
+        run: docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" -v "$(pwd):/data" mogensen/helm-changelog:latest
 
       - name: Package Helm chart
         run: helm package ./charts/copia
