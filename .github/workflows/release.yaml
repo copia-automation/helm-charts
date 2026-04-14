@@ -38,4 +38,6 @@ jobs:
         run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
 
       - name: Push Helm chart to GitHub Container Registry
+        # TODO: push prod releases to `helm-charts`, not `helm-charts-dev`;
+        #       also fix glob — `helm package` produces `copia-*.tgz`, not `copia-dev-*.tgz`.
         run: helm push copia-dev-*.tgz oci://ghcr.io/copia-automation/helm-charts-dev
