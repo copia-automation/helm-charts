@@ -2,7 +2,8 @@ name: Release Charts
 
 on:
   release:
-    types: [published]
+    # TODO: limit release types to just "published" once we're done testing this workflow
+    # types: [published]
 
 permissions: write-all
 
