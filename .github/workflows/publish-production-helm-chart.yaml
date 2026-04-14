@@ -12,7 +12,7 @@ jobs:
     outputs:
       chart-version: ${{ steps.version.outputs.chart-version }}
     steps:
-      - name: Extract chart version from tag
+      - name: Extract chart version from release tag ${{ github.event.release.tag_name }}
         id: version
         run: |
           TAG="${{ github.event.release.tag_name }}"

@@ -13,7 +13,7 @@ jobs:
   check-label:
     runs-on: ubuntu-latest
     steps:
-      - name: Require a release-drafter label
+      - name: Require Pull Request to Have a Label
         env:
           LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
         run: |

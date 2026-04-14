@@ -19,22 +19,22 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Helm
+      - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
           version: v3.8.1
 
-      - name: Set chart version
+      - name: Set `version` in Chart.yaml to ${{ inputs.version }}
         if: inputs.version != ''
         run: |
           sed -i "s/version: 0.0.0/version: ${{ inputs.version }}/" charts/copia/Chart.yaml
 
-      - name: Generate changelog
+      - name: Generate Helm changelog
         run: docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" -v "$(pwd):/data" mogensen/helm-changelog:latest
 
       - name: Package Helm chart
@@ -49,5 +49,5 @@ jobs:
       - name: Log in to GitHub Container Registry
         run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
 
-      - name: Push Helm chart
+      - name: Push Helm chart to registry
         run: helm push copia-*.tgz oci://ghcr.io/copia-automation/${{ inputs.production && 'helm-charts' || 'helm-charts-dev' }}
