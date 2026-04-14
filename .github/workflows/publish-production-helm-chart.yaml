@@ -2,8 +2,7 @@ name: Publish Production Helm Chart to Container Registry
 
 on:
   release:
-    # TODO: limit to types: published when done testing
-    # types: [published]
+    types: [published]
 
 permissions: write-all
 
@@ -24,6 +23,4 @@ jobs:
     uses: ./.github/workflows/publish-helm-chart.yaml
     with:
       version: ${{ needs.prepare.outputs.chart-version }}
-      # TODO: set production: true when done testing
-      # production: true
-      production: false
+      production: true

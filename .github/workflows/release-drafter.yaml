@@ -2,9 +2,8 @@ name: Draft Release
 
 on:
   push:
-    # TODO: limit to pushes on main when done testing
-    # branches:
-    #   - main
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -17,9 +16,7 @@ jobs:
     steps:
       - uses: release-drafter/release-drafter@139054aeaa9adc52ab36ddf67437541f039b88e2 # v7.1.1
         with:
-          # TODO: switch commitish to main once done testing
-          # commitish: main
-          commitish: 04-07-automate_helm_chart_releases
+          commitish: main
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
