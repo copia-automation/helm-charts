@@ -1,0 +1,52 @@
+name: Publish Helm Chart
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Chart version (overrides Chart.yaml if set)
+        required: false
+        type: string
+      registry:
+        description: OCI registry to push to
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Chart version (leave empty to use Chart.yaml as-is)
+        required: false
+        type: string
+      registry:
+        description: OCI registry to push to
+        required: true
+        default: oci://ghcr.io/copia-automation/helm-charts
+        type: string
+
+permissions: write-all
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.8.1
+
+      - name: Set chart version
+        if: inputs.version != ''
+        run: |
+          sed -i "s/version: 0.0.0/version: ${{ inputs.version }}/" charts/copia/Chart.yaml
+
+      - name: Package Helm chart
+        run: helm package ./charts/copia
+
+      - name: Log in to GitHub Container Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+      - name: Push Helm chart
+        run: helm push copia-*.tgz ${{ inputs.registry }}

@@ -1,0 +1,13 @@
+name: Beta Charts
+
+on:
+  pull_request:
+
+permissions: write-all
+
+jobs:
+  publish:
+    uses: ./.github/workflows/publish-helm-chart.yaml
+    with:
+      version: 0.0.0-beta.pr${{ github.event.pull_request.number }}
+      registry: oci://ghcr.io/copia-automation/helm-charts-dev
