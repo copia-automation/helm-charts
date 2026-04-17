@@ -1,8 +1,5 @@
 name: Require Pull Request Label
 
-# TODO: add "Require Pull Request Label / check-label" as a required status check
-#       in branch protection for `main` so failing this actually blocks merges.
-
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
