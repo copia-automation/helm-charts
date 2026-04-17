@@ -2,4 +2,5 @@
 .dccache
 *.tgz
 Chart.lock
+Changelog.md
 node_modules

@@ -1,0 +1,30 @@
+name: Require Pull Request Label
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  check-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require Pull Request to Have a Label
+        env:
+          LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+        run: |
+          # Labels that release-drafter recognizes for version resolution and
+          # changelog categorization (see .github/release-drafter.yml).
+          REQUIRED='major breaking feature enhancement fix bugfix bug chore dependencies'
+          for label in $(echo "$LABELS" | jq -r '.[]'); do
+            for r in $REQUIRED; do
+              if [ "$label" = "$r" ]; then
+                echo "Found release label: $label"
+                exit 0
+              fi
+            done
+          done
+          echo "::error::PR must have one of these labels: $REQUIRED"
+          exit 1

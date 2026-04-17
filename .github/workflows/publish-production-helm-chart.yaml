@@ -1,0 +1,26 @@
+name: Publish Production Helm Chart to Container Registry
+
+on:
+  release:
+    types: [published]
+
+permissions: write-all
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      chart-version: ${{ steps.version.outputs.chart-version }}
+    steps:
+      - name: Extract chart version from release tag ${{ github.event.release.tag_name }}
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          echo "chart-version=${TAG#copia-}" >> $GITHUB_OUTPUT
+
+  publish:
+    needs: prepare
+    uses: ./.github/workflows/publish-helm-chart.yaml
+    with:
+      version: ${{ needs.prepare.outputs.chart-version }}
+      production: true

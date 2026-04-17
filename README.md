@@ -194,13 +194,10 @@ Generating a support bundle for the Copia chart can be completed by running the 
 
 The output of the support bundle command will be a `tar.gz` file that can be reviewed before sending to Copia for support.
 
+## Release Process
+
+See [docs/release-process.md](docs/release-process.md).
+
 ## Changelog
 
-### Generating changelog
-
-Run in the root folder of this repo the following command:
-
-`task changelog`
-
-This automatically generates the Changelog.md file inside the chart.
-For more information see: https://github.com/traefik/helm-changelog
+Changelog is auto-generated from git history at release time and bundled into the chart package.
