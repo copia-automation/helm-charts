@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run Trivy vulnerability scanner on postgres image
-        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
+        uses: aquasecurity/trivy-action@c5967f85626795f647d4bf6eb67227f9b79e02f5 # 0.28.0
         with:
           image-ref: 'docker.io/postgres:latest'
           format: 'table'
