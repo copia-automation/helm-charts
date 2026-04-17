@@ -5,6 +5,7 @@ name: Require Pull Request Label
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   pull-requests: read
