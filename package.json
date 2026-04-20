@@ -13,9 +13,10 @@
     "prettier-plugin-sh": "^0.14.0"
   },
   "lint-staged": {
-    "*.yaml": [
+    "*.{yaml,yml}": [
       "script/lint-helm",
-      "script/test"
+      "script/test",
+      "prettier --write"
     ],
     "*": [
       "script/lint-shellcheck",

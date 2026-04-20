@@ -10,6 +10,10 @@ Run for repo setup:
 ./bin/setup.sh
 ```
 
+### Pre-commit hooks
+
+`./bin/setup.sh` installs pre-commit hooks via `npm install`. To install them without the full setup, run `npm install` from the repo root.
+
 ## Examples
 
 ### Example Azure Installation

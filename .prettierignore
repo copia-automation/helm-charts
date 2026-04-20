@@ -4,3 +4,4 @@
 Brewfile
 charts
 .husky/pre-commit
+index.yaml
