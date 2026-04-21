@@ -2,9 +2,6 @@ name: Check Format
 
 on:
   pull_request:
-    paths:
-      - '**.yaml'
-      - '**.yml'
 
 permissions:
   contents: read
