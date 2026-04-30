@@ -44,6 +44,11 @@ jobs:
         if: inputs.version != ''
         run: |
           sed -i "s/version: 0.0.0/version: ${{ inputs.version }}/" charts/copia/Chart.yaml
+          # helm-changelog reads Chart.yaml via `git cat-file`, not the worktree,
+          # so the version bump must be a real (local-only) commit to be visible.
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -am "Release copia-${{ inputs.version }}"
 
       - name: Generate Helm changelog
         run: docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" -v "$(pwd):/data" mogensen/helm-changelog:latest
