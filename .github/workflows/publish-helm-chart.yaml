@@ -43,10 +43,28 @@ jobs:
       - name: Set `version` in Chart.yaml to ${{ inputs.version }}
         if: inputs.version != ''
         run: |
-          sed -i "s/version: 0.0.0/version: ${{ inputs.version }}/" charts/copia/Chart.yaml
+          sed -i "s/^version: .*/version: ${{ inputs.version }}/" charts/copia/Chart.yaml
+          # helm-changelog reads Chart.yaml via `git cat-file`, not the worktree,
+          # so the version bump must be a real (local-only) commit to be visible.
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -am "Release copia-${{ inputs.version }}"
 
       - name: Generate Helm changelog
         run: docker run --rm --platform linux/amd64 --user "$(id -u):$(id -g)" -v "$(pwd):/data" mogensen/helm-changelog:latest
+
+      # Historical commits af65307 (#141) and 0f613e0 (#150) committed
+      # `version: 0.0.0`, which helm-changelog surfaces as a `## 0.0.0` section
+      # on every run. Strip it; match `0.0.0` exactly to avoid catching
+      # `0.0.0-beta.pr<n>` from beta builds.
+      - name: Strip phantom `## 0.0.0` section from Changelog.md
+        run: |
+          awk '
+            /^## 0\.0\.0[[:space:]]*$/ { skip=1; next }
+            /^## / && skip             { skip=0 }
+            !skip
+          ' charts/copia/Changelog.md > charts/copia/Changelog.md.tmp
+          mv charts/copia/Changelog.md.tmp charts/copia/Changelog.md
 
       - name: Package Helm chart
         run: helm package ./charts/copia
