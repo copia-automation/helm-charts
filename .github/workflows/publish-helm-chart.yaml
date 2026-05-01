@@ -43,7 +43,7 @@ jobs:
       - name: Set `version` in Chart.yaml to ${{ inputs.version }}
         if: inputs.version != ''
         run: |
-          sed -i "s/version: 0.0.0/version: ${{ inputs.version }}/" charts/copia/Chart.yaml
+          sed -i "s/^version: .*/version: ${{ inputs.version }}/" charts/copia/Chart.yaml
           # helm-changelog reads Chart.yaml via `git cat-file`, not the worktree,
           # so the version bump must be a real (local-only) commit to be visible.
           git -c user.name="github-actions[bot]" \
