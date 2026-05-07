@@ -1,0 +1,100 @@
+{{- if and .Values.adminUser .Values.adminUser.create }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "app.fullname" . }}-admin-bootstrap-script
+  labels: {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+data:
+  bootstrap.sh: |
+    #!/bin/sh
+    set -eu
+    apk add --no-cache argon2 >/dev/null
+
+    until pg_isready -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -t 2; do
+      echo "waiting for postgres..."; sleep 2
+    done
+
+    until psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_name='user'" | grep -q 1; do
+      echo "waiting for gitea schema..."; sleep 2
+    done
+
+    EXISTING=$(psql -tAc "SELECT COUNT(*) FROM \"user\" WHERE is_admin = true")
+    if [ "$EXISTING" -gt 0 ]; then
+      echo "admin already exists, skipping"; exit 0
+    fi
+
+    SALT=$(head -c 10 /dev/urandom | base64 | tr -d '/+=' | head -c 10)
+    HASH=$(printf '%s' "$ADMIN_PASSWORD" | argon2 "$SALT" -id -t 2 -m 16 -p 8 -l 50 | awk '/Hash:/ {print $2}')
+
+    psql <<SQL
+    INSERT INTO "user" (
+      lower_name, name, full_name, email, passwd, passwd_hash_algo,
+      type, salt, is_admin, is_active, created_unix, updated_unix,
+      last_login_unix, email_notifications_preference, avatar, avatar_email
+    ) VALUES (
+      lower('$ADMIN_USERNAME'), '$ADMIN_USERNAME', '$ADMIN_USERNAME',
+      '$ADMIN_EMAIL', '$HASH', 'argon2',
+      0, '$SALT', true, true,
+      extract(epoch from now())::bigint, extract(epoch from now())::bigint,
+      0, 'enabled',
+      '$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 64)',
+      '$ADMIN_EMAIL'
+    );
+    SQL
+
+    echo "admin user $ADMIN_USERNAME created"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "app.fullname" . }}-admin-bootstrap
+  labels: {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 5
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: postgres:15-alpine
+          command: ["/bin/sh", "/scripts/bootstrap.sh"]
+          env:
+            {{- $parts := splitList ":" .Values.copia.config.database.HOST }}
+            {{- $pgHost := index $parts 0 }}
+            {{- $pgPort := "5432" }}
+            {{- if eq (len $parts) 2 }}{{ $pgPort = index $parts 1 }}{{ end }}
+            - name: PGHOST
+              value: {{ $pgHost | quote }}
+            - name: PGPORT
+              value: {{ $pgPort | quote }}
+            - name: PGUSER
+              value: {{ .Values.copia.config.database.USER | quote }}
+            - name: PGDATABASE
+              value: {{ .Values.copia.config.database.NAME | quote }}
+            - name: PGPASSWORD
+              value: {{ .Values.copia.config.database.PASSWD | quote }}
+            - name: ADMIN_USERNAME
+              value: {{ .Values.adminUser.username | quote }}
+            - name: ADMIN_EMAIL
+              value: {{ .Values.adminUser.email | quote }}
+            - name: ADMIN_PASSWORD
+              value: {{ .Values.adminUser.password | quote }}
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+      volumes:
+        - name: script
+          configMap:
+            name: {{ include "app.fullname" . }}-admin-bootstrap-script
+            defaultMode: 0755
+{{- end }}
