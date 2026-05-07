@@ -15,11 +15,18 @@ data:
     set -eu
     apk add --no-cache argon2 >/dev/null
 
+    max_attempts=120
+    attempt=0
     until pg_isready -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -t 2; do
+      attempt=$((attempt + 1))
+      [ "$attempt" -ge "$max_attempts" ] && echo "postgres readiness timeout" && exit 1
       echo "waiting for postgres..."; sleep 2
     done
 
+    attempt=0
     until psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_name='user'" | grep -q 1; do
+      attempt=$((attempt + 1))
+      [ "$attempt" -ge "$max_attempts" ] && echo "gitea schema timeout" && exit 1
       echo "waiting for gitea schema..."; sleep 2
     done
 
@@ -60,6 +67,7 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 5
+  activeDeadlineSeconds: 900
   ttlSecondsAfterFinished: 600
   template:
     spec:
