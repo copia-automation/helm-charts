@@ -37,20 +37,26 @@ data:
 
     SALT=$(head -c 10 /dev/urandom | base64 | tr -d '/+=' | head -c 10)
     HASH=$(printf '%s' "$ADMIN_PASSWORD" | argon2 "$SALT" -id -t 2 -m 16 -p 8 -l 50 | awk '/Hash:/ {print $2}')
+    AVATAR=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 64)
 
-    psql <<SQL
+    psql \
+      -v admin_username="$ADMIN_USERNAME" \
+      -v admin_email="$ADMIN_EMAIL" \
+      -v hash="$HASH" \
+      -v salt="$SALT" \
+      -v avatar="$AVATAR" <<'SQL'
     INSERT INTO "user" (
       lower_name, name, full_name, email, passwd, passwd_hash_algo,
       type, salt, is_admin, is_active, created_unix, updated_unix,
       last_login_unix, email_notifications_preference, avatar, avatar_email
     ) VALUES (
-      lower('$ADMIN_USERNAME'), '$ADMIN_USERNAME', '$ADMIN_USERNAME',
-      '$ADMIN_EMAIL', '$HASH', 'argon2',
-      0, '$SALT', true, true,
+      lower(:'admin_username'), :'admin_username', :'admin_username',
+      :'admin_email', :'hash', 'argon2',
+      0, :'salt', true, true,
       extract(epoch from now())::bigint, extract(epoch from now())::bigint,
       0, 'enabled',
-      '$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 64)',
-      '$ADMIN_EMAIL'
+      :'avatar',
+      :'admin_email'
     );
     SQL
 
