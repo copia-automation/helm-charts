@@ -40,6 +40,7 @@ data:
     AVATAR=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 64)
 
     psql \
+      -v ON_ERROR_STOP=1 \
       -v admin_username="$ADMIN_USERNAME" \
       -v admin_email="$ADMIN_EMAIL" \
       -v hash="$HASH" \
