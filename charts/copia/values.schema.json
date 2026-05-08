@@ -829,6 +829,17 @@
         }
       }
     },
+    "chartGeneratedSecrets": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "When enabled, the chart pre-generates Gitea internal secrets via a pre-install Job and assembles them into app.ini at Pod startup via an init container.",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
     "adminUser": {
       "type": "object",
       "additionalProperties": false,

@@ -48,8 +48,10 @@ spec:
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
-      {{- if and .Values.copia.config .Values.deployment.preflight }}
+      {{- $autoGen := and (hasKey .Values.copia "config") (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) }}
+      {{- if or (and .Values.copia.config .Values.deployment.preflight) $autoGen }}
       initContainers:
+        {{- if and .Values.copia.config .Values.deployment.preflight }}
         - name: {{ .Chart.Name }}-init
           image: postgres:latest
           imagePullPolicy: Always
@@ -70,6 +72,29 @@ spec:
               value: {{ .Values.copia.config.database.PASSWD }}
             - name: PGDATABASE
               value: {{ .Values.copia.config.database.NAME }}
+        {{- end }}
+        {{- if $autoGen }}
+        - name: render-app-ini
+          image: alpine:3.22
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              cp /tmp/template/app.ini /tmp/final/app.ini
+              for key in SECRET_KEY JWT_SECRET LFS_JWT_SECRET INTERNAL_TOKEN USER_SECRETS_PUBLIC_KEY USER_SECRETS_PRIVATE_KEY; do
+                if [ -f "/tmp/secrets/$key" ]; then
+                  val=$(cat "/tmp/secrets/$key")
+                  sed -i "s|###${key}###|${val}|g" /tmp/final/app.ini
+                fi
+              done
+          volumeMounts:
+            - name: app-ini-template
+              mountPath: /tmp/template
+            - name: gitea-secrets
+              mountPath: /tmp/secrets
+            - name: config
+              mountPath: /tmp/final
+        {{- end }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -175,8 +200,20 @@ spec:
       volumes:
         {{- if (hasKey .Values.copia "config") }}
         - name: config
+          {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+          emptyDir: {}
+          {{- else }}
           secret:
             secretName: {{ include "app.fullname" . }}-ini
+          {{- end }}
+        {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+        - name: app-ini-template
+          secret:
+            secretName: {{ include "app.fullname" . }}-ini
+        - name: gitea-secrets
+          secret:
+            secretName: {{ include "app.fullname" . }}-gitea-secrets
+        {{- end }}
         {{- end }}
         {{- if .Values.extraVolumes }}
         {{- toYaml .Values.extraVolumes | nindent 8 }}
