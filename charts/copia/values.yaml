@@ -1,12 +1,15 @@
 #Copia configuration
 replicaCount: 1
 clusterDomain: cluster.local
-# When enabled (default), the chart generates Gitea internal secrets via a
-# pre-install Job and assembles them into app.ini at Pod startup via an init
-# container. Set to false when an upstream system (e.g. Flux valuesFrom) is
-# already supplying the values via copia.config.*.
+# When enabled, the chart generates Gitea internal secrets (SECRET_KEY,
+# JWT_SECRET, LFS_JWT_SECRET, INTERNAL_TOKEN, USER_SECRETS_PUBLIC_KEY,
+# USER_SECRETS_PRIVATE_KEY) via a pre-install Job and assembles them into
+# app.ini at Pod startup via an init container. Off by default for backward
+# compatibility with consumers that already supply these via copia.config.*
+# (e.g. Flux valuesFrom). Set to true for plain `helm install` to skip the
+# manual secret-generation step.
 chartGeneratedSecrets:
-  enabled: true
+  enabled: false
 #Use this value "*copia_port" to reference the value of the copia_server_http_port when setting HTTP_PORT on the copia config.
 copia_server_http_port: &copia_port 4001
 conversion_manager_http_port: &cm_port 8888
