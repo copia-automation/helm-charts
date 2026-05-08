@@ -828,6 +828,32 @@
           "type": "string"
         }
       }
+    },
+    "adminUser": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Bootstrap an initial admin user via a post-install Helm hook.",
+      "required": ["create"],
+      "properties": {
+        "create": {
+          "type": "boolean",
+          "description": "When true, run the post-install Job that creates an admin user in the database."
+        },
+        "username": {
+          "type": "string",
+          "minLength": 1
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "password": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "if":   { "properties": { "create": { "const": true } } },
+      "then": { "required": ["username", "email", "password"] }
     }
   }
 }
