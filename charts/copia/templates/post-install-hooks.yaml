@@ -48,16 +48,15 @@ data:
       -v avatar="$AVATAR" <<'SQL'
     INSERT INTO "user" (
       lower_name, name, full_name, email, passwd, passwd_hash_algo,
-      type, salt, is_admin, is_active, created_unix, updated_unix,
-      last_login_unix, email_notifications_preference, avatar, avatar_email
+      type, salt, is_admin, is_active, must_change_password,
+      created_unix, updated_unix, last_login_unix,
+      email_notifications_preference, avatar, avatar_email
     ) VALUES (
       lower(:'admin_username'), :'admin_username', :'admin_username',
       :'admin_email', :'hash', 'argon2',
-      0, :'salt', true, true,
-      extract(epoch from now())::bigint, extract(epoch from now())::bigint,
-      0, 'enabled',
-      :'avatar',
-      :'admin_email'
+      0, :'salt', true, true, true,
+      extract(epoch from now())::bigint, extract(epoch from now())::bigint, 0,
+      'enabled', :'avatar', :'admin_email'
     );
     SQL
 
