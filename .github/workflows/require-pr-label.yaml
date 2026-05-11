@@ -7,6 +7,15 @@ on:
 permissions:
   pull-requests: read
 
+# Cancel an in-progress run when a newer event for the same PR arrives. This
+# resolves the race where an automation (e.g. peter-evans/create-pull-request)
+# opens a PR, firing `opened` with empty labels, and then immediately calls
+# the addLabels API, firing `labeled`. The `labeled` run cancels the `opened`
+# run so the rollup reflects the latest state.
+concurrency:
+  group: require-pr-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   check-label:
     runs-on: ubuntu-latest
