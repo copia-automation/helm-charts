@@ -62,6 +62,7 @@ securityContext: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
+topologySpreadConstraints: []
 deployment:
   preflight: false
   configmap:

@@ -441,6 +441,9 @@
       "type": "object",
       "additionalProperties": true
     },
+    "topologySpreadConstraints": {
+      "type": "array"
+    },
     "service": {
       "type": "object",
       "additionalProperties": false,
