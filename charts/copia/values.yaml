@@ -191,6 +191,7 @@ conversion_manager_service:
     readinessProbe: {}
     nodeSelector: {}
     affinity: {}
+    topologySpreadConstraints: []
     tolerations: []
     volumeMounts: []
     volumes: []

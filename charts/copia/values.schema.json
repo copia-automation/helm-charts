@@ -221,6 +221,9 @@
             "affinity": {
               "type": "object",
               "additionalProperties": true
+            },
+            "topologySpreadConstraints": {
+              "type": "array"
             }
           }
         },

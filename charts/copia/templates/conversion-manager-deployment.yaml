@@ -88,6 +88,10 @@ spec:
       affinity:
         {{- toYaml .Values.conversion_manager_service.deployment.affinity | nindent 8 }}
       {{- end }}
+      {{- if .Values.conversion_manager_service.deployment.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml .Values.conversion_manager_service.deployment.topologySpreadConstraints | nindent 8 }}
+      {{- end }}
       {{- if .Values.conversion_manager_service.deployment.tolerations }}
       tolerations:
         {{- toYaml .Values.conversion_manager_service.deployment.tolerations | nindent 8 }}
