@@ -13,12 +13,9 @@ on:
         type: boolean
         default: false
       registry:
-        description: Target OCI registry (ghcr = GHCR, distr = Distr pilot)
+        description: 'Target OCI registry: ghcr or distr'
         required: false
-        type: choice
-        options:
-          - ghcr
-          - distr
+        type: string
         default: ghcr
     secrets:
       DISTR_REGISTRY_PAT:
@@ -63,6 +60,18 @@ jobs:
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
           version: v3.8.1
+
+      - name: Validate registry input
+        env:
+          REGISTRY: ${{ inputs.registry }}
+        run: |
+          case "$REGISTRY" in
+            ghcr|distr) ;;
+            *)
+              echo "::error::registry must be ghcr or distr (got: ${REGISTRY})"
+              exit 1
+              ;;
+          esac
 
       - name: Set `version` in Chart.yaml to ${{ inputs.version }}
         if: inputs.version != ''
