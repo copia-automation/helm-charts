@@ -1,0 +1,132 @@
+name: Mirror Copia images to Distr
+
+# Renders the chart with helm template, collects ghcr.io/copia-automation image refs,
+# checks Distr for each destination, then runs a matrix job only for images still missing.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'charts/copia/**'
+      - '.github/workflows/mirror-containers-to-distr.yaml'
+  workflow_call:
+    secrets:
+      GHCR_TOKEN:
+        description: Token with read:packages for pulling ghcr.io/copia-automation/* images
+        required: true
+      GHCR_USERNAME:
+        description: Optional GHCR docker login username (defaults to copia-automation-bot)
+        required: false
+      DISTR_REGISTRY_PAT:
+        description: Distr registry personal access token
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  discover-sync-matrix:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      DISTR_REGISTRY_HOST: registry.distr.sh
+      DISTR_NAMESPACE: copia-test
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      sync_count: ${{ steps.plan.outputs.sync_count }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Helm
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: v3.8.1
+
+      - name: Log in to Distr
+        run: |
+          set -euo pipefail
+          echo "${DISTR_REGISTRY_PAT}" | docker login "${DISTR_REGISTRY_HOST}" --password-stdin -u -
+        env:
+          DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
+
+      - name: Build matrix of images missing on Distr
+        id: plan
+        run: |
+          set -euo pipefail
+          CHART_ROOT="${GITHUB_WORKSPACE}/charts/copia"
+          DISTR_PREFIX="${DISTR_REGISTRY_HOST}/${DISTR_NAMESPACE}"
+          helm template mirror "${CHART_ROOT}" --set conversion_manager_service.enabled=true > /tmp/rendered.yaml
+          grep -oE 'ghcr\.io/copia-automation/[A-Za-z0-9._/-]+:[A-Za-z0-9._+-]+' /tmp/rendered.yaml \
+            | sort -u > /tmp/srcs.txt
+          if [ ! -s /tmp/srcs.txt ]; then
+            echo "::error::No ghcr.io/copia-automation images found in rendered chart"
+            exit 1
+          fi
+          entries=()
+          while IFS= read -r src; do
+            [ -z "${src}" ] && continue
+            remainder="${src#ghcr.io/}"
+            repo_tag="${remainder#*/}"
+            dst="${DISTR_PREFIX}/${repo_tag}"
+            if docker manifest inspect "${dst}" >/dev/null 2>&1; then
+              echo "::notice::Already on Distr (omitted from matrix): ${dst}"
+              continue
+            fi
+            entries+=("$(jq -n --arg src "${src}" --arg dst "${dst}" '{src:$src, dst:$dst}')")
+          done < /tmp/srcs.txt
+          if [ "${#entries[@]}" -eq 0 ]; then
+            matrix_json='[]'
+          else
+            matrix_json=$(printf '%s\n' "${entries[@]}" | jq -s -c .)
+          fi
+          count=$(jq 'length' <<< "${matrix_json}")
+          echo "::notice::Images to sync (matrix size): ${count}"
+          delim="MATRIX_JSON_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          {
+            echo "matrix<<${delim}"
+            echo "${matrix_json}"
+            echo "${delim}"
+            echo "sync_count=${count}"
+          } >> "${GITHUB_OUTPUT}"
+
+  sync-to-distr:
+    needs: discover-sync-matrix
+    if: needs.discover-sync-matrix.outputs.sync_count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJSON(needs.discover-sync-matrix.outputs.matrix) }}
+    env:
+      DISTR_REGISTRY_HOST: registry.distr.sh
+      DISTR_NAMESPACE: copia-test
+      DEFAULT_GHCR_USERNAME: copia-automation-bot
+    steps:
+      - name: Log in to GHCR
+        run: |
+          set -euo pipefail
+          USER="${GHCR_USERNAME:-${DEFAULT_GHCR_USERNAME}}"
+          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${USER}" --password-stdin
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+
+      - name: Log in to Distr
+        run: |
+          set -euo pipefail
+          echo "${DISTR_REGISTRY_PAT}" | docker login "${DISTR_REGISTRY_HOST}" --password-stdin -u -
+        env:
+          DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
+
+      - name: Pull, retag, and push
+        env:
+          SRC: ${{ matrix.src }}
+          DST: ${{ matrix.dst }}
+        run: |
+          set -euo pipefail
+          echo "::notice::Mirroring ${SRC} -> ${DST}"
+          docker pull "${SRC}"
+          docker tag "${SRC}" "${DST}"
+          docker push "${DST}"

@@ -8,10 +8,19 @@ on:
         required: false
         type: string
       production:
-        description: Push to production registry (default dev)
+        description: Push to production registry (default dev; GHCR only)
         required: false
         type: boolean
         default: false
+      registry:
+        description: 'Target OCI registry: ghcr or distr'
+        required: false
+        type: string
+        default: ghcr
+    secrets:
+      DISTR_REGISTRY_PAT:
+        description: Personal access token for Distr artifact registry (registry.distr.sh)
+        required: false
   workflow_dispatch:
     inputs:
       version:
@@ -19,16 +28,28 @@ on:
         required: false
         type: string
       production:
-        description: Push to production registry (default dev)
+        description: Push to production registry (default dev; GHCR only)
         required: false
         type: boolean
         default: false
+      registry:
+        description: Target OCI registry (ghcr = GHCR, distr = Distr pilot)
+        required: false
+        type: choice
+        options:
+          - ghcr
+          - distr
+        default: ghcr
 
 permissions: write-all
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      # Distr console — docker login registry.distr.sh; OCI prefix registry.distr.sh/<slug>/…
+      DISTR_REGISTRY_HOST: registry.distr.sh
+      DISTR_OCI_REPOSITORY: copia-test
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -39,6 +60,18 @@ jobs:
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
           version: v3.8.1
+
+      - name: Validate registry input
+        env:
+          REGISTRY: ${{ inputs.registry }}
+        run: |
+          case "$REGISTRY" in
+            ghcr|distr) ;;
+            *)
+              echo "::error::registry must be ghcr or distr (got: ${REGISTRY})"
+              exit 1
+              ;;
+          esac
 
       - name: Set `version` in Chart.yaml to ${{ inputs.version }}
         if: inputs.version != ''
@@ -72,11 +105,23 @@ jobs:
       - name: Upload chart artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: helm-chart
+          name: helm-chart-${{ inputs.registry }}
           path: copia-*.tgz
 
       - name: Log in to GitHub Container Registry
+        if: inputs.registry == 'ghcr'
         run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
 
-      - name: Push Helm chart to registry
+      - name: Log in to Distr registry
+        if: inputs.registry == 'distr'
+        run: echo "$DISTR_REGISTRY_PAT" | helm registry login "$DISTR_REGISTRY_HOST" --username - --password-stdin
+        env:
+          DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
+
+      - name: Push Helm chart to GHCR
+        if: inputs.registry == 'ghcr'
         run: helm push copia-*.tgz oci://ghcr.io/copia-automation/${{ inputs.production && 'helm-charts' || 'helm-charts-dev' }}
+
+      - name: Push Helm chart to Distr
+        if: inputs.registry == 'distr'
+        run: helm push copia-*.tgz "oci://${DISTR_REGISTRY_HOST}/${DISTR_OCI_REPOSITORY}"
