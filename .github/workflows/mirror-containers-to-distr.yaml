@@ -1,7 +1,7 @@
 name: Mirror Copia images to Distr
 
-# Renders the chart, finds every ghcr.io/copia-automation image reference, checks Distr
-# for each destination tag, then runs a matrix job only for images that still need syncing.
+# Renders the chart with helm template, collects ghcr.io/copia-automation image refs,
+# checks Distr for each destination, then runs a matrix job only for images still missing.
 
 on:
   workflow_dispatch:
