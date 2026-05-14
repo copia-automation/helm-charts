@@ -6,7 +6,20 @@ on:
 permissions: write-all
 
 jobs:
+  # Primary path — unchanged: beta charts on GHCR dev repository.
   publish:
     uses: ./.github/workflows/publish-helm-chart.yaml
+    secrets: inherit
     with:
       version: 0.0.0-beta.pr${{ github.event.pull_request.number }}
+      registry: ghcr
+
+  # Distr pilot — same chart as GHCR; registry host/path match Distr console (see publish-helm-chart env).
+  # Requires repo secret DISTR_REGISTRY_PAT. Skipped for fork PRs (secrets are unavailable).
+  publish-distr-pilot:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/publish-helm-chart.yaml
+    secrets: inherit
+    with:
+      version: 0.0.0-beta.pr${{ github.event.pull_request.number }}
+      registry: distr
