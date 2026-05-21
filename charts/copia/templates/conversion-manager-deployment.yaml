@@ -55,6 +55,10 @@ spec:
                 name: {{ include "app.conversion-manager.fullname" . }}-configmap
             - secretRef:
                 name: {{ include "app.conversion-manager.fullname" . }}-secret
+            {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+            - secretRef:
+                name: conversion-manager-secrets
+            {{- end }}
           env:
             {{- if .Values.conversion_manager_service.deployment.env }}
             {{- toYaml .Values.conversion_manager_service.deployment.env | nindent 12 }}
