@@ -86,9 +86,26 @@ spec:
                 for f in "$dir"/*; do
                   [ -e "$f" ] || continue
                   key=$(basename "$f")
-                  val=$(cat "$f")
-                  esc=$(printf '%s' "$val" | sed -e 's/[\\/&]/\\&/g')
-                  sed -i "s|###${key}###|${esc}|g" /tmp/final/app.ini
+                  awk -v ph="###${key}###" -v file="$f" '
+                    BEGIN {
+                      val = ""; first = 1
+                      while ((getline line < file) > 0) {
+                        if (first) { val = line; first = 0 }
+                        else { val = val "\n" line }
+                      }
+                      close(file)
+                    }
+                    {
+                      out = ""; rest = $0; idx = index(rest, ph)
+                      while (idx > 0) {
+                        out = out substr(rest, 1, idx - 1) val
+                        rest = substr(rest, idx + length(ph))
+                        idx = index(rest, ph)
+                      }
+                      print out rest
+                    }
+                  ' /tmp/final/app.ini > /tmp/final/app.ini.tmp
+                  mv /tmp/final/app.ini.tmp /tmp/final/app.ini
                 done
               done
           volumeMounts:
