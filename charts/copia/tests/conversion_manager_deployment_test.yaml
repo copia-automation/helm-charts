@@ -131,4 +131,28 @@ tests:
       - equal:
           path: spec.template.spec.tolerations[0].key
           value: "dedicated"
+  - it: Test extra envFrom when chartGeneratedSecrets is enabled
+    set:
+      conversion_manager_service.enabled: true
+      chartGeneratedSecrets.enabled: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: conversion-manager-secrets
+  - it: Test no extra envFrom when chartGeneratedSecrets is disabled
+    set:
+      conversion_manager_service.enabled: true
+      chartGeneratedSecrets.enabled: false
+    asserts:
+      - isKind:
+          of: Deployment
+      - notContains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: conversion-manager-secrets
 

@@ -81,17 +81,40 @@ spec:
             - |
               set -eu
               cp /tmp/template/app.ini /tmp/final/app.ini
-              for key in SECRET_KEY JWT_SECRET LFS_JWT_SECRET INTERNAL_TOKEN USER_SECRETS_PUBLIC_KEY USER_SECRETS_PRIVATE_KEY; do
-                if [ -f "/tmp/secrets/$key" ]; then
-                  val=$(cat "/tmp/secrets/$key")
-                  sed -i "s|###${key}###|${val}|g" /tmp/final/app.ini
-                fi
+              for dir in /tmp/secrets /tmp/cm-secrets; do
+                [ -d "$dir" ] || continue
+                for f in "$dir"/*; do
+                  [ -e "$f" ] || continue
+                  key=$(basename "$f")
+                  awk -v ph="###${key}###" -v file="$f" '
+                    BEGIN {
+                      val = ""; first = 1
+                      while ((getline line < file) > 0) {
+                        if (first) { val = line; first = 0 }
+                        else { val = val "\n" line }
+                      }
+                      close(file)
+                    }
+                    {
+                      out = ""; rest = $0; idx = index(rest, ph)
+                      while (idx > 0) {
+                        out = out substr(rest, 1, idx - 1) val
+                        rest = substr(rest, idx + length(ph))
+                        idx = index(rest, ph)
+                      }
+                      print out rest
+                    }
+                  ' /tmp/final/app.ini > /tmp/final/app.ini.tmp
+                  mv /tmp/final/app.ini.tmp /tmp/final/app.ini
+                done
               done
           volumeMounts:
             - name: app-ini-template
               mountPath: /tmp/template
             - name: gitea-secrets
               mountPath: /tmp/secrets
+            - name: conversion-manager-secrets
+              mountPath: /tmp/cm-secrets
             - name: config
               mountPath: /tmp/final
         {{- end }}
@@ -217,6 +240,9 @@ spec:
         - name: gitea-secrets
           secret:
             secretName: {{ include "app.fullname" . }}-gitea-secrets
+        - name: conversion-manager-secrets
+          secret:
+            secretName: conversion-manager-secrets
         {{- end }}
         {{- end }}
         {{- if .Values.extraVolumes }}
