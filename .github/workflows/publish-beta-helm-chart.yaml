@@ -6,7 +6,36 @@ on:
 permissions: write-all
 
 jobs:
+  pr-chart-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      chart_version_ghcr: ${{ steps.v.outputs.chart_version_ghcr }}
+      chart_version_distr: ${{ steps.v.outputs.chart_version_distr }}
+    steps:
+      - id: v
+        run: |
+          set -euo pipefail
+          SHORT=$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-8)
+          PR=${{ github.event.pull_request.number }}
+          echo "chart_version_ghcr=0.0.0-beta.pr${PR}" >> "${GITHUB_OUTPUT}"
+          echo "chart_version_distr=0.0.0-beta.pr${PR}.${SHORT}" >> "${GITHUB_OUTPUT}"
+
+  # Primary path — unchanged: beta charts on GHCR dev repository.
   publish:
+    needs: pr-chart-versions
     uses: ./.github/workflows/publish-helm-chart.yaml
+    secrets: inherit
     with:
-      version: 0.0.0-beta.pr${{ github.event.pull_request.number }}
+      version: ${{ needs.pr-chart-versions.outputs.chart_version_ghcr }}
+      registry: ghcr
+
+  # Distr pilot — chart version includes 8-char head SHA so each commit is a distinct chart tag.
+  # Requires repo secret DISTR_REGISTRY_PAT. Skipped for fork PRs (secrets are unavailable).
+  publish-distr-pilot:
+    needs: pr-chart-versions
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/publish-helm-chart.yaml
+    secrets: inherit
+    with:
+      version: ${{ needs.pr-chart-versions.outputs.chart_version_distr }}
+      registry: distr
