@@ -1,0 +1,71 @@
+# Distr base-values overlay (self-hosted profile).
+#
+# ADR-ENG-19206 attaches this file to the Distr ApplicationVersion via
+# `base-values-file`. It is identical for every customer. Distr merges it UNDER
+# the per-target/customer values, then the agent's `helm install` merges the
+# result over the chart defaults in ../values.yaml.
+#
+# Rules (ADR-ENG-19206 / ENG-19207):
+#   - No `{{ .Secrets.* }}` / `{{ .LicenseKeys.* }}` references here. Distr renders
+#     templating only on the per-target layer; base values are read as plain YAML.
+#   - No image tags here. The tag resolves from the chart (appVersion for the web
+#     app, cmVersion for conversion-manager); pinning a tag would defeat the mirror.
+#   - Customer-supplied keys (database HOST/NAME/USER/PASSWD, server ROOT_URL/DOMAIN/
+#     SSH_DOMAIN, ingress hosts, adminUser, persistence.storageClassName) are set per
+#     target in Distr, not here.
+
+# --- Copia web app ---
+image:
+  # Repository only — tag comes from Chart.appVersion.
+  repository: registry.distr.sh/copia-test/copia-web-app-selfhosted-releases
+
+# The agent injects the Distr registry pull secret, so the chart references none.
+imagePullSecrets: []
+
+# Generate Gitea and conversion-manager bootstrap secrets on a fresh install.
+chartGeneratedSecrets:
+  enabled: true
+
+# Cluster-internal service; ingress/LoadBalancer is a per-customer concern.
+service:
+  http:
+    type: ClusterIP
+
+persistence:
+  enabled: true
+  size: 100Gi
+
+copia:
+  config:
+    APP_NAME: Copia
+    RUN_MODE: prod
+    server:
+      # Vendor-fixed container port; the customer adds ROOT_URL/DOMAIN/SSH_DOMAIN per target.
+      HTTP_PORT: 4001
+    security:
+      # Lock the install so the first run does not expose the setup wizard.
+      INSTALL_LOCK: true
+    service:
+      DISABLE_REGISTRATION: true
+    database:
+      DB_TYPE: postgres
+      SSL_MODE: require
+    storage:
+      # Open (ENG-19206 Phase 2): local PVC for the pilot; may move to object storage.
+      STORAGE_TYPE: local
+    # Per-target / generated (NOT set here):
+    #   server.{ROOT_URL,DOMAIN,SSH_DOMAIN}, database.{HOST,NAME,USER,PASSWD},
+    #   copia.LICENSE_KEY ({{ .LicenseKeys.copia }}), and the secrets that
+    #   chartGeneratedSecrets produces (oauth2.JWT_SECRET, security.INTERNAL_TOKEN, ...).
+
+# --- Conversion-manager (part of the offering; enable in base) ---
+conversion_manager_service:
+  enabled: true
+  deployment:
+    image:
+      # Repository only — tag comes from .Values.cmVersion.
+      repository: registry.distr.sh/copia-test/conversion-manager
+    imagePullSecrets: []
+  service:
+    http:
+      type: ClusterIP
