@@ -1,0 +1,52 @@
+name: Create Distr ApplicationVersion
+
+# ADR-ENG-19206: after the chart is published to Distr, create an ApplicationVersion
+# in the target application from the Distr-hosted chart and the base-values overlay.
+# update-deployments is omitted, so promotion stays manual. The caller selects the
+# application (copia-edge on merge to main, copia on release) and the version name.
+
+on:
+  workflow_call:
+    inputs:
+      application-id:
+        description: Distr application ID to create the version in
+        required: true
+        type: string
+      version-name:
+        description: Human-readable version name
+        required: true
+        type: string
+      chart-version:
+        description: OCI chart version published to Distr
+        required: true
+        type: string
+    secrets:
+      DISTR_TOKEN:
+        description: Distr API token
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  create-version:
+    runs-on: ubuntu-latest
+    env:
+      DISTR_REGISTRY_HOST: registry.distr.sh
+      DISTR_OCI_REPOSITORY: copia-test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create ApplicationVersion
+        uses: distr-sh/distr-create-version-action@v1.6.0
+        with:
+          api-token: ${{ secrets.DISTR_TOKEN }}
+          api-base: ${{ vars.DISTR_API_BASE }}
+          application-id: ${{ inputs.application-id }}
+          version-name: ${{ inputs.version-name }}
+          chart-type: oci
+          chart-url: oci://registry.distr.sh/copia-test/copia
+          chart-version: ${{ inputs.chart-version }}
+          base-values-file: charts/copia/distr/values.base.yaml
+          # update-deployments is intentionally unset: promotion is manual.

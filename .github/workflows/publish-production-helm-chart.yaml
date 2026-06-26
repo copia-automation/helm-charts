@@ -40,3 +40,13 @@ jobs:
     needs: prepare
     uses: ./.github/workflows/mirror-containers-to-distr.yaml
     secrets: inherit
+
+  # ADR-ENG-19206: create the ApplicationVersion in the production copia application.
+  create-version:
+    needs: [prepare, publish-distr, mirror-images]
+    uses: ./.github/workflows/create-distr-version.yaml
+    secrets: inherit
+    with:
+      application-id: ${{ vars.DISTR_APPLICATION_ID }}
+      version-name: ${{ needs.prepare.outputs.chart-version }}
+      chart-version: ${{ needs.prepare.outputs.chart-version }}

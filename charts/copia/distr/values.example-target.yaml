@@ -1,0 +1,21 @@
+# Representative per-target (customer) overlay. Used only by the render-check in
+# .github/workflows/distr-render-check.yaml to confirm that the chart renders when
+# the base overlay is combined with a customer's values. It is NOT shipped to any
+# customer. Distr renders {{ .Secrets.* }} / {{ .LicenseKeys.* }} on this layer at
+# deploy time; the placeholders below stand in so `helm template` can validate the merge.
+adminUser:
+  create: true
+  username: admin
+  email: admin@example.com
+  password: rendered-by-distr
+copia:
+  config:
+    server:
+      ROOT_URL: https://copia.example.com/
+      DOMAIN: copia.example.com
+      SSH_DOMAIN: copia.example.com
+    database:
+      HOST: postgres.example.com:5432
+      NAME: copia
+      USER: copia
+      PASSWD: rendered-by-distr

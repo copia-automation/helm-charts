@@ -27,7 +27,7 @@ renders unchanged for a representative existing-customer value set:
       template:
         metadata:
           annotations:
-            checksum/config: 4c18fea1ad0a3d86ca674f930c0b773731ad1bc3872ebba7290103810051a11c
+            checksum/config: 4b491f853161af50d444858dd3242b9ead376478f4eb5ce88d3beb76d26410cf
             checksum/secret: 56faff83423b499ae78312f416244b95189b16874bc3e800d17b555f75ec7478
           labels:
             app: conversion-manager
@@ -87,9 +87,9 @@ renders unchanged for a representative existing-customer value set:
         app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: copia
-        app.kubernetes.io/version: v0.55.0
+        app.kubernetes.io/version: v0.56.0
         helm.sh/chart: copia-0.0.0
-        version: v0.55.0
+        version: v0.56.0
       name: RELEASE-NAME-copia
     spec:
       replicas: 1
@@ -113,9 +113,9 @@ renders unchanged for a representative existing-customer value set:
             app.kubernetes.io/instance: RELEASE-NAME
             app.kubernetes.io/managed-by: Helm
             app.kubernetes.io/name: copia
-            app.kubernetes.io/version: v0.55.0
+            app.kubernetes.io/version: v0.56.0
             helm.sh/chart: copia-0.0.0
-            version: v0.55.0
+            version: v0.56.0
         spec:
           containers:
             - command:
@@ -124,7 +124,7 @@ renders unchanged for a representative existing-customer value set:
               envFrom:
                 - configMapRef:
                     name: RELEASE-NAME-copia-configmap
-              image: ghcr.io/copia-automation/copia-web-app-selfhosted-releases:v0.55.0
+              image: ghcr.io/copia-automation/copia-web-app-selfhosted-releases:v0.56.0
               imagePullPolicy: Always
               lifecycle:
                 preStop:
@@ -188,9 +188,9 @@ renders unchanged for a representative existing-customer value set:
         app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: copia
-        app.kubernetes.io/version: v0.55.0
+        app.kubernetes.io/version: v0.56.0
         helm.sh/chart: copia-0.0.0
-        version: v0.55.0
+        version: v0.56.0
       name: RELEASE-NAME-copia-http
     spec:
       ports:
@@ -230,7 +230,7 @@ renders unchanged for default values:
       template:
         metadata:
           annotations:
-            checksum/config: 4c18fea1ad0a3d86ca674f930c0b773731ad1bc3872ebba7290103810051a11c
+            checksum/config: 4b491f853161af50d444858dd3242b9ead376478f4eb5ce88d3beb76d26410cf
             checksum/secret: 56faff83423b499ae78312f416244b95189b16874bc3e800d17b555f75ec7478
           labels:
             app: conversion-manager
@@ -290,9 +290,9 @@ renders unchanged for default values:
         app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: copia
-        app.kubernetes.io/version: v0.55.0
+        app.kubernetes.io/version: v0.56.0
         helm.sh/chart: copia-0.0.0
-        version: v0.55.0
+        version: v0.56.0
       name: RELEASE-NAME-copia
     spec:
       replicas: 1
@@ -316,9 +316,9 @@ renders unchanged for default values:
             app.kubernetes.io/instance: RELEASE-NAME
             app.kubernetes.io/managed-by: Helm
             app.kubernetes.io/name: copia
-            app.kubernetes.io/version: v0.55.0
+            app.kubernetes.io/version: v0.56.0
             helm.sh/chart: copia-0.0.0
-            version: v0.55.0
+            version: v0.56.0
         spec:
           containers:
             - command:
@@ -327,7 +327,7 @@ renders unchanged for default values:
               envFrom:
                 - configMapRef:
                     name: RELEASE-NAME-copia-configmap
-              image: ghcr.io/copia-automation/copia-web-app-selfhosted-releases:v0.55.0
+              image: ghcr.io/copia-automation/copia-web-app-selfhosted-releases:v0.56.0
               imagePullPolicy: Always
               lifecycle:
                 preStop:
@@ -385,9 +385,9 @@ renders unchanged for default values:
         app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: copia
-        app.kubernetes.io/version: v0.55.0
+        app.kubernetes.io/version: v0.56.0
         helm.sh/chart: copia-0.0.0
-        version: v0.55.0
+        version: v0.56.0
       name: RELEASE-NAME-copia-http
     spec:
       ports:

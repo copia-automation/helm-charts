@@ -40,3 +40,13 @@ jobs:
   mirror-images:
     uses: ./.github/workflows/mirror-containers-to-distr.yaml
     secrets: inherit
+
+  # ADR-ENG-19206: create the ApplicationVersion in the copia-edge application.
+  create-version:
+    needs: [edge-version, publish-chart, mirror-images]
+    uses: ./.github/workflows/create-distr-version.yaml
+    secrets: inherit
+    with:
+      application-id: ${{ vars.DISTR_APPLICATION_ID_EDGE }}
+      version-name: ${{ needs.edge-version.outputs.chart_version }}
+      chart-version: ${{ needs.edge-version.outputs.chart_version }}
