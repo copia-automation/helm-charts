@@ -15,9 +15,9 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
-      chart-version: ${{ steps.v.outputs.chart-version }}
+      chart-version: ${{ steps.version.outputs.chart-version }}
     steps:
-      - id: v
+      - id: version
         run: echo "chart-version=0.0.0-edge.$(echo "${{ github.sha }}" | cut -c1-8)" >> "$GITHUB_OUTPUT"
 
   publish:

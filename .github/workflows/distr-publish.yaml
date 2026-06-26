@@ -23,17 +23,12 @@ on:
         type: string
         default: ubuntu-latest
     secrets:
-      DISTR_REGISTRY_PAT:
+      OP_SERVICE_ACCOUNT_TOKEN:
         required: true
-      DISTR_TOKEN:
-        required: true
-      GHCR_TOKEN:
-        required: true
-      GHCR_USERNAME:
-        required: false
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   publish:
@@ -47,16 +42,20 @@ jobs:
         with:
           version: v3.8.1
 
+      - uses: 1password/load-secrets-action@581a835fb51b8e7ec56b71cf2ffddd7e68bb25e0 # v2.0.0
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          DISTR_REGISTRY_PAT: op://platform/distr/registry-pat
+          DISTR_TOKEN: op://platform/distr/api-token
+
       - name: Log in to registries
         run: |
           set -euo pipefail
-          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USERNAME:-copia-automation-bot}" --password-stdin
-          echo "${DISTR_REGISTRY_PAT}" | docker login "${{ inputs.registry-host }}" -u - --password-stdin
-          echo "${DISTR_REGISTRY_PAT}" | helm registry login "${{ inputs.registry-host }}" -u - --password-stdin
-        env:
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
-          DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "$DISTR_REGISTRY_PAT" | docker login "${{ inputs.registry-host }}" -u - --password-stdin
+          echo "$DISTR_REGISTRY_PAT" | helm registry login "${{ inputs.registry-host }}" -u - --password-stdin
 
       - name: Mirror images to Distr
         run: |
@@ -82,7 +81,7 @@ jobs:
       - name: Create ApplicationVersion
         uses: distr-sh/distr-create-version-action@v1.6.0
         with:
-          api-token: ${{ secrets.DISTR_TOKEN }}
+          api-token: ${{ env.DISTR_TOKEN }}
           api-base: ${{ inputs.api-base }}
           application-id: ${{ inputs.application-id }}
           version-name: ${{ inputs.chart-version }}

@@ -13,9 +13,9 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
-      chart-version: ${{ steps.v.outputs.chart-version }}
+      chart-version: ${{ steps.version.outputs.chart-version }}
     steps:
-      - id: v
+      - id: version
         run: echo "chart-version=0.0.0-pr${{ github.event.pull_request.number }}.$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-8)" >> "$GITHUB_OUTPUT"
 
   publish:
