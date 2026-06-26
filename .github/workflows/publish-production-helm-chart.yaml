@@ -24,3 +24,19 @@ jobs:
     with:
       version: ${{ needs.prepare.outputs.chart-version }}
       production: true
+
+  # Production channel (ADR-ENG-19207): the same release also publishes the chart
+  # to Distr and mirrors the images it references. ADR-ENG-19206 then creates an
+  # ApplicationVersion in the `copia` application from this chart.
+  publish-distr:
+    needs: prepare
+    uses: ./.github/workflows/publish-helm-chart.yaml
+    secrets: inherit
+    with:
+      version: ${{ needs.prepare.outputs.chart-version }}
+      registry: distr
+
+  mirror-images:
+    needs: prepare
+    uses: ./.github/workflows/mirror-containers-to-distr.yaml
+    secrets: inherit

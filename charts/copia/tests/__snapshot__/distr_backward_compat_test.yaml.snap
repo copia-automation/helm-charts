@@ -1,0 +1,400 @@
+renders unchanged for a representative existing-customer value set:
+  1: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: conversion-manager
+        app.kubernetes.io/instance: conversion-manager
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: conversion-manager
+        app.kubernetes.io/version: v0.1.10
+        helm.sh/chart: copia-0.0.0
+        version: v0.1.10
+      name: conversion-manager
+    spec:
+      replicas: 1
+      revisionHistoryLimit: 2
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: conversion-manager
+          app.kubernetes.io/name: conversion-manager
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          annotations:
+            checksum/config: 4c18fea1ad0a3d86ca674f930c0b773731ad1bc3872ebba7290103810051a11c
+            checksum/secret: 56faff83423b499ae78312f416244b95189b16874bc3e800d17b555f75ec7478
+          labels:
+            app: conversion-manager
+            app.kubernetes.io/instance: conversion-manager
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: conversion-manager
+            app.kubernetes.io/version: v0.1.10
+            helm.sh/chart: copia-0.0.0
+            version: v0.1.10
+        spec:
+          containers:
+            - env: null
+              envFrom:
+                - configMapRef:
+                    name: conversion-manager-configmap
+                - secretRef:
+                    name: conversion-manager-secret
+              image: ghcr.io/copia-automation/conversion-manager:v0.1.10
+              imagePullPolicy: Always
+              livenessProbe:
+                failureThreshold: 2
+                httpGet:
+                  path: /api/v1/ping
+                  port: 8888
+                  scheme: HTTPS
+                periodSeconds: 10
+                timeoutSeconds: 5
+              name: conversion-manager
+              ports:
+                - containerPort: 8888
+                  name: http
+              resources:
+                limits:
+                  cpu: 2
+                  memory: 512Mi
+                requests:
+                  cpu: 0.5
+                  memory: 128Mi
+              startupProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: /api/v1/ping
+                  port: 8888
+                  scheme: HTTPS
+                initialDelaySeconds: 20
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
+          imagePullSecrets:
+            - name: ghcr-login-secret
+  2: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: copia
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: copia
+        app.kubernetes.io/version: v0.55.0
+        helm.sh/chart: copia-0.0.0
+        version: v0.55.0
+      name: RELEASE-NAME-copia
+    spec:
+      replicas: 1
+      revisionHistoryLimit: 2
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: RELEASE-NAME
+          app.kubernetes.io/name: copia
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          annotations:
+            checksum/config: 2cc0994de9f48e57089a6261bc0397afc2957cbfdbb821d175cf559186518a96
+            checksum/secret: 5043015ce716de592c72f7a0dcbf4019fc4380583f0dd22f46f8e6801446e7dd
+          labels:
+            app: copia
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: copia
+            app.kubernetes.io/version: v0.55.0
+            helm.sh/chart: copia-0.0.0
+            version: v0.55.0
+        spec:
+          containers:
+            - command:
+                - gitea
+              env: null
+              envFrom:
+                - configMapRef:
+                    name: RELEASE-NAME-copia-configmap
+              image: ghcr.io/copia-automation/copia-web-app-selfhosted-releases:v0.55.0
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                      - sh
+                      - -c
+                      - sleep 10 && /usr/local/bin/gitea manager shutdown
+              livenessProbe:
+                failureThreshold: 2
+                httpGet:
+                  path: /
+                  port: 4001
+                periodSeconds: 10
+                timeoutSeconds: 2
+              name: copia
+              ports:
+                - containerPort: 22
+                  name: ssh
+                - containerPort: 4001
+                  name: http
+              resources: {}
+              securityContext: {}
+              startupProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: /
+                  port: 4001
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                timeoutSeconds: 2
+              volumeMounts:
+                - mountPath: /tmp/gitea
+                  name: temp
+                - mountPath: /data
+                  name: data
+                - mountPath: /data/gitea/conf/app.ini
+                  name: config
+                  subPath: app.ini
+          imagePullSecrets:
+            - name: ghcr-login-secret
+          securityContext:
+            fsGroup: 1000
+          terminationGracePeriodSeconds: 60
+          volumes:
+            - name: config
+              secret:
+                secretName: RELEASE-NAME-copia-ini
+            - emptyDir: {}
+              name: temp
+            - name: data
+              persistentVolumeClaim:
+                claimName: RELEASE-NAME-copia-data
+  3: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations: {}
+      labels:
+        app: copia
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: copia
+        app.kubernetes.io/version: v0.55.0
+        helm.sh/chart: copia-0.0.0
+        version: v0.55.0
+      name: RELEASE-NAME-copia-http
+    spec:
+      ports:
+        - name: http
+          port: 3000
+          targetPort: 4001
+      selector:
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/name: copia
+      type: NodePort
+renders unchanged for default values:
+  1: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: conversion-manager
+        app.kubernetes.io/instance: conversion-manager
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: conversion-manager
+        app.kubernetes.io/version: v0.1.10
+        helm.sh/chart: copia-0.0.0
+        version: v0.1.10
+      name: conversion-manager
+    spec:
+      replicas: 1
+      revisionHistoryLimit: 2
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: conversion-manager
+          app.kubernetes.io/name: conversion-manager
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          annotations:
+            checksum/config: 4c18fea1ad0a3d86ca674f930c0b773731ad1bc3872ebba7290103810051a11c
+            checksum/secret: 56faff83423b499ae78312f416244b95189b16874bc3e800d17b555f75ec7478
+          labels:
+            app: conversion-manager
+            app.kubernetes.io/instance: conversion-manager
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: conversion-manager
+            app.kubernetes.io/version: v0.1.10
+            helm.sh/chart: copia-0.0.0
+            version: v0.1.10
+        spec:
+          containers:
+            - env: null
+              envFrom:
+                - configMapRef:
+                    name: conversion-manager-configmap
+                - secretRef:
+                    name: conversion-manager-secret
+              image: ghcr.io/copia-automation/conversion-manager:v0.1.10
+              imagePullPolicy: Always
+              livenessProbe:
+                failureThreshold: 2
+                httpGet:
+                  path: /api/v1/ping
+                  port: 8888
+                  scheme: HTTPS
+                periodSeconds: 10
+                timeoutSeconds: 5
+              name: conversion-manager
+              ports:
+                - containerPort: 8888
+                  name: http
+              resources:
+                limits:
+                  cpu: 2
+                  memory: 512Mi
+                requests:
+                  cpu: 0.5
+                  memory: 128Mi
+              startupProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: /api/v1/ping
+                  port: 8888
+                  scheme: HTTPS
+                initialDelaySeconds: 20
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
+          imagePullSecrets:
+            - name: ghcr-login-secret
+  2: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: copia
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: copia
+        app.kubernetes.io/version: v0.55.0
+        helm.sh/chart: copia-0.0.0
+        version: v0.55.0
+      name: RELEASE-NAME-copia
+    spec:
+      replicas: 1
+      revisionHistoryLimit: 2
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: RELEASE-NAME
+          app.kubernetes.io/name: copia
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          annotations:
+            checksum/config: 2cc0994de9f48e57089a6261bc0397afc2957cbfdbb821d175cf559186518a96
+            checksum/secret: 74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b
+          labels:
+            app: copia
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: copia
+            app.kubernetes.io/version: v0.55.0
+            helm.sh/chart: copia-0.0.0
+            version: v0.55.0
+        spec:
+          containers:
+            - command:
+                - gitea
+              env: null
+              envFrom:
+                - configMapRef:
+                    name: RELEASE-NAME-copia-configmap
+              image: ghcr.io/copia-automation/copia-web-app-selfhosted-releases:v0.55.0
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                      - sh
+                      - -c
+                      - sleep 10 && /usr/local/bin/gitea manager shutdown
+              livenessProbe:
+                failureThreshold: 2
+                httpGet:
+                  path: /
+                  port: 4001
+                periodSeconds: 10
+                timeoutSeconds: 2
+              name: copia
+              ports:
+                - containerPort: 22
+                  name: ssh
+                - containerPort: 4001
+                  name: http
+              resources: {}
+              securityContext: {}
+              startupProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: /
+                  port: 4001
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                timeoutSeconds: 2
+              volumeMounts:
+                - mountPath: /tmp/gitea
+                  name: temp
+                - mountPath: /data
+                  name: data
+          imagePullSecrets:
+            - name: ghcr-login-secret
+          securityContext:
+            fsGroup: 1000
+          terminationGracePeriodSeconds: 60
+          volumes:
+            - emptyDir: {}
+              name: temp
+            - name: data
+              persistentVolumeClaim:
+                claimName: RELEASE-NAME-copia-data
+  3: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations: {}
+      labels:
+        app: copia
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: copia
+        app.kubernetes.io/version: v0.55.0
+        helm.sh/chart: copia-0.0.0
+        version: v0.55.0
+      name: RELEASE-NAME-copia-http
+    spec:
+      ports:
+        - name: http
+          port: 3000
+          targetPort: 4001
+      selector:
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/name: copia
+      type: NodePort

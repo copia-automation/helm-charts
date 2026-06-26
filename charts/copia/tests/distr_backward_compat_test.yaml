@@ -1,0 +1,36 @@
+# ADR-ENG-19207: Distr support must be backward-compatible. The test is
+# behavioral — an existing value set must render the same manifests before and
+# after a change. These snapshots lock the rendered output of the surface the
+# Distr base-values overlay touches (images, service type, pull secrets,
+# conversion-manager). Regenerate intentionally with `helm unittest -u charts/copia`
+# and review the snapshot diff in the same PR as the change that caused it.
+suite: Distr backward compatibility (golden render)
+templates:
+  - copia-deployment.yaml
+  - copia-service.yaml
+  - conversion-manager-deployment.yaml
+tests:
+  - it: renders unchanged for default values
+    set:
+      conversion_manager_service.enabled: true
+    asserts:
+      - matchSnapshot: {}
+  - it: renders unchanged for a representative existing-customer value set
+    set:
+      service.http.type: NodePort
+      conversion_manager_service.enabled: true
+      conversion_manager_service.service.http.type: NodePort
+      copia.config:
+        APP_NAME: Copia
+        RUN_MODE: prod
+        server:
+          ROOT_URL: https://git.customer.example/
+          DOMAIN: git.customer.example
+          HTTP_PORT: 4001
+        database:
+          HOST: postgres.customer.example:5432
+          NAME: copia
+          USER: copia
+          PASSWD: example
+    asserts:
+      - matchSnapshot: {}

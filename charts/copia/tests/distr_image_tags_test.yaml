@@ -1,0 +1,31 @@
+# ADR-ENG-19207: the chart a customer pulls from Distr must carry concrete image
+# tags. This guards against an image reference that ships an unresolved
+# substitution variable (for example a Flux `${...}` placeholder), which would
+# break the agent's plain `helm install`.
+suite: Distr image tags are concrete
+templates:
+  - copia-deployment.yaml
+  - conversion-manager-deployment.yaml
+tests:
+  - it: copia image resolves to a concrete tag with no unresolved variables
+    template: copia-deployment.yaml
+    set:
+      copia.config: {}
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: '^ghcr\.io/copia-automation/copia-web-app-selfhosted-releases:.+$'
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: '\$\{'
+  - it: conversion-manager image resolves to a concrete tag with no unresolved variables
+    template: conversion-manager-deployment.yaml
+    set:
+      conversion_manager_service.enabled: true
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: '^ghcr\.io/copia-automation/conversion-manager:.+$'
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: '\$\{'

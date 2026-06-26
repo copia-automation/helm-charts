@@ -1,0 +1,42 @@
+name: Publish Edge Helm Chart to Distr
+
+# Edge channel (ADR-ENG-19207): every merge to main publishes a prerelease chart
+# to the Distr registry and mirrors the images it references. ADR-ENG-19206 then
+# creates an ApplicationVersion in the `copia-edge` application from this chart.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'charts/copia/**'
+      - '.github/workflows/publish-edge-helm-chart.yaml'
+      - '.github/workflows/publish-helm-chart.yaml'
+      - '.github/workflows/mirror-containers-to-distr.yaml'
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  edge-version:
+    runs-on: ubuntu-latest
+    outputs:
+      chart_version: ${{ steps.v.outputs.chart_version }}
+    steps:
+      - id: v
+        run: |
+          set -euo pipefail
+          SHORT=$(echo "${{ github.sha }}" | cut -c1-8)
+          # Prerelease tag, distinct per commit, sorts below any real release.
+          echo "chart_version=0.0.0-edge.${SHORT}" >> "${GITHUB_OUTPUT}"
+
+  publish-chart:
+    needs: edge-version
+    uses: ./.github/workflows/publish-helm-chart.yaml
+    secrets: inherit
+    with:
+      version: ${{ needs.edge-version.outputs.chart_version }}
+      registry: distr
+
+  mirror-images:
+    uses: ./.github/workflows/mirror-containers-to-distr.yaml
+    secrets: inherit
