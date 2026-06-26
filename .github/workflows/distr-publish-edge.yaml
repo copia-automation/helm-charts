@@ -1,0 +1,32 @@
+name: Publish edge to Distr
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'charts/copia/**'
+      - '.github/workflows/distr-publish*.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      chart-version: ${{ steps.v.outputs.chart-version }}
+    steps:
+      - id: v
+        run: echo "chart-version=0.0.0-edge.$(echo "${{ github.sha }}" | cut -c1-8)" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: version
+    uses: ./.github/workflows/distr-publish.yaml
+    secrets: inherit
+    with:
+      chart-version: ${{ needs.version.outputs.chart-version }}
+      registry-host: ${{ vars.DISTR_REGISTRY_HOST }}
+      oci-namespace: ${{ vars.DISTR_OCI_NAMESPACE }}
+      api-base: ${{ vars.DISTR_API_BASE }}
+      application-id: ${{ vars.DISTR_APP_ID_EDGE }}

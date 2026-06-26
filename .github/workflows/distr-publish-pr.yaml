@@ -1,0 +1,30 @@
+name: Publish PR to Distr
+
+on:
+  pull_request:
+    paths:
+      - 'charts/copia/**'
+      - '.github/workflows/distr-publish*.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      chart-version: ${{ steps.v.outputs.chart-version }}
+    steps:
+      - id: v
+        run: echo "chart-version=0.0.0-pr${{ github.event.pull_request.number }}.$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-8)" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: version
+    uses: ./.github/workflows/distr-publish.yaml
+    secrets: inherit
+    with:
+      chart-version: ${{ needs.version.outputs.chart-version }}
+      registry-host: ${{ vars.DISTR_REGISTRY_HOST }}
+      oci-namespace: ${{ vars.DISTR_OCI_NAMESPACE }}
+      api-base: ${{ vars.DISTR_API_BASE }}
+      application-id: ${{ vars.DISTR_APP_ID_PR }}

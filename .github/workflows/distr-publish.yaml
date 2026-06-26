@@ -1,0 +1,92 @@
+name: Publish to Distr
+
+on:
+  workflow_call:
+    inputs:
+      chart-version:
+        required: true
+        type: string
+      registry-host:
+        required: true
+        type: string
+      oci-namespace:
+        required: true
+        type: string
+      api-base:
+        required: true
+        type: string
+      application-id:
+        required: true
+        type: string
+      runs-on:
+        required: false
+        type: string
+        default: ubuntu-latest
+    secrets:
+      DISTR_REGISTRY_PAT:
+        required: true
+      DISTR_TOKEN:
+        required: true
+      GHCR_TOKEN:
+        required: true
+      GHCR_USERNAME:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ${{ inputs.runs-on }}
+    env:
+      DST: ${{ inputs.registry-host }}/${{ inputs.oci-namespace }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: v3.8.1
+
+      - name: Log in to registries
+        run: |
+          set -euo pipefail
+          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USERNAME:-copia-automation-bot}" --password-stdin
+          echo "${DISTR_REGISTRY_PAT}" | docker login "${{ inputs.registry-host }}" -u - --password-stdin
+          echo "${DISTR_REGISTRY_PAT}" | helm registry login "${{ inputs.registry-host }}" -u - --password-stdin
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
+
+      - name: Mirror images to Distr
+        run: |
+          set -euo pipefail
+          helm template mirror charts/copia --set conversion_manager_service.enabled=true > /tmp/rendered.yaml
+          grep -oE 'ghcr\.io/copia-automation/[A-Za-z0-9._/-]+:[A-Za-z0-9._+-]+' /tmp/rendered.yaml | sort -u > /tmp/srcs.txt
+          test -s /tmp/srcs.txt
+          while IFS= read -r src; do
+            dst="${DST}/${src#ghcr.io/copia-automation/}"
+            if docker manifest inspect "$dst" >/dev/null 2>&1; then continue; fi
+            docker pull "$src"
+            docker tag "$src" "$dst"
+            docker push "$dst"
+          done < /tmp/srcs.txt
+
+      - name: Publish chart to Distr
+        run: |
+          set -euo pipefail
+          sed -i "s/^version:.*/version: ${{ inputs.chart-version }}/" charts/copia/Chart.yaml
+          helm package charts/copia
+          helm push copia-*.tgz "oci://${DST}"
+
+      - name: Create ApplicationVersion
+        uses: distr-sh/distr-create-version-action@v1.6.0
+        with:
+          api-token: ${{ secrets.DISTR_TOKEN }}
+          api-base: ${{ inputs.api-base }}
+          application-id: ${{ inputs.application-id }}
+          version-name: ${{ inputs.chart-version }}
+          chart-type: oci
+          chart-url: oci://${{ inputs.registry-host }}/${{ inputs.oci-namespace }}/copia
+          chart-version: ${{ inputs.chart-version }}
+          base-values-file: charts/copia/distr/values.base.yaml
