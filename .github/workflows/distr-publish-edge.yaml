@@ -1,4 +1,4 @@
-name: Publish edge to Distr
+name: Publish "edge" release to Distr
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
     secrets: inherit
     with:
       chart-version: ${{ needs.version.outputs.chart-version }}
-      registry-host: ${{ vars.DISTR_REGISTRY_HOST }}
-      oci-namespace: ${{ vars.DISTR_OCI_NAMESPACE }}
-      api-base: ${{ vars.DISTR_API_BASE }}
-      application-id: ${{ vars.DISTR_APP_ID_EDGE }}
+      registry-host: ${{ vars.DISTR_CLOUD_REGISTRY_HOST }}
+      oci-namespace: ${{ vars.DISTR_CLOUD_OCI_NAMESPACE }}
+      api-base: ${{ vars.DISTR_CLOUD_API_BASE }}
+      application-id: ${{ vars.DISTR_CLOUD_APP_ID_EDGE }}
