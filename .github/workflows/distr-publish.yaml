@@ -46,6 +46,8 @@ jobs:
         with:
           export-env: true
         env:
+          # TODO: add OP_SERVICE_ACCOUNT_TOKEN to the helm-charts GitHub secrets,
+          # and create registry-pat and api-token in the 1Password platform vault.
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           DISTR_REGISTRY_PAT: op://platform/distr/registry-pat
           DISTR_TOKEN: op://platform/distr/api-token
