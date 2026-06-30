@@ -25,7 +25,7 @@ on:
     secrets:
       DISTR_REGISTRY_PAT:
         required: true
-      DISTR_TOKEN:
+      DISTR_API_TOKEN:
         required: true
 
 permissions:
@@ -85,7 +85,7 @@ jobs:
       - name: Create ApplicationVersion
         uses: distr-sh/distr-create-version-action@f14d2ee8b9750e305b29c6047cc68afbf028e8e7 # v1.6.0
         with:
-          api-token: ${{ secrets.DISTR_TOKEN }}
+          api-token: ${{ secrets.DISTR_API_TOKEN }}
           api-base: ${{ inputs.api-base }}
           application-id: ${{ inputs.application-id }}
           version-name: ${{ inputs.chart-version }}

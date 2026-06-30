@@ -25,7 +25,7 @@ jobs:
     uses: ./.github/workflows/distr-publish.yaml
     secrets:
       DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
-      DISTR_TOKEN: ${{ secrets.DISTR_TOKEN }}
+      DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
     with:
       chart-version: ${{ needs.version.outputs.chart-version }}
       registry-host: ${{ vars.DISTR_CLOUD_REGISTRY_HOST }}
