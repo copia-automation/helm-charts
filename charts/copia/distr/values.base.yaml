@@ -1,12 +1,26 @@
-# Distr base values overlay. Minimal for now; expanded later with the customer values template.
+# Distr base values overlay: the self-hosted profile applied to every customer.
+# Vendor-fixed keys only. Backing-service ownership (Postgres, object storage,
+# Redis, TLS), the resources and probe profiles, and storage type are decided in
+# Phase 2 (ADR ENG-19206, Appendix A). Secret and license references must never
+# appear here; Distr renders templating only in the per-target layer.
 image:
   repository: __DISTR_REGISTRY__/copia-web-app-selfhosted-releases
 imagePullSecrets: []
 chartGeneratedSecrets:
   enabled: true
+persistence:
+  size: 100Gi
 service:
   http:
     type: ClusterIP
+copia:
+  config:
+    APP_NAME: Copia
+    RUN_MODE: prod
+    security:
+      INSTALL_LOCK: true
+    service:
+      DISABLE_REGISTRATION: true
 conversion_manager_service:
   enabled: true
   deployment:
