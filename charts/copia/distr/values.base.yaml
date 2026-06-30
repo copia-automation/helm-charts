@@ -1,0 +1,18 @@
+# Distr base values overlay. Minimal for now; expanded later with the customer values template.
+image:
+  repository: __DISTR_REGISTRY__/copia-web-app-selfhosted-releases
+imagePullSecrets: []
+chartGeneratedSecrets:
+  enabled: true
+service:
+  http:
+    type: ClusterIP
+conversion_manager_service:
+  enabled: true
+  deployment:
+    image:
+      repository: __DISTR_REGISTRY__/conversion-manager
+    imagePullSecrets: []
+  service:
+    http:
+      type: ClusterIP
