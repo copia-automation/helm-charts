@@ -1,12 +1,8 @@
-name: Publish "edge" release to Distr
+name: Publish production release to Distr
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'charts/copia/**'
-      - '.github/workflows/distr-publish*.yaml'
-  workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -19,7 +15,9 @@ jobs:
       chart-version: ${{ steps.version.outputs.chart-version }}
     steps:
       - id: version
-        run: echo "chart-version=0.0.0-edge.$(echo "${{ github.sha }}" | cut -c1-8)" >> "$GITHUB_OUTPUT"
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: echo "chart-version=${TAG#copia-}" >> "$GITHUB_OUTPUT"
 
   publish:
     needs: version
@@ -30,4 +28,4 @@ jobs:
       registry-host: ${{ vars.DISTR_CLOUD_REGISTRY_HOST }}
       oci-namespace: ${{ vars.DISTR_CLOUD_OCI_NAMESPACE }}
       api-base: ${{ vars.DISTR_CLOUD_API_BASE }}
-      application-id: ${{ vars.DISTR_CLOUD_APP_ID_EDGE }}
+      application-id: ${{ vars.DISTR_CLOUD_APP_ID_PROD }}
