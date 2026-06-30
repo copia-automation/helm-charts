@@ -42,16 +42,19 @@ jobs:
 
       - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
-          version: v3.8.1
+          version: v3.21.2
 
       - name: Log in to registries
         env:
           DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
+          REGISTRY_HOST: ${{ inputs.registry-host }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
-          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          echo "$DISTR_REGISTRY_PAT" | docker login "${{ inputs.registry-host }}" -u - --password-stdin
-          echo "$DISTR_REGISTRY_PAT" | helm registry login "${{ inputs.registry-host }}" -u - --password-stdin
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
+          echo "$DISTR_REGISTRY_PAT" | docker login "$REGISTRY_HOST" -u - --password-stdin
+          echo "$DISTR_REGISTRY_PAT" | helm registry login "$REGISTRY_HOST" -u - --password-stdin
 
       - name: Mirror images to Distr
         run: |
@@ -68,9 +71,11 @@ jobs:
           done < /tmp/srcs.txt
 
       - name: Publish chart to Distr
+        env:
+          CHART_VERSION: ${{ inputs.chart-version }}
         run: |
           set -euo pipefail
-          sed -i "s/^version:.*/version: ${{ inputs.chart-version }}/" charts/copia/Chart.yaml
+          sed -i "s/^version:.*/version: ${CHART_VERSION}/" charts/copia/Chart.yaml
           helm package charts/copia
           helm push copia-*.tgz "oci://${DST}"
 
