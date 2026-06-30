@@ -1,6 +1,6 @@
 # Distr base values overlay. Minimal for now; expanded later with the customer values template.
 image:
-  repository: registry.distr.sh/copia-test/copia-web-app-selfhosted-releases
+  repository: __DISTR_REGISTRY__/copia-web-app-selfhosted-releases
 imagePullSecrets: []
 chartGeneratedSecrets:
   enabled: true
@@ -11,7 +11,7 @@ conversion_manager_service:
   enabled: true
   deployment:
     image:
-      repository: registry.distr.sh/copia-test/conversion-manager
+      repository: __DISTR_REGISTRY__/conversion-manager
     imagePullSecrets: []
   service:
     http:

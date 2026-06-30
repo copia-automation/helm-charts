@@ -80,6 +80,9 @@ jobs:
           helm package charts/copia
           helm push copia-*.tgz "oci://${DST}"
 
+      - name: Point base values at the target registry
+        run: sed -i "s#__DISTR_REGISTRY__#${DST}#g" charts/copia/distr/values.base.yaml
+
       - name: Create ApplicationVersion
         uses: distr-sh/distr-create-version-action@f14d2ee8b9750e305b29c6047cc68afbf028e8e7 # v1.6.0
         with:

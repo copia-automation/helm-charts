@@ -17,12 +17,17 @@ jobs:
       - id: version
         env:
           TAG: ${{ github.event.release.tag_name }}
-        run: echo "chart-version=${TAG#copia-}" >> "$GITHUB_OUTPUT"
+        run: |
+          case "$TAG" in
+            copia-*) echo "chart-version=${TAG#copia-}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "Unexpected release tag: $TAG" >&2; exit 1 ;;
+          esac
 
   publish:
     needs: version
     uses: ./.github/workflows/distr-publish.yaml
-    secrets: inherit
+    secrets:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
     with:
       chart-version: ${{ needs.version.outputs.chart-version }}
       registry-host: ${{ vars.DISTR_CLOUD_REGISTRY_HOST }}
