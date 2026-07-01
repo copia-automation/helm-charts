@@ -2,10 +2,9 @@
 # in the Distr console and fill in the placeholders. These values layer over
 # charts/copia/distr/values.base.yaml; only customer-specific keys belong here.
 #
-# Secrets and the license key are references that Distr renders server-side from
-# the target's secrets. Never paste secret material into this file. Configure
-# each {{ .Secrets.<Name> }} secret on the target, and Distr generates
-# {{ .LicenseKeys.copia }}.
+# Secret values are references that Distr renders server-side from the target's
+# secrets. Never paste secret material into this file. Configure each
+# {{ .Secrets.<Name> }} secret on the target.
 adminUser:
   create: true
   username: admin
@@ -44,8 +43,6 @@ copia:
       FROM: Copia <copia@example.com>
       USER: "{{ .Secrets.SmtpUser }}"
       PASSWD: "{{ .Secrets.SmtpPassword }}"
-    copia:
-      LICENSE_KEY: "{{ .LicenseKeys.copia }}"
 conversion_manager_service:
   configmap:
     DB_HOST: postgres.example.com:5432
