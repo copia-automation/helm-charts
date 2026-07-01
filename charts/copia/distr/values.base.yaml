@@ -1,18 +1,74 @@
-# Distr base values overlay. Minimal for now; expanded later with the customer values template.
+# Distr base values: the self-hosted profile applied to every customer.
+# Vendor-fixed keys only. This layer carries no secrets or license references;
+# Distr renders templating only in the per-target layer, which supplies
+# hostnames, database connection, SMTP, TLS, storage class, and secrets.
+# Profile assumptions: local storage, no Redis, customer-supplied SMTP, no
+# database read replica, single web replica. See ADR ENG-19206, Appendix A.
+replicaCount: 1
 image:
   repository: __DISTR_REGISTRY__/copia-web-app-selfhosted-releases
 imagePullSecrets: []
 chartGeneratedSecrets:
   enabled: true
+persistence:
+  enabled: true
+  size: 100Gi
 service:
   http:
     type: ClusterIP
+copia:
+  config:
+    APP_NAME: Copia
+    RUN_MODE: prod
+    security:
+      INSTALL_LOCK: true
+      PASSWORD_COMPLEXITY: "lower,upper,digit"
+    server:
+      HTTP_PORT: 4001
+      APP_DATA_PATH: /data
+      DISABLE_SSH: true
+      SSH_PORT: 22
+      LFS_START_SERVER: true
+      OFFLINE_MODE: false
+    repository:
+      ROOT: /data/repos
+      FORCE_PRIVATE: true
+      DEFAULT_PUSH_CREATE_PRIVATE: true
+      ENABLE_PUSH_CREATE_USER: false
+    repository.upload:
+      FILE_MAX_SIZE: 600
+      MAX_FILES: 40
+    database:
+      DB_TYPE: postgres
+      SSL_MODE: require
+    service:
+      DISABLE_REGISTRATION: true
+      REQUIRE_SIGNIN_VIEW: true
+    session:
+      PROVIDER: db
+    cache:
+      ADAPTER: memory
+    queue:
+      TYPE: level
+    indexer:
+      ISSUE_INDEXER_TYPE: db
+    log:
+      MODE: console
+      LEVEL: info
+    copia:
+      COPIA_HOSTED: false
 conversion_manager_service:
   enabled: true
   deployment:
+    replicaCount: 1
     image:
       repository: __DISTR_REGISTRY__/conversion-manager
     imagePullSecrets: []
   service:
     http:
       type: ClusterIP
+  configmap:
+    NODE_ENV: production
+    LOGGER_LEVEL: http
+    PORT: 8888
+    ENABLE_HTTPS: false
