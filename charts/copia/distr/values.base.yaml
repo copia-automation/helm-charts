@@ -22,7 +22,7 @@ copia:
     RUN_MODE: prod
     security:
       INSTALL_LOCK: true
-      PASSWORD_COMPLEXITY: "lower,upper,digit"
+      PASSWORD_COMPLEXITY: "lower,upper,digit,spec"
     server:
       HTTP_PORT: 4001
       APP_DATA_PATH: /data
