@@ -1,0 +1,55 @@
+# Distr per-target values template. Copy this into a deployment target's values
+# in the Distr console and fill in the placeholders. These values layer over
+# charts/copia/distr/values.base.yaml; only customer-specific keys belong here.
+#
+# Secrets and the license key are references that Distr renders server-side from
+# the target's secrets. Never paste secret material into this file. Configure
+# each {{ .Secrets.<Name> }} secret on the target, and Distr generates
+# {{ .LicenseKeys.copia }}.
+adminUser:
+  create: true
+  username: admin
+  email: admin@example.com
+  password: "{{ .Secrets.CopiaAdminPassword }}"
+persistence:
+  # Storage class for the Copia data volume; cluster-specific.
+  storageClassName: ""
+ingress:
+  enabled: true
+  hosts:
+    - host: copia.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: copia-tls
+      hosts:
+        - copia.example.com
+copia:
+  config:
+    server:
+      DOMAIN: copia.example.com
+      ROOT_URL: https://copia.example.com/
+      SSH_DOMAIN: copia.example.com
+    database:
+      HOST: postgres.example.com:5432
+      NAME: copia
+      USER: copia
+      PASSWD: "{{ .Secrets.CopiaDbPassword }}"
+    mailer:
+      ENABLED: true
+      MAILER_TYPE: smtp
+      HOST: smtp.example.com:587
+      IS_TLS_ENABLED: true
+      FROM: Copia <copia@example.com>
+      USER: "{{ .Secrets.SmtpUser }}"
+      PASSWD: "{{ .Secrets.SmtpPassword }}"
+    copia:
+      LICENSE_KEY: "{{ .LicenseKeys.copia }}"
+conversion_manager_service:
+  configmap:
+    DB_HOST: postgres.example.com:5432
+    DB_NAME: conversion_manager
+    DB_USER: conversion_manager
+  secret:
+    DB_PASSWORD: "{{ .Secrets.ConversionManagerDbPassword }}"
