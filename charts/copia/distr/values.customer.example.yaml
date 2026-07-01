@@ -3,8 +3,8 @@
 # charts/copia/distr/values.base.yaml; only customer-specific keys belong here.
 #
 # Secret values are references that Distr renders server-side from the target's
-# secrets. Never paste secret material into this file. Configure each
-# {{ .Secrets.<Name> }} secret on the target.
+# secrets. Never paste secret material into this file; configure the matching
+# secrets on the target so the .Secrets references below resolve.
 adminUser:
   create: true
   username: admin
