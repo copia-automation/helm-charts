@@ -63,6 +63,13 @@ conversion_manager_service:
     image:
       repository: __DISTR_REGISTRY__/conversion-manager
     imagePullSecrets: []
+    # ENABLE_HTTPS is false, so probe the plain HTTP port.
+    startupProbe:
+      httpGet:
+        scheme: HTTP
+    livenessProbe:
+      httpGet:
+        scheme: HTTP
   service:
     http:
       type: ClusterIP
