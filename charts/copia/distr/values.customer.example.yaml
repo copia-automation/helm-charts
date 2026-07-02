@@ -35,6 +35,9 @@ copia:
       NAME: copia
       USER: copia
       PASSWD: "{{ .Secrets.CopiaDbPassword }}"
+      # require for a TLS-enabled database (managed Postgres); disable for a
+      # non-TLS in-cluster database.
+      SSL_MODE: require
     mailer:
       ENABLED: true
       MAILER_TYPE: smtp

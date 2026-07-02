@@ -40,7 +40,6 @@ copia:
       MAX_FILES: 40
     database:
       DB_TYPE: postgres
-      SSL_MODE: require
     service:
       DISABLE_REGISTRATION: true
       REQUIRE_SIGNIN_VIEW: true
