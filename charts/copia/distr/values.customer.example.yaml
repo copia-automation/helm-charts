@@ -26,7 +26,6 @@ copia:
     server:
       DOMAIN: copia.example.com
       ROOT_URL: https://copia.example.com/
-      SSH_DOMAIN: copia.example.com
     database:
       HOST: postgres.example.com:5432
       NAME: copia
