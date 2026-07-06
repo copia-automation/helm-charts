@@ -16,6 +16,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: distr-cleanup-${{ github.event_name == 'workflow_dispatch' && inputs.version || format('pr-{0}', github.event.pull_request.number) }}
+  cancel-in-progress: false
+
 jobs:
   cleanup:
     # Fork PRs never receive the secrets to publish, so there is nothing to
@@ -33,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           auth="Authorization: AccessToken ${DISTR_API_TOKEN}"
-          ids=$(curl -fsSL -H "$auth" "${API_BASE}/applications/${APP_ID}" \
+          ids=$(curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth" "${API_BASE}/applications/${APP_ID}" \
             | jq -r --arg p "$MATCH" \
                 '.versions[]? | select(.name | startswith($p)) | select(.archivedAt == null) | .id')
           if [ -z "$ids" ]; then
@@ -44,5 +48,5 @@ jobs:
           body=$(printf '%s\n' "$ids" | jq -R -s --arg t "$now" \
             '{versions: (split("\n") | map(select(length > 0)) | map({id: ., archivedAt: $t}))}')
           echo "Archiving $(printf '%s\n' "$ids" | grep -c .) version(s) matching ${MATCH}"
-          curl -fsSL -X PATCH -H "$auth" -H 'Content-Type: application/json' \
+          curl -fsSL --connect-timeout 10 --max-time 30 -X PATCH -H "$auth" -H 'Content-Type: application/json' \
             -d "$body" "${API_BASE}/applications/${APP_ID}" >/dev/null
