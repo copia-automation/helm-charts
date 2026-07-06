@@ -1,9 +1,6 @@
 name: Clean up Distr artifacts
 
 on:
-  # TEMPORARY: one-shot trigger to exercise the workflow; remove after.
-  push:
-    branches: [ENG-20004-cleanup-pr-distr-artifacts]
   pull_request:
     types: [closed]
     paths:
@@ -23,14 +20,14 @@ jobs:
   cleanup:
     # Fork PRs never receive the secrets to publish, so there is nothing to
     # clean up for them; manual dispatch is always allowed.
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     env:
       API_BASE: ${{ vars.DISTR_CLOUD_API_BASE }}
       APP_ID: ${{ vars.DISTR_CLOUD_APP_ID_PR }}
       REGISTRY_HOST: ${{ vars.DISTR_CLOUD_REGISTRY_HOST }}
       OCI_NAMESPACE: ${{ vars.DISTR_CLOUD_OCI_NAMESPACE }}
-      MATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.event_name == 'push' && '0.0.0-pr168.' || format('0.0.0-pr{0}.', github.event.pull_request.number) }}
+      MATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.version || format('0.0.0-pr{0}.', github.event.pull_request.number) }}
     steps:
       - name: Archive matching ApplicationVersions
         env:
