@@ -1,0 +1,119 @@
+default copia deployment matches golden:
+  1: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: copia
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: copia
+        app.kubernetes.io/version: v0.56.0
+        helm.sh/chart: copia-0.0.0
+        version: v0.56.0
+      name: RELEASE-NAME-copia
+    spec:
+      replicas: 1
+      revisionHistoryLimit: 2
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: RELEASE-NAME
+          app.kubernetes.io/name: copia
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+        type: RollingUpdate
+      template:
+        metadata:
+          annotations:
+            checksum/config: 2cc0994de9f48e57089a6261bc0397afc2957cbfdbb821d175cf559186518a96
+            checksum/secret: 74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b
+          labels:
+            app: copia
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: copia
+            app.kubernetes.io/version: v0.56.0
+            helm.sh/chart: copia-0.0.0
+            version: v0.56.0
+        spec:
+          containers:
+            - command:
+                - gitea
+              env: null
+              envFrom:
+                - configMapRef:
+                    name: RELEASE-NAME-copia-configmap
+              image: ghcr.io/copia-automation/copia-web-app-selfhosted-releases:v0.56.0
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                      - sh
+                      - -c
+                      - sleep 10 && /usr/local/bin/gitea manager shutdown
+              livenessProbe:
+                failureThreshold: 2
+                httpGet:
+                  path: /
+                  port: 4001
+                periodSeconds: 10
+                timeoutSeconds: 2
+              name: copia
+              ports:
+                - containerPort: 22
+                  name: ssh
+                - containerPort: 4001
+                  name: http
+              resources: {}
+              securityContext: {}
+              startupProbe:
+                failureThreshold: 10
+                httpGet:
+                  path: /
+                  port: 4001
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                timeoutSeconds: 2
+              volumeMounts:
+                - mountPath: /tmp/gitea
+                  name: temp
+                - mountPath: /data
+                  name: data
+          imagePullSecrets:
+            - name: ghcr-login-secret
+          securityContext:
+            fsGroup: 1000
+          terminationGracePeriodSeconds: 60
+          volumes:
+            - emptyDir: {}
+              name: temp
+            - name: data
+              persistentVolumeClaim:
+                claimName: RELEASE-NAME-copia-data
+default copia service matches golden:
+  1: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations: {}
+      labels:
+        app: copia
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: copia
+        app.kubernetes.io/version: v0.56.0
+        helm.sh/chart: copia-0.0.0
+        version: v0.56.0
+      name: RELEASE-NAME-copia-http
+    spec:
+      ports:
+        - name: http
+          port: 3000
+          targetPort: 4001
+      selector:
+        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/name: copia
+      type: NodePort
