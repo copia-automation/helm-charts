@@ -10,9 +10,6 @@ adminUser:
   username: admin
   email: admin@example.com
   password: "{{ .Secrets.CopiaAdminPassword }}"
-persistence:
-  # Storage class for the Copia data volume; cluster-specific.
-  storageClassName: ""
 ingress:
   enabled: true
   hosts:
