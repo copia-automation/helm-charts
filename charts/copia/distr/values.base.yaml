@@ -76,5 +76,8 @@ conversion_manager_service:
   configmap:
     NODE_ENV: production
     LOGGER_LEVEL: http
+    # Bind all interfaces so the kubelet probe and the Service reach the pod;
+    # the chart default localhost binds loopback only.
+    HOST: 0.0.0.0
     PORT: 8888
     ENABLE_HTTPS: false
