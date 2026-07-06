@@ -25,8 +25,6 @@ jobs:
     env:
       API_BASE: ${{ vars.DISTR_CLOUD_API_BASE }}
       APP_ID: ${{ vars.DISTR_CLOUD_APP_ID_PR }}
-      REGISTRY_HOST: ${{ vars.DISTR_CLOUD_REGISTRY_HOST }}
-      OCI_NAMESPACE: ${{ vars.DISTR_CLOUD_OCI_NAMESPACE }}
       MATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.version || format('0.0.0-pr{0}.', github.event.pull_request.number) }}
     steps:
       - name: Archive matching ApplicationVersions
@@ -48,31 +46,3 @@ jobs:
           echo "Archiving $(printf '%s\n' "$ids" | grep -c .) version(s) matching ${MATCH}"
           curl -fsSL -X PATCH -H "$auth" -H 'Content-Type: application/json' \
             -d "$body" "${API_BASE}/applications/${APP_ID}" >/dev/null
-
-      - name: Delete matching chart tags from the Distr registry
-        # The registry may reject manifest deletion; archiving the
-        # ApplicationVersions above is the authoritative cleanup.
-        continue-on-error: true
-        env:
-          DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
-        run: |
-          set -euo pipefail
-          base="https://${REGISTRY_HOST}/v2/${OCI_NAMESPACE}/copia"
-          accept='application/vnd.oci.image.index.v1+json,application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.list.v2+json,application/vnd.docker.distribution.manifest.v2+json'
-          tags=$(curl -fsSL -u "-:${DISTR_REGISTRY_PAT}" "${base}/tags/list" \
-            | jq -r --arg p "$MATCH" '.tags[]? | select(startswith($p))')
-          if [ -z "$tags" ]; then
-            echo "No chart tags to delete for ${MATCH}"
-            exit 0
-          fi
-          for tag in $tags; do
-            digest=$(curl -fsSL -u "-:${DISTR_REGISTRY_PAT}" -I -H "Accept: ${accept}" \
-              "${base}/manifests/${tag}" | tr -d '\r' \
-              | awk -F': ' 'tolower($1) == "docker-content-digest" { print $2 }')
-            if [ -z "$digest" ]; then
-              echo "No digest for ${tag}, skipping"
-              continue
-            fi
-            echo "Deleting copia:${tag} (${digest})"
-            curl -fsSL -u "-:${DISTR_REGISTRY_PAT}" -X DELETE "${base}/manifests/${digest}"
-          done
