@@ -12,7 +12,8 @@ adminUser:
   password: "{{ .Secrets.CopiaAdminPassword }}"
 ingress:
   enabled: true
-  ingressClassName: nginx
+  # Uncomment and set to your ingress controller's IngressClass.
+  # ingressClassName: my-ingress-class
   hosts:
     - host: copia.example.com
       paths:
