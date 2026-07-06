@@ -1,9 +1,3 @@
-# Distr base values: the self-hosted profile applied to every customer.
-# Vendor-fixed keys only. This layer carries no secrets or license references;
-# Distr renders templating only in the per-target layer, which supplies
-# hostnames, database connection, SMTP, TLS, storage class, and secrets.
-# Profile assumptions: local storage, no Redis, customer-supplied SMTP, no
-# database read replica, single web replica. See ADR ENG-19206, Appendix A.
 replicaCount: 1
 image:
   repository: __DISTR_REGISTRY__/copia-web-app-selfhosted-releases
@@ -27,7 +21,6 @@ copia:
       HTTP_PORT: 4001
       APP_DATA_PATH: /data
       DISABLE_SSH: true
-      SSH_PORT: 22
       LFS_START_SERVER: true
       OFFLINE_MODE: false
     repository:

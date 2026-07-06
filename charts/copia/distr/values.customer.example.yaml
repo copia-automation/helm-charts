@@ -1,10 +1,3 @@
-# Distr per-target values template. Copy this into a deployment target's values
-# in the Distr console and fill in the placeholders. These values layer over
-# charts/copia/distr/values.base.yaml; only customer-specific keys belong here.
-#
-# Secret values are references that Distr renders server-side from the target's
-# secrets. Never paste secret material into this file; configure the matching
-# secrets on the target so the .Secrets references below resolve.
 adminUser:
   create: true
   username: admin
@@ -33,8 +26,6 @@ copia:
       NAME: copia
       USER: copia
       PASSWD: "{{ .Secrets.CopiaDbPassword }}"
-      # require for a TLS-enabled database (managed Postgres); disable for a
-      # non-TLS in-cluster database.
       SSL_MODE: require
     mailer:
       ENABLED: true
