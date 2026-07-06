@@ -1,0 +1,72 @@
+name: Clean up PR release from Distr
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'charts/copia/**'
+      - '.github/workflows/distr-publish*.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    # Fork PRs never receive the secrets to publish, so there is nothing to
+    # clean up for them.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      API_BASE: ${{ vars.DISTR_CLOUD_API_BASE }}
+      APP_ID: ${{ vars.DISTR_CLOUD_APP_ID_PR }}
+      REGISTRY_HOST: ${{ vars.DISTR_CLOUD_REGISTRY_HOST }}
+      OCI_NAMESPACE: ${{ vars.DISTR_CLOUD_OCI_NAMESPACE }}
+      PREFIX: 0.0.0-pr${{ github.event.pull_request.number }}.
+    steps:
+      - name: Archive the PR's ApplicationVersions
+        env:
+          DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          auth="Authorization: AccessToken ${DISTR_API_TOKEN}"
+          ids=$(curl -fsSL -H "$auth" "${API_BASE}/applications/${APP_ID}" \
+            | jq -r --arg p "$PREFIX" \
+                '.versions[]? | select(.name | startswith($p)) | select(.archivedAt == null) | .id')
+          if [ -z "$ids" ]; then
+            echo "No ApplicationVersions to archive for ${PREFIX}"
+            exit 0
+          fi
+          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          body=$(printf '%s\n' "$ids" | jq -R -s --arg t "$now" \
+            '{versions: (split("\n") | map(select(length > 0)) | map({id: ., archivedAt: $t}))}')
+          echo "Archiving $(printf '%s\n' "$ids" | grep -c .) version(s) for ${PREFIX}"
+          curl -fsSL -X PATCH -H "$auth" -H 'Content-Type: application/json' \
+            -d "$body" "${API_BASE}/applications/${APP_ID}" >/dev/null
+
+      - name: Delete the PR's chart tags from the Distr registry
+        # The registry may reject manifest deletion; archiving the
+        # ApplicationVersions above is the authoritative cleanup.
+        continue-on-error: true
+        env:
+          DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
+        run: |
+          set -euo pipefail
+          base="https://${REGISTRY_HOST}/v2/${OCI_NAMESPACE}/copia"
+          accept='application/vnd.oci.image.index.v1+json,application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.list.v2+json,application/vnd.docker.distribution.manifest.v2+json'
+          tags=$(curl -fsSL -u "-:${DISTR_REGISTRY_PAT}" "${base}/tags/list" \
+            | jq -r --arg p "$PREFIX" '.tags[]? | select(startswith($p))')
+          if [ -z "$tags" ]; then
+            echo "No chart tags to delete for ${PREFIX}"
+            exit 0
+          fi
+          for tag in $tags; do
+            digest=$(curl -fsSL -u "-:${DISTR_REGISTRY_PAT}" -I -H "Accept: ${accept}" \
+              "${base}/manifests/${tag}" | tr -d '\r' \
+              | awk -F': ' 'tolower($1) == "docker-content-digest" { print $2 }')
+            if [ -z "$digest" ]; then
+              echo "No digest for ${tag}, skipping"
+              continue
+            fi
+            echo "Deleting copia:${tag} (${digest})"
+            curl -fsSL -u "-:${DISTR_REGISTRY_PAT}" -X DELETE "${base}/manifests/${digest}"
+          done
