@@ -12,6 +12,7 @@ adminUser:
   password: "{{ .Secrets.CopiaAdminPassword }}"
 ingress:
   enabled: true
+  ingressClassName: nginx
   hosts:
     - host: copia.example.com
       paths:
