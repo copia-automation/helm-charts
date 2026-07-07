@@ -92,4 +92,5 @@ jobs:
           chart-type: oci
           chart-url: oci://${{ inputs.registry-host }}/${{ inputs.oci-namespace }}/copia
           chart-version: ${{ inputs.chart-version }}
-          base-values-file: charts/copia/distr/values.base.yaml
+          base-values-file: ${{ github.workspace }}/charts/copia/distr/values.base.yaml
+          template-file: ${{ github.workspace }}/charts/copia/distr/values.customer.example.yaml

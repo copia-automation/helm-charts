@@ -1,18 +1,76 @@
-# Distr base values overlay. Minimal for now; expanded later with the customer values template.
+replicaCount: 1
 image:
   repository: __DISTR_REGISTRY__/copia-web-app-selfhosted-releases
 imagePullSecrets: []
 chartGeneratedSecrets:
   enabled: true
+persistence:
+  enabled: true
 service:
   http:
     type: ClusterIP
+copia:
+  config:
+    APP_NAME: Copia
+    RUN_MODE: prod
+    security:
+      INSTALL_LOCK: true
+      PASSWORD_COMPLEXITY: "lower,upper,digit,spec"
+    server:
+      HTTP_PORT: 4001
+      APP_DATA_PATH: /data
+      DISABLE_SSH: true
+      LFS_START_SERVER: true
+      OFFLINE_MODE: false
+    repository:
+      ROOT: /data/repos
+      FORCE_PRIVATE: true
+      DEFAULT_PUSH_CREATE_PRIVATE: true
+      ENABLE_PUSH_CREATE_USER: false
+    repository.upload:
+      FILE_MAX_SIZE: 600
+      MAX_FILES: 40
+    database:
+      DB_TYPE: postgres
+    service:
+      DISABLE_REGISTRATION: true
+      REQUIRE_SIGNIN_VIEW: true
+    session:
+      PROVIDER: db
+      COOKIE_SECURE: true
+    cache:
+      ADAPTER: memory
+    queue:
+      TYPE: level
+    indexer:
+      ISSUE_INDEXER_TYPE: db
+    log:
+      MODE: console
+      LEVEL: info
+    copia:
+      COPIA_HOSTED: false
 conversion_manager_service:
   enabled: true
   deployment:
+    replicaCount: 1
     image:
       repository: __DISTR_REGISTRY__/conversion-manager
     imagePullSecrets: []
+    # ENABLE_HTTPS is false, so probe the plain HTTP port.
+    startupProbe:
+      httpGet:
+        scheme: HTTP
+    livenessProbe:
+      httpGet:
+        scheme: HTTP
   service:
     http:
       type: ClusterIP
+  configmap:
+    NODE_ENV: production
+    LOGGER_LEVEL: http
+    # Bind all interfaces so the kubelet probe and the Service reach the pod;
+    # the chart default localhost binds loopback only.
+    HOST: 0.0.0.0
+    PORT: 8888
+    ENABLE_HTTPS: false
