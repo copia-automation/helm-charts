@@ -1,0 +1,52 @@
+name: Clean up Distr artifacts
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'charts/copia/**'
+      - '.github/workflows/distr-publish*.yaml'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: ApplicationVersion name or prefix to clean up (for example 0.0.0-pr123. or 0.0.0-pr123.abc1234)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: distr-cleanup-${{ github.event_name == 'workflow_dispatch' && inputs.version || format('pr-{0}', github.event.pull_request.number) }}
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    # Fork PRs never receive the secrets to publish, so there is nothing to
+    # clean up for them; manual dispatch is always allowed.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      API_BASE: ${{ vars.DISTR_CLOUD_API_BASE }}
+      APP_ID: ${{ vars.DISTR_CLOUD_APP_ID_PR }}
+      MATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.version || format('0.0.0-pr{0}.', github.event.pull_request.number) }}
+    steps:
+      - name: Archive matching ApplicationVersions
+        env:
+          DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          auth="Authorization: AccessToken ${DISTR_API_TOKEN}"
+          ids=$(curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth" "${API_BASE}/applications/${APP_ID}" \
+            | jq -r --arg p "$MATCH" \
+                '.versions[]? | select(.name | startswith($p)) | select(.archivedAt == null) | .id')
+          if [ -z "$ids" ]; then
+            echo "No ApplicationVersions to archive for ${MATCH}"
+            exit 0
+          fi
+          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          body=$(printf '%s\n' "$ids" | jq -R -s --arg t "$now" \
+            '{versions: (split("\n") | map(select(length > 0)) | map({id: ., archivedAt: $t}))}')
+          echo "Archiving $(printf '%s\n' "$ids" | grep -c .) version(s) matching ${MATCH}"
+          curl -fsSL --connect-timeout 10 --max-time 30 -X PATCH -H "$auth" -H 'Content-Type: application/json' \
+            -d "$body" "${API_BASE}/applications/${APP_ID}" >/dev/null
