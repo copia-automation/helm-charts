@@ -28,4 +28,4 @@ jobs:
 
       - name: Render Distr base + per-target overlay
         run: |
-          bash script/render-check
+          bash script/render-check.sh

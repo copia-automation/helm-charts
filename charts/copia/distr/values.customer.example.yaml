@@ -3,6 +3,8 @@ adminUser:
   username: admin
   email: admin@example.com
   password: "{{ .Secrets.CopiaAdminPassword }}"
+persistence:
+  size: 100Gi
 ingress:
   enabled: true
   # Uncomment and set to your ingress controller's IngressClass.
@@ -28,13 +30,14 @@ copia:
       PASSWD: "{{ .Secrets.CopiaDbPassword }}"
       SSL_MODE: require
     mailer:
-      ENABLED: true
-      MAILER_TYPE: smtp
-      HOST: smtp.example.com:587
-      IS_TLS_ENABLED: true
-      FROM: Copia <copia@example.com>
-      USER: "{{ .Secrets.SmtpUser }}"
-      PASSWD: "{{ .Secrets.SmtpPassword }}"
+      ENABLED: false
+      # To send mail, set ENABLED: true and uncomment:
+      # MAILER_TYPE: smtp
+      # HOST: smtp.example.com:587
+      # IS_TLS_ENABLED: true
+      # FROM: Copia <copia@example.com>
+      # USER: "{{ .Secrets.SmtpUser }}"
+      # PASSWD: "{{ .Secrets.SmtpPassword }}"
 conversion_manager_service:
   configmap:
     DB_HOST: postgres.example.com:5432

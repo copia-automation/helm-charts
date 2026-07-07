@@ -6,7 +6,6 @@ chartGeneratedSecrets:
   enabled: true
 persistence:
   enabled: true
-  size: 100Gi
 service:
   http:
     type: ClusterIP
