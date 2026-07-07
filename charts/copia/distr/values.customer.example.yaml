@@ -1,0 +1,47 @@
+adminUser:
+  create: true
+  username: admin
+  email: admin@example.com
+  password: "{{ .Secrets.CopiaAdminPassword }}"
+persistence:
+  size: 100Gi
+ingress:
+  enabled: true
+  # Uncomment and set to your ingress controller's IngressClass.
+  # ingressClassName: my-ingress-class
+  hosts:
+    - host: copia.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: copia-tls
+      hosts:
+        - copia.example.com
+copia:
+  config:
+    server:
+      DOMAIN: copia.example.com
+      ROOT_URL: https://copia.example.com/
+    database:
+      HOST: postgres.example.com:5432
+      NAME: copia
+      USER: copia
+      PASSWD: "{{ .Secrets.CopiaDbPassword }}"
+      SSL_MODE: require
+    mailer:
+      ENABLED: false
+      # To send mail, set ENABLED: true and uncomment:
+      # MAILER_TYPE: smtp
+      # HOST: smtp.example.com:587
+      # IS_TLS_ENABLED: true
+      # FROM: Copia <copia@example.com>
+      # USER: "{{ .Secrets.SmtpUser }}"
+      # PASSWD: "{{ .Secrets.SmtpPassword }}"
+conversion_manager_service:
+  configmap:
+    DB_HOST: postgres.example.com:5432
+    DB_NAME: conversion_manager
+    DB_USER: conversion_manager
+  secret:
+    DB_PASSWORD: "{{ .Secrets.ConversionManagerDbPassword }}"

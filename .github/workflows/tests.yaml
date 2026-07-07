@@ -25,3 +25,7 @@ jobs:
       - name: Test copia chart
         run: |
           bash script/test
+
+      - name: Render Distr base + per-target overlay
+        run: |
+          bash script/render-check.sh
