@@ -322,6 +322,33 @@
                         },
                         "pathType": {
                           "type": "string"
+                        },
+                        "backend": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "service": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "port": {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "number": {
+                                      "type": "integer"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
                         }
                       }
                     }
@@ -545,6 +572,33 @@
                     },
                     "pathType": {
                       "type": "string"
+                    },
+                    "backend": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "service": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "port": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "number": {
+                                  "type": "integer"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }
