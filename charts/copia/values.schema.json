@@ -300,24 +300,57 @@
             },
             "hosts": {
               "type": "array",
-              "additionalProperties": false,
               "description": "Hosts to expose",
-              "required": ["host"],
-              "properties": {
-                "host": {
-                  "type": "string"
-                },
-                "paths": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "description": "Paths",
-                  "properties": {
-                    "path": {
-                      "type": "string",
-                      "description": "Path on host"
-                    },
-                    "pathType": {
-                      "type": "string"
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["host"],
+                "properties": {
+                  "host": {
+                    "type": "string"
+                  },
+                  "paths": {
+                    "type": "array",
+                    "description": "Paths",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "path": {
+                          "type": "string",
+                          "description": "Path on host"
+                        },
+                        "pathType": {
+                          "type": "string"
+                        },
+                        "backend": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "service": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "port": {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "number": {
+                                      "type": "integer"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -517,24 +550,57 @@
         },
         "hosts": {
           "type": "array",
-          "additionalProperties": false,
           "description": "Hosts to expose",
-          "required": ["host"],
-          "properties": {
-            "host": {
-              "type": "string"
-            },
-            "paths": {
-              "type": "object",
-              "additionalProperties": false,
-              "description": "Paths",
-              "properties": {
-                "path": {
-                  "type": "string",
-                  "description": "Path on host"
-                },
-                "pathType": {
-                  "type": "string"
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["host"],
+            "properties": {
+              "host": {
+                "type": "string"
+              },
+              "paths": {
+                "type": "array",
+                "description": "Paths",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Path on host"
+                    },
+                    "pathType": {
+                      "type": "string"
+                    },
+                    "backend": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "service": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "port": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "number": {
+                                  "type": "integer"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
