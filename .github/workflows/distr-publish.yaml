@@ -19,9 +19,13 @@ on:
         required: true
         type: string
       runs-on:
+        # JSON-encoded array of runner labels, e.g. '["ubuntu-latest"]' or
+        # '["staging", "self-hosted"]'. workflow_call inputs cannot be arrays,
+        # so this string is decoded with fromJSON at the job below.
+        description: JSON-encoded array of runner labels
         required: false
         type: string
-        default: ubuntu-latest
+        default: '["ubuntu-latest"]'
     secrets:
       DISTR_REGISTRY_PAT:
         required: true
@@ -34,7 +38,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     env:
       DST: ${{ inputs.registry-host }}/${{ inputs.oci-namespace }}
     steps:

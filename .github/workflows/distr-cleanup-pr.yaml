@@ -30,12 +30,12 @@ jobs:
       matrix:
         include:
           - prefix: DISTR_CLOUD
-            runs-on: ubuntu-latest
+            runs-on: '["ubuntu-latest"]'
             api-token: DISTR_API_TOKEN
           - prefix: DISTR_STAGING
-            runs-on: staging # todo: use correct runner label
+            runs-on: '["staging", "self-hosted"]'
             api-token: DISTR_STAGING_API_TOKEN
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: ${{ fromJSON(matrix.runs-on) }}
     env:
       API_BASE: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
       APP_NAME: copia-pr

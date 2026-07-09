@@ -29,12 +29,12 @@ jobs:
         include:
           - target: cloud
             prefix: DISTR_CLOUD
-            runs-on: ubuntu-latest
+            runs-on: '["ubuntu-latest"]'
             registry-pat: DISTR_REGISTRY_PAT
             api-token: DISTR_API_TOKEN
           - target: staging
             prefix: DISTR_STAGING
-            runs-on: staging # todo: use correct runner label
+            runs-on: '["staging", "self-hosted"]'
             registry-pat: DISTR_STAGING_REGISTRY_PAT
             api-token: DISTR_STAGING_API_TOKEN
     uses: ./.github/workflows/distr-publish.yaml
