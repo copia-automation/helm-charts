@@ -45,5 +45,5 @@ jobs:
       registry-host: ${{ vars[format('{0}_REGISTRY_HOST', matrix.prefix)] }}
       oci-namespace: ${{ vars[format('{0}_OCI_NAMESPACE', matrix.prefix)] }}
       api-base: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
-      application-name: ${{ vars[format('{0}_APP_NAME_PR', matrix.prefix)] }}
+      application-name: copia-pr
       runs-on: ${{ matrix.runs-on }}

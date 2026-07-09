@@ -38,7 +38,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     env:
       API_BASE: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
-      APP_NAME: ${{ vars[format('{0}_APP_NAME_PR', matrix.prefix)] }}
+      APP_NAME: copia-pr
       MATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.version || format('0.0.0-pr{0}.', github.event.pull_request.number) }}
     steps:
       - name: Archive matching ApplicationVersions
