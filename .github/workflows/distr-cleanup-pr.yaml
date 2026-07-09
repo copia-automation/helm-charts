@@ -31,10 +31,8 @@ jobs:
         include:
           - prefix: DISTR_CLOUD
             runs-on: '["ubuntu-latest"]'
-            api-token: DISTR_API_TOKEN
           - prefix: DISTR_STAGING
             runs-on: '["staging", "self-hosted"]'
-            api-token: DISTR_STAGING_API_TOKEN
     runs-on: ${{ fromJSON(matrix.runs-on) }}
     env:
       API_BASE: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
@@ -43,7 +41,7 @@ jobs:
     steps:
       - name: Archive matching ApplicationVersions
         env:
-          DISTR_API_TOKEN: ${{ secrets[matrix.api-token] }}
+          DISTR_API_TOKEN: ${{ matrix.prefix == 'DISTR_CLOUD' && secrets.DISTR_API_TOKEN || secrets.DISTR_STAGING_API_TOKEN }}
         run: |
           set -euo pipefail
           auth="Authorization: AccessToken ${DISTR_API_TOKEN}"
