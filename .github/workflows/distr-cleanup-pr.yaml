@@ -33,7 +33,7 @@ jobs:
             runs-on: ubuntu-latest
             api-token: DISTR_API_TOKEN
           - prefix: DISTR_STAGING
-            runs-on: staging
+            runs-on: staging # todo: use correct runner label
             api-token: DISTR_STAGING_API_TOKEN
     runs-on: ${{ matrix.runs-on }}
     env:
