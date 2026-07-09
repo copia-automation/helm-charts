@@ -15,7 +15,7 @@ on:
       api-base:
         required: true
         type: string
-      application-id:
+      application-name:
         required: true
         type: string
       runs-on:
@@ -82,12 +82,30 @@ jobs:
       - name: Point base values at the target registry
         run: sed -i "s#__DISTR_REGISTRY__#${DST}#g" charts/copia/distr/values.base.yaml
 
+      - name: Resolve Distr application ID
+        id: app
+        env:
+          API_BASE: ${{ inputs.api-base }}
+          APP_NAME: ${{ inputs.application-name }}
+          DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          APP_ID=$(curl -fsSL --max-time 30 \
+            -H "Authorization: AccessToken ${DISTR_API_TOKEN}" \
+            "${API_BASE}/applications" \
+            | jq -r --arg name "${APP_NAME}" '.[] | select(.name == $name) | .id' | head -n1)
+          if [ -z "${APP_ID}" ] || [ "${APP_ID}" = "null" ]; then
+            echo "::error::Distr application not found: ${APP_NAME}" >&2
+            exit 1
+          fi
+          echo "application-id=${APP_ID}" >> "${GITHUB_OUTPUT}"
+
       - name: Create ApplicationVersion
         uses: distr-sh/distr-create-version-action@f14d2ee8b9750e305b29c6047cc68afbf028e8e7 # v1.6.0
         with:
           api-token: ${{ secrets.DISTR_API_TOKEN }}
           api-base: ${{ inputs.api-base }}
-          application-id: ${{ inputs.application-id }}
+          application-id: ${{ steps.app.outputs.application-id }}
           version-name: ${{ inputs.chart-version }}
           chart-type: oci
           chart-url: oci://${{ inputs.registry-host }}/${{ inputs.oci-namespace }}/copia

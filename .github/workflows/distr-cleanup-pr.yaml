@@ -38,7 +38,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     env:
       API_BASE: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
-      APP_ID: ${{ vars[format('{0}_APP_ID_PR', matrix.prefix)] }}
+      APP_NAME: ${{ vars[format('{0}_APP_NAME_PR', matrix.prefix)] }}
       MATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.version || format('0.0.0-pr{0}.', github.event.pull_request.number) }}
     steps:
       - name: Archive matching ApplicationVersions
@@ -47,7 +47,13 @@ jobs:
         run: |
           set -euo pipefail
           auth="Authorization: AccessToken ${DISTR_API_TOKEN}"
-          ids=$(curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth" "${API_BASE}/applications/${APP_ID}" \
+          app_id=$(curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth" "${API_BASE}/applications" \
+            | jq -r --arg name "$APP_NAME" '.[] | select(.name == $name) | .id' | head -n1)
+          if [ -z "$app_id" ] || [ "$app_id" = "null" ]; then
+            echo "::error::Distr application not found: ${APP_NAME}" >&2
+            exit 1
+          fi
+          ids=$(curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth" "${API_BASE}/applications/${app_id}" \
             | jq -r --arg p "$MATCH" \
                 '.versions[]? | select(.name | startswith($p)) | select(.archivedAt == null) | .id')
           if [ -z "$ids" ]; then
@@ -59,4 +65,4 @@ jobs:
             '{versions: (split("\n") | map(select(length > 0)) | map({id: ., archivedAt: $t}))}')
           echo "Archiving $(printf '%s\n' "$ids" | grep -c .) version(s) matching ${MATCH}"
           curl -fsSL --connect-timeout 10 --max-time 30 -X PATCH -H "$auth" -H 'Content-Type: application/json' \
-            -d "$body" "${API_BASE}/applications/${APP_ID}" >/dev/null
+            -d "$body" "${API_BASE}/applications/${app_id}" >/dev/null
