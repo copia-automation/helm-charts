@@ -25,15 +25,25 @@ jobs:
     # Fork PRs never receive the secrets to publish, so there is nothing to
     # clean up for them; manual dispatch is always allowed.
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - prefix: DISTR_CLOUD
+            runs-on: ubuntu-latest
+            api-token: DISTR_API_TOKEN
+          - prefix: DISTR_STAGING
+            runs-on: staging
+            api-token: DISTR_STAGING_API_TOKEN
+    runs-on: ${{ matrix.runs-on }}
     env:
-      API_BASE: ${{ vars.DISTR_CLOUD_API_BASE }}
-      APP_ID: ${{ vars.DISTR_CLOUD_APP_ID_PR }}
+      API_BASE: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
+      APP_ID: ${{ vars[format('{0}_APP_ID_PR', matrix.prefix)] }}
       MATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.version || format('0.0.0-pr{0}.', github.event.pull_request.number) }}
     steps:
       - name: Archive matching ApplicationVersions
         env:
-          DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+          DISTR_API_TOKEN: ${{ secrets[matrix.api-token] }}
         run: |
           set -euo pipefail
           auth="Authorization: AccessToken ${DISTR_API_TOKEN}"

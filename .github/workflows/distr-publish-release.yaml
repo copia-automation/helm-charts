@@ -25,13 +25,28 @@ jobs:
 
   publish:
     needs: version
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - target: cloud
+            prefix: DISTR_CLOUD
+            runs-on: ubuntu-latest
+            registry-pat: DISTR_REGISTRY_PAT
+            api-token: DISTR_API_TOKEN
+          - target: staging
+            prefix: DISTR_STAGING
+            runs-on: staging # todo: use correct runner label
+            registry-pat: DISTR_STAGING_REGISTRY_PAT
+            api-token: DISTR_STAGING_API_TOKEN
     uses: ./.github/workflows/distr-publish.yaml
     secrets:
-      DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
-      DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+      DISTR_REGISTRY_PAT: ${{ secrets[matrix.registry-pat] }}
+      DISTR_API_TOKEN: ${{ secrets[matrix.api-token] }}
     with:
       chart-version: ${{ needs.version.outputs.chart-version }}
-      registry-host: ${{ vars.DISTR_CLOUD_REGISTRY_HOST }}
-      oci-namespace: ${{ vars.DISTR_CLOUD_OCI_NAMESPACE }}
-      api-base: ${{ vars.DISTR_CLOUD_API_BASE }}
-      application-id: ${{ vars.DISTR_CLOUD_APP_ID_PROD }}
+      registry-host: ${{ vars[format('{0}_REGISTRY_HOST', matrix.prefix)] }}
+      oci-namespace: ${{ vars[format('{0}_OCI_NAMESPACE', matrix.prefix)] }}
+      api-base: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
+      application-id: ${{ vars[format('{0}_APP_ID_PROD', matrix.prefix)] }}
+      runs-on: ${{ matrix.runs-on }}
