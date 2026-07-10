@@ -28,10 +28,10 @@ jobs:
         include:
           - target: cloud
             prefix: DISTR_CLOUD
-            runs-on: '["ubuntu-latest"]'
+            tailscale: false
           - target: staging
             prefix: DISTR_STAGING
-            runs-on: '["staging", "self-hosted"]'
+            tailscale: true
     uses: ./.github/workflows/distr-publish.yaml
     secrets:
       DISTR_REGISTRY_PAT: ${{ matrix.target == 'cloud' && secrets.DISTR_REGISTRY_PAT || secrets.DISTR_STAGING_REGISTRY_PAT }}
@@ -42,4 +42,4 @@ jobs:
       oci-namespace: ${{ vars[format('{0}_OCI_NAMESPACE', matrix.prefix)] }}
       api-base: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
       application-name: copia-pr
-      runs-on: ${{ matrix.runs-on }}
+      tailscale: ${{ matrix.tailscale }}

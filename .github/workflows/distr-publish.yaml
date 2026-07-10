@@ -18,14 +18,13 @@ on:
       application-name:
         required: true
         type: string
-      runs-on:
-        # JSON-encoded array of runner labels, e.g. '["ubuntu-latest"]' or
-        # '["staging", "self-hosted"]'. workflow_call inputs cannot be arrays,
-        # so this string is decoded with fromJSON at the job below.
-        description: JSON-encoded array of runner labels
+      tailscale:
+        # When true, join the tailnet and route egress through the staging
+        # exit node so the runner can reach Distr staging inside its VPC.
+        description: Connect to the staging tailnet via a Tailscale exit node
         required: false
-        type: string
-        default: '["ubuntu-latest"]'
+        type: boolean
+        default: false
     secrets:
       DISTR_REGISTRY_PAT:
         required: true
@@ -35,14 +34,27 @@ on:
 permissions:
   contents: read
   packages: read
+  id-token: write
 
 jobs:
   publish:
-    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    runs-on: ubuntu-latest
     env:
       DST: ${{ inputs.registry-host }}/${{ inputs.oci-namespace }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Connect to staging tailnet
+        if: ${{ inputs.tailscale }}
+        uses: tailscale/github-action@780049a30b6ff5c378a9e7b389d15ece7a204888 # v4.1.3
+        with:
+          oauth-client-id: ${{ vars.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ vars.TS_AUDIENCE }}
+          tags: tag:ci
+
+      - name: Route egress through staging exit node
+        if: ${{ inputs.tailscale }}
+        run: sudo tailscale set --exit-node="${{ vars.DISTR_STAGING_EXIT_NODE }}" --exit-node-allow-lan-access
 
       - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
