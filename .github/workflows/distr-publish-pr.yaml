@@ -24,7 +24,7 @@ jobs:
     needs: version
     if: github.event.pull_request.head.repo.full_name == github.repository
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - target: cloud
