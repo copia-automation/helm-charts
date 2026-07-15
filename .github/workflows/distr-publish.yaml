@@ -15,13 +15,23 @@ on:
       api-base:
         required: true
         type: string
-      application-name:
+      chart-name:
+        # The per-channel artifact repo the chart is pushed to and the
+        # ApplicationVersion points at, for example copia, copia-edge, copia-pr.
+        description: Artifact repo name for this release channel
         required: true
         type: string
       tailscale:
         # When true, join the tailnet and route egress through the staging
         # exit node so the runner can reach Distr staging inside its VPC.
         description: Connect to the staging tailnet via a Tailscale exit node
+        required: false
+        type: boolean
+        default: false
+      archive-previous:
+        # Edge only: after publishing, archive superseded edge
+        # ApplicationVersions so only the newest stays live.
+        description: Archive superseded edge ApplicationVersions after publishing
         required: false
         type: boolean
         default: false
@@ -89,11 +99,15 @@ jobs:
       - name: Publish chart to Distr
         env:
           CHART_VERSION: ${{ inputs.chart-version }}
+          CHART_NAME: ${{ inputs.chart-name }}
         run: |
           set -euo pipefail
+          # Rename the chart so it lands in its own per-channel artifact repo;
+          # helm push derives the OCI repo from Chart.yaml name.
+          sed -i "s/^name:.*/name: ${CHART_NAME}/" charts/copia/Chart.yaml
           sed -i "s/^version:.*/version: ${CHART_VERSION}/" charts/copia/Chart.yaml
           helm package charts/copia
-          helm push copia-*.tgz "oci://${DST}"
+          helm push "${CHART_NAME}"-*.tgz "oci://${DST}"
 
       - name: Point base values at the target registry
         run: sed -i "s#__DISTR_REGISTRY__#${DST}#g" charts/copia/distr/values.base.yaml
@@ -102,7 +116,7 @@ jobs:
         id: app
         env:
           API_BASE: ${{ inputs.api-base }}
-          APP_NAME: ${{ inputs.application-name }}
+          APP_NAME: copia
           DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
         run: |
           set -euo pipefail
@@ -124,7 +138,33 @@ jobs:
           application-id: ${{ steps.app.outputs.application-id }}
           version-name: ${{ inputs.chart-version }}
           chart-type: oci
-          chart-url: oci://${{ inputs.registry-host }}/${{ inputs.oci-namespace }}/copia
+          chart-url: oci://${{ inputs.registry-host }}/${{ inputs.oci-namespace }}/${{ inputs.chart-name }}
           chart-version: ${{ inputs.chart-version }}
           base-values-file: ${{ github.workspace }}/charts/copia/distr/values.base.yaml
           template-file: ${{ github.workspace }}/charts/copia/distr/values.customer.example.yaml
+
+      - name: Archive superseded edge versions
+        if: ${{ inputs.archive-previous }}
+        env:
+          API_BASE: ${{ inputs.api-base }}
+          APP_ID: ${{ steps.app.outputs.application-id }}
+          DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          auth="Authorization: AccessToken ${DISTR_API_TOKEN}"
+          # Match edge versions by the "-edge." infix; the base version varies.
+          # Keep the newest by createdAt, archive the rest.
+          ids=$(curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth" "${API_BASE}/applications/${APP_ID}" \
+            | jq -r '
+                [.versions[]? | select(.name | test("-edge\\.")) | select(.archivedAt == null)]
+                | sort_by(.createdAt) | reverse | .[1:] | .[].id')
+          if [ -z "$ids" ]; then
+            echo "No superseded edge versions to archive"
+            exit 0
+          fi
+          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          body=$(printf '%s\n' "$ids" | jq -R -s --arg t "$now" \
+            '{versions: (split("\n") | map(select(length > 0)) | map({id: ., archivedAt: $t}))}')
+          echo "Archiving $(printf '%s\n' "$ids" | grep -c .) superseded edge version(s)"
+          curl -fsSL --connect-timeout 10 --max-time 30 -X PATCH -H "$auth" -H 'Content-Type: application/json' \
+            -d "$body" "${API_BASE}/applications/${APP_ID}" >/dev/null

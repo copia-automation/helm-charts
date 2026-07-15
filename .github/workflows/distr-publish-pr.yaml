@@ -23,6 +23,9 @@ jobs:
   publish:
     needs: version
     if: github.event.pull_request.head.repo.full_name == github.repository
+    # Publishes to both Distr instances during rollout. Future (ENG-20123): PR
+    # versions will live only in staging; drop the cloud matrix leg here once
+    # the prod/staging split lands.
     strategy:
       fail-fast: false
       matrix:
@@ -42,5 +45,5 @@ jobs:
       registry-host: ${{ vars[format('{0}_REGISTRY_HOST', matrix.prefix)] }}
       oci-namespace: ${{ vars[format('{0}_OCI_NAMESPACE', matrix.prefix)] }}
       api-base: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
-      application-name: copia-pr
+      chart-name: copia-pr
       tailscale: ${{ matrix.tailscale }}
