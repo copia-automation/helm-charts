@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
   packages: read
+  id-token: write
 
 jobs:
   version:
@@ -22,13 +23,24 @@ jobs:
   publish:
     needs: version
     if: github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: cloud
+            prefix: DISTR_CLOUD
+            tailscale: false
+          - target: staging
+            prefix: DISTR_STAGING
+            tailscale: true
     uses: ./.github/workflows/distr-publish.yaml
     secrets:
-      DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
-      DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+      DISTR_REGISTRY_PAT: ${{ matrix.target == 'cloud' && secrets.DISTR_REGISTRY_PAT || secrets.DISTR_STAGING_REGISTRY_PAT }}
+      DISTR_API_TOKEN: ${{ matrix.target == 'cloud' && secrets.DISTR_API_TOKEN || secrets.DISTR_STAGING_API_TOKEN }}
     with:
       chart-version: ${{ needs.version.outputs.chart-version }}
-      registry-host: ${{ vars.DISTR_CLOUD_REGISTRY_HOST }}
-      oci-namespace: ${{ vars.DISTR_CLOUD_OCI_NAMESPACE }}
-      api-base: ${{ vars.DISTR_CLOUD_API_BASE }}
-      application-id: ${{ vars.DISTR_CLOUD_APP_ID_PR }}
+      registry-host: ${{ vars[format('{0}_REGISTRY_HOST', matrix.prefix)] }}
+      oci-namespace: ${{ vars[format('{0}_OCI_NAMESPACE', matrix.prefix)] }}
+      api-base: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
+      application-name: copia-pr
+      tailscale: ${{ matrix.tailscale }}
