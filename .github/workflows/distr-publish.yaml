@@ -22,13 +22,6 @@ on:
         required: false
         type: boolean
         default: false
-      archive-previous:
-        # Edge only: after publishing, archive superseded edge
-        # ApplicationVersions so only the newest stays live.
-        description: Archive superseded edge ApplicationVersions after publishing
-        required: false
-        type: boolean
-        default: false
     secrets:
       DISTR_REGISTRY_PAT:
         required: true
@@ -134,29 +127,3 @@ jobs:
           chart-version: ${{ inputs.chart-version }}
           base-values-file: ${{ github.workspace }}/charts/copia/distr/values.base.yaml
           template-file: ${{ github.workspace }}/charts/copia/distr/values.customer.example.yaml
-
-      - name: Archive superseded edge versions
-        if: ${{ inputs.archive-previous }}
-        env:
-          API_BASE: ${{ inputs.api-base }}
-          APP_ID: ${{ steps.app.outputs.application-id }}
-          DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
-        run: |
-          set -euo pipefail
-          auth="Authorization: AccessToken ${DISTR_API_TOKEN}"
-          # Match edge versions by the "-edge." infix; the base version varies.
-          # Keep the newest by createdAt, archive the rest.
-          ids=$(curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth" "${API_BASE}/applications/${APP_ID}" \
-            | jq -r '
-                [.versions[]? | select(.name | test("-edge\\.")) | select(.archivedAt == null)]
-                | sort_by(.createdAt) | reverse | .[1:] | .[].id')
-          if [ -z "$ids" ]; then
-            echo "No superseded edge versions to archive"
-            exit 0
-          fi
-          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          body=$(printf '%s\n' "$ids" | jq -R -s --arg t "$now" \
-            '{versions: (split("\n") | map(select(length > 0)) | map({id: ., archivedAt: $t}))}')
-          echo "Archiving $(printf '%s\n' "$ids" | grep -c .) superseded edge version(s)"
-          curl -fsSL --connect-timeout 10 --max-time 30 -X PATCH -H "$auth" -H 'Content-Type: application/json' \
-            -d "$body" "${API_BASE}/applications/${APP_ID}" >/dev/null
