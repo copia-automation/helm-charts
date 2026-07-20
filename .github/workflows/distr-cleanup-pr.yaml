@@ -26,18 +26,22 @@ jobs:
     # Fork PRs never receive the secrets to publish, so there is nothing to
     # clean up for them; manual dispatch is always allowed.
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    # TODO(ENG-20123): Distr staging stands in as the production instance until
+    # the real production instance is ready; then add its matrix leg. Distr
+    # cloud is intentionally no longer targeted.
     strategy:
       fail-fast: false
       matrix:
         include:
-          - prefix: DISTR_CLOUD
-            tailscale: false
           - prefix: DISTR_STAGING
             tailscale: true
     runs-on: ubuntu-latest
     env:
       API_BASE: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
-      APP_NAME: copia-pr
+      # One application and one artifact per instance hold every channel; PR
+      # versions and chart tags live in the shared copia app and copia artifact.
+      APP_NAME: copia
+      ARTIFACT_NAME: copia
       MATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.version || format('0.0.0-pr{0}.', github.event.pull_request.number) }}
     steps:
       - name: Connect to staging tailnet
@@ -54,7 +58,7 @@ jobs:
 
       - name: Archive matching ApplicationVersions
         env:
-          DISTR_API_TOKEN: ${{ matrix.prefix == 'DISTR_CLOUD' && secrets.DISTR_API_TOKEN || secrets.DISTR_STAGING_API_TOKEN }}
+          DISTR_API_TOKEN: ${{ secrets.DISTR_STAGING_API_TOKEN }}
         run: |
           set -euo pipefail
           auth="Authorization: AccessToken ${DISTR_API_TOKEN}"
@@ -77,3 +81,36 @@ jobs:
           echo "Archiving $(printf '%s\n' "$ids" | grep -c .) version(s) matching ${MATCH}"
           curl -fsSL --connect-timeout 10 --max-time 30 -X PATCH -H "$auth" -H 'Content-Type: application/json' \
             -d "$body" "${API_BASE}/applications/${app_id}" >/dev/null
+
+      - name: Delete PR artifact tags
+        env:
+          DISTR_API_TOKEN: ${{ secrets.DISTR_STAGING_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          auth="Authorization: AccessToken ${DISTR_API_TOKEN}"
+          art_id=$(curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth" "${API_BASE}/artifacts" \
+            | jq -r --arg name "$ARTIFACT_NAME" '.[]? | select(.name == $name) | .id' | head -n1)
+          if [ -z "$art_id" ] || [ "$art_id" = "null" ]; then
+            echo "No ${ARTIFACT_NAME} artifact found; nothing to delete"
+            exit 0
+          fi
+          # MATCH is the PR-specific prefix (0.0.0-pr<n>.), so only PR tags are
+          # selected; stable and edge tags in the shared artifact are untouched.
+          tags=$(curl -fsSL --connect-timeout 10 --max-time 30 -H "$auth" "${API_BASE}/artifacts/${art_id}" \
+            | jq -r --arg p "$MATCH" '.versions[]?.tags[]?.name | select(startswith($p))' | sort -u)
+          if [ -z "$tags" ]; then
+            echo "No ${ARTIFACT_NAME} tags to delete for ${MATCH}"
+            exit 0
+          fi
+          echo "Deleting $(printf '%s\n' "$tags" | grep -c .) ${ARTIFACT_NAME} tag(s) matching ${MATCH}"
+          # A tag delete can be refused (at least one tag must remain per
+          # artifact); log and continue rather than fail the cleanup.
+          printf '%s\n' "$tags" | while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            if curl -fsSL --connect-timeout 10 --max-time 30 -X DELETE -H "$auth" \
+                "${API_BASE}/artifacts/${art_id}/tags/${tag}" >/dev/null; then
+              echo "  deleted ${tag}"
+            else
+              echo "  ::warning::could not delete ${tag}"
+            fi
+          done

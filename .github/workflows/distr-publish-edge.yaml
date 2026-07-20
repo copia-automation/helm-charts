@@ -20,28 +20,45 @@ jobs:
       chart-version: ${{ steps.version.outputs.chart-version }}
     steps:
       - id: version
-        run: echo "chart-version=0.0.0-edge.$(echo "${{ github.sha }}" | cut -c1-8)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # Base the edge version on the next minor of the latest release, so it
+          # sorts above the last release but below the next final. The numeric
+          # epoch orders edge builds chronologically per semver; the sha8 traces
+          # the commit. Switch to a patch bump by changing the next= line.
+          latest=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name' 2>/dev/null || true)
+          base=${latest#copia-}
+          if printf '%s' "$base" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            major=${base%%.*}; rest=${base#*.}; minor=${rest%%.*}
+            next="${major}.$((minor + 1)).0"
+          else
+            next="0.0.0"
+          fi
+          echo "chart-version=${next}-edge.$(date -u +%s).$(printf '%s' "$SHA" | cut -c1-8)" >> "$GITHUB_OUTPUT"
 
   publish:
     needs: version
+    # TODO(ENG-20123): Distr staging stands in as the production instance until
+    # the real production instance is ready; then add its matrix leg. Distr
+    # cloud is intentionally no longer targeted.
     strategy:
       fail-fast: false
       matrix:
         include:
-          - target: cloud
-            prefix: DISTR_CLOUD
-            tailscale: false
           - target: staging
             prefix: DISTR_STAGING
             tailscale: true
     uses: ./.github/workflows/distr-publish.yaml
     secrets:
-      DISTR_REGISTRY_PAT: ${{ matrix.target == 'cloud' && secrets.DISTR_REGISTRY_PAT || secrets.DISTR_STAGING_REGISTRY_PAT }}
-      DISTR_API_TOKEN: ${{ matrix.target == 'cloud' && secrets.DISTR_API_TOKEN || secrets.DISTR_STAGING_API_TOKEN }}
+      DISTR_REGISTRY_PAT: ${{ secrets.DISTR_STAGING_REGISTRY_PAT }}
+      DISTR_API_TOKEN: ${{ secrets.DISTR_STAGING_API_TOKEN }}
     with:
       chart-version: ${{ needs.version.outputs.chart-version }}
       registry-host: ${{ vars[format('{0}_REGISTRY_HOST', matrix.prefix)] }}
       oci-namespace: ${{ vars[format('{0}_OCI_NAMESPACE', matrix.prefix)] }}
       api-base: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
-      application-name: copia-edge
       tailscale: ${{ matrix.tailscale }}
+      archive-previous: true
