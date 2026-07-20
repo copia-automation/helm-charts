@@ -41,24 +41,18 @@ jobs:
 
   publish:
     needs: version
-    # TODO(ENG-20123): Distr staging stands in as the production instance until
-    # the real production instance is ready; then add its matrix leg. Distr
-    # cloud is intentionally no longer targeted.
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: staging
-            prefix: DISTR_STAGING
-            tailscale: true
+    # TODO(ENG-20123): all publishing targets Distr staging, which stands in as
+    # the production instance until the real one is ready. To add the production
+    # instance later, reintroduce a matrix over the two instances. Distr cloud is
+    # intentionally no longer targeted.
     uses: ./.github/workflows/distr-publish.yaml
     secrets:
       DISTR_REGISTRY_PAT: ${{ secrets.DISTR_STAGING_REGISTRY_PAT }}
       DISTR_API_TOKEN: ${{ secrets.DISTR_STAGING_API_TOKEN }}
     with:
       chart-version: ${{ needs.version.outputs.chart-version }}
-      registry-host: ${{ vars[format('{0}_REGISTRY_HOST', matrix.prefix)] }}
-      oci-namespace: ${{ vars[format('{0}_OCI_NAMESPACE', matrix.prefix)] }}
-      api-base: ${{ vars[format('{0}_API_BASE', matrix.prefix)] }}
-      tailscale: ${{ matrix.tailscale }}
+      registry-host: ${{ vars.DISTR_STAGING_REGISTRY_HOST }}
+      oci-namespace: ${{ vars.DISTR_STAGING_OCI_NAMESPACE }}
+      api-base: ${{ vars.DISTR_STAGING_API_BASE }}
+      tailscale: true
       archive-previous: true
