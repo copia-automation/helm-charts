@@ -13,6 +13,12 @@ permissions:
   packages: read
   id-token: write
 
+# Serialize edge runs so overlapping publishes do not race on the archive
+# job's snapshot-then-PATCH of the version list.
+concurrency:
+  group: distr-publish-edge-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   version:
     runs-on: ubuntu-latest
@@ -60,8 +66,11 @@ jobs:
   # so the app UI stays clean. Runs on its own runner, so it re-joins the
   # staging tailnet and resolves the copia application itself.
   archive:
+    name: Archive superseded edge versions
     needs: publish
     runs-on: ubuntu-latest
+    # id-token: write lets the Tailscale action mint an OIDC token for its OAuth
+    # flow; no other scopes are needed since this job does not check out code.
     permissions:
       id-token: write
     steps:
@@ -76,6 +85,10 @@ jobs:
         run: sudo tailscale set --exit-node="${{ vars.DISTR_STAGING_EXIT_NODE }}" --exit-node-allow-lan-access
 
       - name: Archive superseded edge versions
+        # Best-effort: publishing already succeeded, and the next edge run
+        # re-archives anything left behind, so a transient API error here must
+        # not fail the workflow.
+        continue-on-error: true
         env:
           API_BASE: ${{ vars.DISTR_STAGING_API_BASE }}
           DISTR_API_TOKEN: ${{ secrets.DISTR_STAGING_API_TOKEN }}
