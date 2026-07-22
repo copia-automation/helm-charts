@@ -15,9 +15,6 @@ on:
       api-base:
         required: true
         type: string
-      application-name:
-        required: true
-        type: string
       tailscale:
         # When true, join the tailnet and route egress through the staging
         # exit node so the runner can reach Distr staging inside its VPC.
@@ -102,7 +99,9 @@ jobs:
         id: app
         env:
           API_BASE: ${{ inputs.api-base }}
-          APP_NAME: ${{ inputs.application-name }}
+          # One application per instance holds every channel (stable, edge, PR),
+          # differentiated by version name.
+          APP_NAME: copia
           DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
         run: |
           set -euo pipefail
