@@ -24,12 +24,10 @@ jobs:
             *) echo "Unexpected release tag: $TAG" >&2; exit 1 ;;
           esac
 
-  publish:
+  # Stable releases ship to BOTH instances: staging (every channel) and production
+  # (stable only). Edge/PR stay staging-only.
+  publish-staging:
     needs: version
-    # TODO(ENG-20123): all publishing targets Distr staging, which stands in as
-    # the production instance until the real one is ready. To add the production
-    # instance later, reintroduce a matrix over the two instances. Distr cloud is
-    # intentionally no longer targeted.
     uses: ./.github/workflows/distr-publish.yaml
     secrets:
       DISTR_REGISTRY_PAT: ${{ secrets.DISTR_STAGING_REGISTRY_PAT }}
@@ -40,3 +38,16 @@ jobs:
       oci-namespace: ${{ vars.DISTR_STAGING_OCI_NAMESPACE }}
       api-base: ${{ vars.DISTR_STAGING_API_BASE }}
       tailscale: true
+
+  publish-production:
+    needs: version
+    uses: ./.github/workflows/distr-publish.yaml
+    secrets:
+      DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
+      DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+    with:
+      chart-version: ${{ needs.version.outputs.chart-version }}
+      registry-host: ${{ vars.DISTR_PROD_REGISTRY_HOST }}
+      oci-namespace: ${{ vars.DISTR_PROD_OCI_NAMESPACE }}
+      api-base: ${{ vars.DISTR_PROD_API_BASE }}
+      tailscale: false
