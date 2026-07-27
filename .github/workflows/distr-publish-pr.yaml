@@ -36,4 +36,4 @@ jobs:
       registry-host: ${{ vars.DISTR_STAGING_REGISTRY_HOST }}
       oci-namespace: ${{ vars.DISTR_STAGING_OCI_NAMESPACE }}
       api-base: ${{ vars.DISTR_STAGING_API_BASE }}
-      tailscale: true
+      exit-node: ${{ vars.DISTR_STAGING_EXIT_NODE }}

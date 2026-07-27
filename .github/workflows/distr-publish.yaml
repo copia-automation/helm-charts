@@ -15,13 +15,16 @@ on:
       api-base:
         required: true
         type: string
-      tailscale:
-        # When true, join the tailnet and route egress through the staging
-        # exit node so the runner can reach Distr staging inside its VPC.
-        description: Connect to the staging tailnet via a Tailscale exit node
+      ref:
+        description: Git ref whose chart content is published; empty uses the caller's commit
         required: false
-        type: boolean
-        default: false
+        type: string
+        default: ''
+      exit-node:
+        description: MagicDNS name of the Tailscale exit node to route egress through
+        required: false
+        type: string
+        default: ''
     secrets:
       DISTR_REGISTRY_PAT:
         required: true
@@ -40,18 +43,41 @@ jobs:
       DST: ${{ inputs.registry-host }}/${{ inputs.oci-namespace }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Connect to staging tailnet
-        if: ${{ inputs.tailscale }}
+      - name: Overlay chart content from the target ref
+        if: ${{ inputs.ref != '' }}
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          rm -rf charts/copia
+          git checkout "$REF" -- charts/copia
+
+          if [ -f charts/copia/distr/values.base.yaml ] \
+            && [ -f charts/copia/distr/values.customer.example.yaml ]; then
+            echo "Using the Distr assets from ${REF}"
+          else
+            echo "::notice::${REF} has no charts/copia/distr; falling back to the assets at ${GITHUB_SHA}"
+            git checkout "$GITHUB_SHA" -- charts/copia/distr
+          fi
+          git --no-pager diff --stat HEAD -- charts/copia | tail -1
+
+      - name: Connect to tailnet
+        if: ${{ inputs.exit-node != '' }}
         uses: tailscale/github-action@780049a30b6ff5c378a9e7b389d15ece7a204888 # v4.1.3
         with:
           oauth-client-id: ${{ vars.TS_OAUTH_CLIENT_ID }}
           audience: ${{ vars.TS_AUDIENCE }}
           tags: tag:ci
 
-      - name: Route egress through staging exit node
-        if: ${{ inputs.tailscale }}
-        run: sudo tailscale set --exit-node="${{ vars.DISTR_STAGING_EXIT_NODE }}" --exit-node-allow-lan-access
+      - name: Route egress through exit node
+        if: ${{ inputs.exit-node != '' }}
+        env:
+          EXIT_NODE: ${{ inputs.exit-node }}
+        run: sudo tailscale set --exit-node="$EXIT_NODE" --exit-node-allow-lan-access
 
       - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
@@ -68,6 +94,41 @@ jobs:
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
           echo "$DISTR_REGISTRY_PAT" | docker login "$REGISTRY_HOST" -u - --password-stdin
           echo "$DISTR_REGISTRY_PAT" | helm registry login "$REGISTRY_HOST" -u - --password-stdin
+
+      - name: Resolve Distr application ID
+        id: app
+        env:
+          API_BASE: ${{ inputs.api-base }}
+          APP_NAME: copia
+          DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          APP_ID=$(curl -fsSL --max-time 30 \
+            -H "Authorization: AccessToken ${DISTR_API_TOKEN}" \
+            "${API_BASE}/applications" \
+            | jq -r --arg name "${APP_NAME}" '.[] | select(.name == $name) | .id' | head -n1)
+          if [ -z "${APP_ID}" ] || [ "${APP_ID}" = "null" ]; then
+            echo "::error::Distr application not found: ${APP_NAME}" >&2
+            exit 1
+          fi
+          echo "application-id=${APP_ID}" >> "${GITHUB_OUTPUT}"
+
+      - name: Abort if the version already exists
+        env:
+          API_BASE: ${{ inputs.api-base }}
+          APP_ID: ${{ steps.app.outputs.application-id }}
+          CHART_VERSION: ${{ inputs.chart-version }}
+          DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          app=$(curl -fsSL --max-time 30 \
+            -H "Authorization: AccessToken ${DISTR_API_TOKEN}" \
+            "${API_BASE}/applications/${APP_ID}")
+          if printf '%s' "$app" \
+              | jq -e --arg v "${CHART_VERSION}" '[.versions[]? | select(.name == $v)] | length > 0' >/dev/null; then
+            echo "::error::ApplicationVersion ${CHART_VERSION} already exists; nothing to publish" >&2
+            exit 1
+          fi
 
       - name: Mirror images to Distr
         run: |
@@ -95,26 +156,6 @@ jobs:
       - name: Point base values at the target registry
         run: sed -i "s#__DISTR_REGISTRY__#${DST}#g" charts/copia/distr/values.base.yaml
 
-      - name: Resolve Distr application ID
-        id: app
-        env:
-          API_BASE: ${{ inputs.api-base }}
-          # One application per instance holds every channel (stable, edge, PR),
-          # differentiated by version name.
-          APP_NAME: copia
-          DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
-        run: |
-          set -euo pipefail
-          APP_ID=$(curl -fsSL --max-time 30 \
-            -H "Authorization: AccessToken ${DISTR_API_TOKEN}" \
-            "${API_BASE}/applications" \
-            | jq -r --arg name "${APP_NAME}" '.[] | select(.name == $name) | .id' | head -n1)
-          if [ -z "${APP_ID}" ] || [ "${APP_ID}" = "null" ]; then
-            echo "::error::Distr application not found: ${APP_NAME}" >&2
-            exit 1
-          fi
-          echo "application-id=${APP_ID}" >> "${GITHUB_OUTPUT}"
-
       - name: Create ApplicationVersion
         uses: distr-sh/distr-create-version-action@f14d2ee8b9750e305b29c6047cc68afbf028e8e7 # v1.6.0
         with:
@@ -127,3 +168,4 @@ jobs:
           chart-version: ${{ inputs.chart-version }}
           base-values-file: ${{ github.workspace }}/charts/copia/distr/values.base.yaml
           template-file: ${{ github.workspace }}/charts/copia/distr/values.customer.example.yaml
+          update-deployments: false
