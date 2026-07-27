@@ -3,26 +3,58 @@ name: Publish production release to Distr
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing stable release tag to backfill (for example copia-0.60.0)
+        required: true
+        type: string
 
 permissions:
   contents: read
   packages: read
   id-token: write
 
+concurrency:
+  group: distr-publish-release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
 jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
       chart-version: ${{ steps.version.outputs.chart-version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - id: version
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.release.tag_name }}
+          MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          case "$TAG" in
-            copia-*) echo "chart-version=${TAG#copia-}" >> "$GITHUB_OUTPUT" ;;
-            *) echo "Unexpected release tag: $TAG" >&2; exit 1 ;;
-          esac
+          set -euo pipefail
+          # Stable production tags only, which also rejects the prerelease forms
+          # present in the tag list such as copia-0.29.0-beta.
+          if ! printf '%s' "$TAG" | grep -qE '^copia-[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Not a stable production release tag: ${TAG}" >&2
+            exit 1
+          fi
+          if [ "$MANUAL" = true ]; then
+            # A dispatch input is free text, so confirm the tag really is a
+            # published, non-draft, non-prerelease GitHub release before anything
+            # authenticates to a registry.
+            if ! state=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+                --json isDraft,isPrerelease --jq '"\(.isDraft) \(.isPrerelease)"'); then
+              echo "::error::No GitHub release found for tag ${TAG}" >&2
+              exit 1
+            fi
+            if [ "$state" != "false false" ]; then
+              echo "::error::${TAG} is a draft or prerelease (isDraft isPrerelease = ${state})" >&2
+              exit 1
+            fi
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "chart-version=${TAG#copia-}" >> "$GITHUB_OUTPUT"
 
   publish:
     needs: version
@@ -39,4 +71,5 @@ jobs:
       registry-host: ${{ vars.DISTR_STAGING_REGISTRY_HOST }}
       oci-namespace: ${{ vars.DISTR_STAGING_OCI_NAMESPACE }}
       api-base: ${{ vars.DISTR_STAGING_API_BASE }}
-      tailscale: true
+      ref: ${{ needs.version.outputs.tag }}
+      exit-node: ${{ vars.DISTR_STAGING_EXIT_NODE }}
