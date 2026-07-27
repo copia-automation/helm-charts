@@ -53,17 +53,9 @@ jobs:
           REF: ${{ inputs.ref }}
         run: |
           set -euo pipefail
-          # The rm is required. `git checkout <ref> -- <path>` overlays, so without
-          # it any chart file deleted since the ref would linger in the package.
           rm -rf charts/copia
           git checkout "$REF" -- charts/copia
 
-          # Prefer the ref's own Distr assets. Base values and the customer
-          # template are written against a specific chart's values.yaml and
-          # values.schema.json, so pairing an old chart with current base values
-          # can set keys that the old schema rejects and break the install.
-          # Tags up to copia-0.60.0 predate charts/copia/distr entirely, and those
-          # are the only ones that need the current assets as a fallback.
           if [ -f charts/copia/distr/values.base.yaml ] \
             && [ -f charts/copia/distr/values.customer.example.yaml ]; then
             echo "Using the Distr assets from ${REF}"
@@ -83,7 +75,9 @@ jobs:
 
       - name: Route egress through exit node
         if: ${{ inputs.exit-node != '' }}
-        run: sudo tailscale set --exit-node="${{ inputs.exit-node }}" --exit-node-allow-lan-access
+        env:
+          EXIT_NODE: ${{ inputs.exit-node }}
+        run: sudo tailscale set --exit-node="$EXIT_NODE" --exit-node-allow-lan-access
 
       - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
@@ -127,12 +121,6 @@ jobs:
           DISTR_API_TOKEN: ${{ secrets.DISTR_API_TOKEN }}
         run: |
           set -euo pipefail
-          # distr-create-version-action has no upsert or overwrite input, so a
-          # duplicate name fails at the very last step, after the chart and images
-          # have already been pushed. Check first and leave the registry untouched.
-          #
-          # Assign the response separately so a failed request fails this step
-          # rather than piping empty input to jq and reading as "does not exist".
           app=$(curl -fsSL --max-time 30 \
             -H "Authorization: AccessToken ${DISTR_API_TOKEN}" \
             "${API_BASE}/applications/${APP_ID}")
