@@ -28,11 +28,11 @@ fields keep **Deploy** disabled.
 
 ## Install the Kubernetes agent
 
-Copy the connect command from your deployment page in Distr and run it against your cluster:
+Copy the connect command from your deployment page in Distr and run it against your cluster.
+Distr generates a one-time command that includes credentials — paste it from the portal:
 
 ```bash
-kubectl apply -n copia -f \
-  "https://<your-distr-host>/api/v1/connect?targetId=<uuid>&targetSecret=<secret>"
+kubectl apply -n copia -f "https://<your-distr-host>/api/v1/connect?..."
 ```
 
 This installs the Distr agent with RBAC scoped to the `copia` namespace. The agent registers
