@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'charts/copia/**'
+      - 'docs/distr/**'
       - '.github/workflows/distr-publish*.yaml'
   workflow_dispatch:
 
