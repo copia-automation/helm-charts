@@ -65,6 +65,13 @@ jobs:
           fi
           git --no-pager diff --stat HEAD -- charts/copia | tail -1
 
+      # Install Helm before the exit node. azure/setup-helm downloads from
+      # get.helm.sh, which MagicDNS/exit-node DNS often cannot resolve
+      # (getaddrinfo EAI_AGAIN).
+      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: v3.21.2
+
       - name: Connect to tailnet
         if: ${{ inputs.exit-node != '' }}
         uses: tailscale/github-action@780049a30b6ff5c378a9e7b389d15ece7a204888 # v4.1.3
@@ -78,10 +85,6 @@ jobs:
         env:
           EXIT_NODE: ${{ inputs.exit-node }}
         run: sudo tailscale set --exit-node="$EXIT_NODE" --exit-node-allow-lan-access
-
-      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
-        with:
-          version: v3.21.2
 
       - name: Log in to registries
         env:
