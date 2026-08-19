@@ -255,8 +255,8 @@ conversion_manager_service:
 
 # Optional in-cluster Postgres via a CloudNativePG Cluster CR. The operator and
 # CRDs must already be installed in the cluster; this chart does not deploy them.
-# When enabled, Copia and conversion-manager are pointed at <clusterName>-rw:5432
-# and HOST / DB_HOST values are ignored. See docs/distr/cloudnativepg.md.
+# When enabled, omit HOST / DB_HOST (or leave the localhost chart default);
+# the apps use <clusterName>-rw:5432. See docs/distr/cloudnativepg.md.
 cloudnativePG:
   enabled: false
   # Fail helm install/upgrade unless postgresql.cnpg.io/v1 is registered.

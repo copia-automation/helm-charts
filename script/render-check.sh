@@ -19,6 +19,8 @@ main() {
     --values charts/copia/distr/values.base.yaml \
     --values charts/copia/distr/values.customer.example.yaml \
     --set cloudnativePG.enabled=true \
+    --set copia.config.database.HOST= \
+    --set conversion_manager_service.configmap.DB_HOST= \
     >/dev/null
   log::success "Distr overlay with cloudnativePG.enabled renders cleanly"
 }

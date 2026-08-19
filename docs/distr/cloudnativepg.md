@@ -29,9 +29,10 @@ checks also look for `clusters.postgresql.cnpg.io`.
 
 ## Customer values
 
-Flip `cloudnativePG.enabled` to `true`. You can leave `HOST` and `DB_HOST` in
-place; the chart ignores them and points both apps at the Cluster read-write
-Service (`<clusterName>-rw:5432`). Keep `NAME`, `USER`, and `PASSWD`.
+Flip `cloudnativePG.enabled` to `true` and **remove** `copia.config.database.HOST` and
+`conversion_manager_service.configmap.DB_HOST`. The chart points both apps at the
+Cluster read-write Service (`<clusterName>-rw:5432`). Leaving an external host in
+place fails the install. Keep `NAME`, `USER`, and `PASSWD`.
 
 ```yaml
 cloudnativePG:

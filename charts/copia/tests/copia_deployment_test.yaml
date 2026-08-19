@@ -86,7 +86,6 @@ tests:
   - it: waits for CloudNativePG read-write service
     set:
       cloudnativePG.enabled: true
-      copia.config.database.HOST: ignored.example.com:5432
       copia.config.database.USER: copia
       copia.config.database.NAME: copia
       copia.config.database.PASSWD: s3cret

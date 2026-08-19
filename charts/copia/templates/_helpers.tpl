@@ -183,10 +183,40 @@ copia
 
 {{/*
 host:port used by Copia and conversion-manager. When CloudNativePG is enabled this
-is the Cluster read-write Service, even if copia.config.database.HOST is set.
+is the Cluster read-write Service. A customer-set HOST/DB_HOST is an error unless
+it is empty, a localhost placeholder (chart default), or already the RW Service.
 */}}
+{{- define "copia.cnpg.isPlaceholderHost" -}}
+{{- $h := . | toString | trim | lower -}}
+{{- if or (eq $h "") (eq $h "localhost") (hasPrefix "localhost:" $h) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.cnpg.validateHosts" -}}
+{{- if eq "true" (include "copia.cnpg.enabled" .) -}}
+{{- $expected := printf "%s-rw:5432" (include "copia.cnpg.clusterName" .) -}}
+{{- $host := "" -}}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.HOST -}}
+{{- $host = .Values.copia.config.database.HOST | toString -}}
+{{- end -}}
+{{- if and $host (ne $host $expected) (ne (include "copia.cnpg.isPlaceholderHost" $host) "true") -}}
+{{- fail "cloudnativePG.enabled is true; omit copia.config.database.HOST." -}}
+{{- end -}}
+{{- $cmHost := "" -}}
+{{- $cm := .Values.conversion_manager_service -}}
+{{- if and $cm $cm.configmap $cm.configmap.DB_HOST -}}
+{{- $cmHost = $cm.configmap.DB_HOST | toString -}}
+{{- end -}}
+{{- if and $cmHost (ne $cmHost $expected) (ne (include "copia.cnpg.isPlaceholderHost" $cmHost) "true") -}}
+{{- fail "cloudnativePG.enabled is true; omit conversion_manager_service.configmap.DB_HOST." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "copia.database.hostPort" -}}
 {{- if eq "true" (include "copia.cnpg.enabled" .) }}
+{{- $_ := include "copia.cnpg.validateHosts" . }}
 {{- printf "%s-rw:5432" (include "copia.cnpg.clusterName" .) }}
 {{- else if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.HOST }}
 {{- .Values.copia.config.database.HOST }}

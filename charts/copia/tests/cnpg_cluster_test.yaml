@@ -22,6 +22,28 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "copia.config.database.PASSWD"
+  - it: fails when enabled with an external database HOST
+    capabilities:
+      apiVersions:
+        - postgresql.cnpg.io/v1
+    set:
+      cloudnativePG.enabled: true
+      copia.config.database.PASSWD: s3cret
+      copia.config.database.HOST: postgres.example.com:5432
+    asserts:
+      - failedTemplate:
+          errorPattern: "omit copia.config.database.HOST"
+  - it: fails when enabled with an external conversion-manager DB_HOST
+    capabilities:
+      apiVersions:
+        - postgresql.cnpg.io/v1
+    set:
+      cloudnativePG.enabled: true
+      copia.config.database.PASSWD: s3cret
+      conversion_manager_service.configmap.DB_HOST: postgres.example.com:5432
+    asserts:
+      - failedTemplate:
+          errorPattern: "omit conversion_manager_service.configmap.DB_HOST"
   - it: renders owner secret and Cluster when enabled
     capabilities:
       apiVersions:

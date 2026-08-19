@@ -19,9 +19,9 @@ ingress:
       hosts:
         - copia.example.com
 # In-cluster Postgres via CloudNativePG. Requires the operator and CRDs already
-# on the cluster (this chart does not install them). When enabled, HOST and
-# DB_HOST below are ignored; Copia and conversion-manager use <clusterName>-rw:5432.
-# See the "CloudNativePG Config" guide.
+# on the cluster (this chart does not install them). When enabled, remove HOST
+# and DB_HOST below; the chart uses <clusterName>-rw:5432 and fails if those
+# fields still point at an external server. See the "CloudNativePG Config" guide.
 cloudnativePG:
   enabled: false
   instances: 1
@@ -34,7 +34,7 @@ copia:
       DOMAIN: copia.example.com
       ROOT_URL: https://copia.example.com/
     database:
-      # Required for an existing Postgres. Ignored when cloudnativePG.enabled is true.
+      # Required for an existing Postgres. Remove this key when using CloudNativePG.
       HOST: postgres.example.com:5432
       NAME: copia
       USER: copia
@@ -51,7 +51,7 @@ copia:
       # PASSWD: "{{ .Secrets.SmtpPassword }}"
 conversion_manager_service:
   configmap:
-    # Ignored when cloudnativePG.enabled is true.
+    # Required for an existing Postgres. Remove this key when using CloudNativePG.
     DB_HOST: postgres.example.com:5432
     DB_NAME: conversion_manager
     DB_USER: conversion_manager

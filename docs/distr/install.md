@@ -33,8 +33,9 @@ Copia needs PostgreSQL. Two supported layouts:
 - **External Postgres** (default customer values) — set `copia.config.database.HOST`
   and conversion-manager `DB_HOST` to your server.
 - **In-cluster CloudNativePG** — install the CloudNativePG operator on the cluster
-  first, then set `cloudnativePG.enabled: true`. The chart creates a `Cluster` CR
-  and points the apps at it. See [CloudNativePG Config](./cloudnativepg.md).
+  first, then set `cloudnativePG.enabled: true` and remove `HOST` / `DB_HOST`.
+  The chart creates a `Cluster` CR and points the apps at it. See
+  [CloudNativePG Config](./cloudnativepg.md).
 
 ## Install the Kubernetes agent
 
