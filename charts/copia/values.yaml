@@ -252,3 +252,28 @@ conversion_manager_service:
     ADMIN_KEY: testAdminKey
     COPIA_USER_KEY: testCopiaUserKey
     COPIA_TEAM_KEY: testCopiaTeamKey
+
+# Optional in-cluster Postgres via a CloudNativePG Cluster CR. The operator and
+# CRDs must already be installed in the cluster; this chart does not deploy them.
+# When enabled, Copia and conversion-manager are pointed at <clusterName>-rw:5432
+# and HOST / DB_HOST values are ignored. See docs/distr/cloudnativepg.md.
+cloudnativePG:
+  enabled: false
+  # Fail helm install/upgrade unless postgresql.cnpg.io/v1 is registered.
+  requireCRD: true
+  # Keep Cluster (and its PVCs) if the chart is uninstalled or this option is
+  # turned off. Set false only for disposable environments.
+  keepOnDelete: true
+  # Default: <release-fullname>-pg
+  clusterName: ""
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  storage:
+    size: 20Gi
+    storageClass: ""
+  resources: {}
+  # Merged into the Cluster spec (postgresql.parameters, backup, monitoring, ...).
+  extraSpec: {}
+

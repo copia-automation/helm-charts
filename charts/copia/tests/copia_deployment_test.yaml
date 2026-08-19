@@ -73,10 +73,27 @@ tests:
           value: localhost
       - equal:
           path: spec.template.spec.initContainers[0].env[1].value
-          value: postgres
+          value: "5432"
       - equal:
           path: spec.template.spec.initContainers[0].env[2].value
-          value: password
+          value: postgres
       - equal:
           path: spec.template.spec.initContainers[0].env[3].value
+          value: password
+      - equal:
+          path: spec.template.spec.initContainers[0].env[4].value
           value: copia
+  - it: waits for CloudNativePG read-write service
+    set:
+      cloudnativePG.enabled: true
+      copia.config.database.HOST: ignored.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: s3cret
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].env[0].value
+          value: RELEASE-NAME-copia-pg-rw
+      - equal:
+          path: spec.template.spec.initContainers[0].env[1].value
+          value: "5432"

@@ -1,0 +1,115 @@
+{{- if eq "true" (include "copia.cnpg.enabled" .) }}
+{{- $requireCRD := true }}
+{{- if and .Values.cloudnativePG (hasKey .Values.cloudnativePG "requireCRD") }}
+{{- $requireCRD = .Values.cloudnativePG.requireCRD }}
+{{- end }}
+{{- if and $requireCRD (not (.Capabilities.APIVersions.Has "postgresql.cnpg.io/v1")) }}
+{{- fail "cloudnativePG.enabled requires CloudNativePG CRDs (postgresql.cnpg.io/v1). Install the operator first." }}
+{{- end }}
+{{- $db := dict }}
+{{- if and .Values.copia .Values.copia.config }}
+{{- $db = .Values.copia.config.database | default dict }}
+{{- end }}
+{{- if not $db.PASSWD }}
+{{- fail "cloudnativePG.enabled requires copia.config.database.PASSWD (bootstrap owner password)." }}
+{{- end }}
+{{- $clusterName := include "copia.cnpg.clusterName" . }}
+{{- $appSecret := printf "%s-app" $clusterName }}
+{{- $cmSecret := printf "%s-conversion-manager" $clusterName }}
+{{- $size := "20Gi" }}
+{{- if and .Values.cloudnativePG.storage .Values.cloudnativePG.storage.size }}
+{{- $size = .Values.cloudnativePG.storage.size }}
+{{- end }}
+{{- $storage := dict "size" $size }}
+{{- if and .Values.cloudnativePG.storage .Values.cloudnativePG.storage.storageClass }}
+{{- $_ := set $storage "storageClass" .Values.cloudnativePG.storage.storageClass }}
+{{- end }}
+{{- $initdb := dict
+      "database" (include "copia.database.name" .)
+      "owner" (include "copia.database.user" .)
+      "secret" (dict "name" $appSecret)
+}}
+{{- $spec := dict
+      "instances" (int (.Values.cloudnativePG.instances | default 1))
+      "imageName" (.Values.cloudnativePG.imageName | default "ghcr.io/cloudnative-pg/postgresql:16")
+      "enableSuperuserAccess" false
+      "storage" $storage
+      "bootstrap" (dict "initdb" $initdb)
+}}
+{{- if .Values.cloudnativePG.imagePullPolicy }}
+{{- $_ := set $spec "imagePullPolicy" .Values.cloudnativePG.imagePullPolicy }}
+{{- end }}
+{{- if and .Values.cloudnativePG.imagePullSecrets (gt (len .Values.cloudnativePG.imagePullSecrets) 0) }}
+{{- $_ := set $spec "imagePullSecrets" .Values.cloudnativePG.imagePullSecrets }}
+{{- end }}
+{{- if and .Values.cloudnativePG.resources (gt (len .Values.cloudnativePG.resources) 0) }}
+{{- $_ := set $spec "resources" .Values.cloudnativePG.resources }}
+{{- end }}
+{{- if eq "true" (include "copia.cnpg.conversionManager.enabled" .) }}
+{{- if not (and .Values.conversion_manager_service.secret .Values.conversion_manager_service.secret.DB_PASSWORD) }}
+{{- fail "cloudnativePG with conversion-manager requires conversion_manager_service.secret.DB_PASSWORD." }}
+{{- end }}
+{{- $role := dict
+      "name" (include "copia.cnpg.conversionManager.user" .)
+      "ensure" "present"
+      "login" true
+      "passwordSecret" (dict "name" $cmSecret)
+}}
+{{- $_ := set $spec "managed" (dict "roles" (list $role)) }}
+{{- end }}
+{{- $spec = mergeOverwrite $spec (.Values.cloudnativePG.extraSpec | default dict) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $appSecret }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+    cnpg.io/reload: "true"
+type: kubernetes.io/basic-auth
+stringData:
+  username: {{ include "copia.database.user" . | quote }}
+  password: {{ .Values.copia.config.database.PASSWD | quote }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ $clusterName }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+  {{- if .Values.cloudnativePG.keepOnDelete }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  {{- toYaml $spec | nindent 2 }}
+{{- if eq "true" (include "copia.cnpg.conversionManager.enabled" .) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $cmSecret }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+    cnpg.io/reload: "true"
+type: kubernetes.io/basic-auth
+stringData:
+  username: {{ include "copia.cnpg.conversionManager.user" . | quote }}
+  password: {{ .Values.conversion_manager_service.secret.DB_PASSWORD | quote }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: {{ $clusterName }}-conversion-manager
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+  {{- if .Values.cloudnativePG.keepOnDelete }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  name: {{ include "copia.cnpg.conversionManager.database" . }}
+  owner: {{ include "copia.cnpg.conversionManager.user" . }}
+  cluster:
+    name: {{ $clusterName }}
+{{- end }}
+{{- end }}

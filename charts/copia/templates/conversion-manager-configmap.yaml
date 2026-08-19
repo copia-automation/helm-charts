@@ -1,4 +1,10 @@
 {{- if and .Values.conversion_manager_service.configmap (eq .Values.conversion_manager_service.enabled true)}}
+{{- $cm := deepCopy .Values.conversion_manager_service.configmap }}
+{{- if eq "true" (include "copia.cnpg.enabled" .) }}
+  {{- $_ := set $cm "DB_HOST" (include "copia.database.hostPort" .) }}
+  {{- $_ := set $cm "DB_USER" (include "copia.cnpg.conversionManager.user" .) }}
+  {{- $_ := set $cm "DB_NAME" (include "copia.cnpg.conversionManager.database" .) }}
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,7 +12,7 @@ metadata:
   labels:
     {{- include "app.conversion-manager.labels" . | nindent 4 }}
 data:
-  {{- range $key, $value := .Values.conversion_manager_service.configmap }}
+  {{- range $key, $value := $cm }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
 {{- end }}

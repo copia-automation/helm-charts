@@ -26,6 +26,16 @@ Required environment fields include hostname, database connection settings, and 
 details. See the environment template on your deployment for the full list. Empty required
 fields keep **Deploy** disabled.
 
+### Database
+
+Copia needs PostgreSQL. Two supported layouts:
+
+- **External Postgres** (default customer values) — set `copia.config.database.HOST`
+  and conversion-manager `DB_HOST` to your server.
+- **In-cluster CloudNativePG** — install the CloudNativePG operator on the cluster
+  first, then set `cloudnativePG.enabled: true`. The chart creates a `Cluster` CR
+  and points the apps at it. See [CloudNativePG Config](./cloudnativepg.md).
+
 ## Install the Kubernetes agent
 
 Copy the connect command from your deployment page in Distr and run it against your cluster.

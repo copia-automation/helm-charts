@@ -446,6 +446,62 @@
       "type": "array",
       "description": "Repo auth secrets."
     },
+    "cloudnativePG": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional in-cluster Postgres via a CloudNativePG Cluster CR. The operator/CRDs must already be installed.",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "requireCRD": {
+          "type": "boolean",
+          "description": "When true, helm install fails unless postgresql.cnpg.io/v1 is present."
+        },
+        "keepOnDelete": {
+          "type": "boolean",
+          "description": "Annotate CNPG resources with helm.sh/resource-policy keep."
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "instances": {
+          "type": "number"
+        },
+        "imageName": {
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "type": "array"
+        },
+        "storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "size": {
+              "type": "string"
+            },
+            "storageClass": {
+              "type": "string"
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "extraSpec": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Merged into the Cluster spec for backups, monitoring, and other operator settings."
+        }
+      }
+    },
+
     "resources": {
       "type": "object",
       "additionalProperties": false,

@@ -83,18 +83,14 @@ spec:
           image: postgres:15-alpine
           command: ["/bin/sh", "/scripts/bootstrap.sh"]
           env:
-            {{- $parts := splitList ":" .Values.copia.config.database.HOST }}
-            {{- $pgHost := index $parts 0 }}
-            {{- $pgPort := "5432" }}
-            {{- if eq (len $parts) 2 }}{{ $pgPort = index $parts 1 }}{{ end }}
             - name: PGHOST
-              value: {{ $pgHost | quote }}
+              value: {{ include "copia.database.host" . | quote }}
             - name: PGPORT
-              value: {{ $pgPort | quote }}
+              value: {{ include "copia.database.port" . | quote }}
             - name: PGUSER
-              value: {{ .Values.copia.config.database.USER | quote }}
+              value: {{ include "copia.database.user" . | quote }}
             - name: PGDATABASE
-              value: {{ .Values.copia.config.database.NAME | quote }}
+              value: {{ include "copia.database.name" . | quote }}
             - name: PGPASSWORD
               value: {{ .Values.copia.config.database.PASSWD | quote }}
             - name: ADMIN_USERNAME

@@ -50,3 +50,21 @@ tests:
       - equal:
           path: data.ENABLE_HTTPS
           value: "false"
+  - it: CloudNativePG overrides DB_HOST and remaps reserved DB_USER
+    set:
+      conversion_manager_service.enabled: true
+      cloudnativePG.enabled: true
+      cloudnativePG.clusterName: copia-pg
+      conversion_manager_service.configmap.DB_HOST: postgres.example.com:5432
+      conversion_manager_service.configmap.DB_USER: postgres
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+    asserts:
+      - equal:
+          path: data.DB_HOST
+          value: "copia-pg-rw:5432"
+      - equal:
+          path: data.DB_USER
+          value: "conversion_manager"
+      - equal:
+          path: data.DB_NAME
+          value: "conversion_manager"
