@@ -17,7 +17,25 @@ similar). If you do, leave `cloudnativePG.enabled` false and set `HOST` /
 - Distr secrets `CopiaDbPassword` and `ConversionManagerDbPassword` (if you use
   conversion-manager)
 
-Confirm the CRDs:
+### Install the operator (infrastructure agent)
+
+The Copia chart does not install the operator. If the infrastructure agent
+provisioned the cluster with Windsor Core `oci://ghcr.io/windsorcli/core:v0.7.0`,
+set these on that application's Environment tab:
+
+```bash
+CORE_DATABASE__POSTGRES__ENABLED=true
+CORE_DATABASE__POSTGRES__DRIVER=cloudnativepg
+```
+
+That writes `database.postgres.enabled` and `database.postgres.driver` in Windsor
+`values.yaml`. The next reconcile installs the operator HelmRelease (`database` /
+`cloudnativepg` in Flux).
+
+Do **not** set `CORE_ADDONS__DATABASE__POSTGRES__*`. Those keys write
+`addons.database.postgres`, which Core `v0.7.0` ignores.
+
+Confirm the CRDs after reconcile:
 
 ```bash
 kubectl get crd clusters.postgresql.cnpg.io databases.postgresql.cnpg.io
@@ -124,7 +142,10 @@ kubectl -n copia delete cluster.postgresql.cnpg.io <clusterName>
 
 ## Troubleshooting
 
-- **Helm: CRDs were not found** — install the operator, then retry deploy
+- **Helm: CRDs were not found** — install the operator
+  (`CORE_DATABASE__POSTGRES__ENABLED=true` on the infrastructure application for
+  Core `v0.7.0`), then retry deploy. `CORE_ADDONS__DATABASE__*` does not enable
+  the operator on that blueprint.
 - **Copia crash-loop / init container waiting** — `kubectl -n copia get cluster`
   and describe the Cluster; storage and image pull are the usual causes
 - **conversion-manager cannot log in** — confirm `DB_USER` is not `postgres`, and
