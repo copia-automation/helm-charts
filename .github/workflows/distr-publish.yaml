@@ -21,7 +21,9 @@ on:
         type: string
         default: ''
       exit-node:
-        description: MagicDNS name of the Tailscale exit node to route egress through
+        description: >
+          Staging exit-node hostname prefix (e.g. staging-platform). The live MagicDNS
+          name may be unsuffixed or staging-platform-N; CI resolves it from the tailnet.
         required: false
         type: string
         default: ''
@@ -65,35 +67,6 @@ jobs:
           fi
           git --no-pager diff --stat HEAD -- charts/copia | tail -1
 
-      # Install Helm before the exit node. azure/setup-helm downloads from
-      # get.helm.sh, which MagicDNS/exit-node DNS often cannot resolve
-      # (getaddrinfo EAI_AGAIN).
-      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
-        with:
-          version: v3.21.2
-
-      # GHCR is public. Login and pull before the exit node; staging-platform-1
-      # cannot reach ghcr.io (docker login times out with context deadline).
-      - name: Log in to GHCR
-        env:
-          GHCR_TOKEN: ${{ github.token }}
-          GHCR_ACTOR: ${{ github.actor }}
-        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
-
-      - name: Pull chart images from GHCR
-        run: |
-          set -euo pipefail
-          helm template mirror charts/copia --set conversion_manager_service.enabled=true \
-            > /tmp/rendered.yaml
-          grep -oE 'ghcr\.io/copia-automation/[A-Za-z0-9._/-]+:[A-Za-z0-9._+-]+' \
-            /tmp/rendered.yaml | sort -u > /tmp/srcs.txt
-          test -s /tmp/srcs.txt
-          while IFS= read -r src; do
-            dst="${DST}/${src#ghcr.io/copia-automation/}"
-            docker pull "$src"
-            docker tag "$src" "$dst"
-          done < /tmp/srcs.txt
-
       - name: Connect to tailnet
         if: ${{ inputs.exit-node != '' }}
         uses: tailscale/github-action@780049a30b6ff5c378a9e7b389d15ece7a204888 # v4.1.3
@@ -106,14 +79,23 @@ jobs:
         if: ${{ inputs.exit-node != '' }}
         env:
           EXIT_NODE: ${{ inputs.exit-node }}
-        run: sudo tailscale set --exit-node="$EXIT_NODE" --exit-node-allow-lan-access
+        run: |
+          set -euo pipefail
+          .github/scripts/route-via-exit-node.sh
 
-      - name: Log in to Distr registry
+      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: v3.21.2
+
+      - name: Log in to registries
         env:
           DISTR_REGISTRY_PAT: ${{ secrets.DISTR_REGISTRY_PAT }}
           REGISTRY_HOST: ${{ inputs.registry-host }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
           echo "$DISTR_REGISTRY_PAT" | docker login "$REGISTRY_HOST" -u - --password-stdin
           echo "$DISTR_REGISTRY_PAT" | helm registry login "$REGISTRY_HOST" -u - --password-stdin
 
@@ -152,12 +134,17 @@ jobs:
             exit 1
           fi
 
-      - name: Push mirrored images to Distr
+      - name: Mirror images to Distr
         run: |
           set -euo pipefail
+          helm template mirror charts/copia --set conversion_manager_service.enabled=true > /tmp/rendered.yaml
+          grep -oE 'ghcr\.io/copia-automation/[A-Za-z0-9._/-]+:[A-Za-z0-9._+-]+' /tmp/rendered.yaml | sort -u > /tmp/srcs.txt
+          test -s /tmp/srcs.txt
           while IFS= read -r src; do
             dst="${DST}/${src#ghcr.io/copia-automation/}"
             if docker manifest inspect "$dst" >/dev/null 2>&1; then continue; fi
+            docker pull "$src"
+            docker tag "$src" "$dst"
             docker push "$dst"
           done < /tmp/srcs.txt
 
