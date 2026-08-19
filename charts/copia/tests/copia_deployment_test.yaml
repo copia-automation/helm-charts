@@ -65,9 +65,12 @@ tests:
       - matchRegex:
           path: metadata.name
           pattern: copia
-      - matchRegex:
+      - equal:
           path: spec.template.spec.initContainers[0].image
-          pattern: postgres:latest
+          value: postgres:16-alpine
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: pg_isready
       - equal:
           path: spec.template.spec.initContainers[0].env[0].value
           value: localhost
@@ -96,3 +99,6 @@ tests:
       - equal:
           path: spec.template.spec.initContainers[0].env[1].value
           value: "5432"
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: waiting for postgres

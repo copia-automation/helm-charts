@@ -55,28 +55,19 @@ spec:
       {{- if or $waitPg $autoGen }}
       initContainers:
         {{- if $waitPg }}
-        - name: {{ .Chart.Name }}-init
-          image: postgres:latest
-          imagePullPolicy: Always
-          command: ['psql', '-c', '\q']
-          resources:
-            limits:
-              cpu: 100m
-              memory: 128Mi
-            requests:
-              cpu: 100m
-              memory: 128Mi
-          env:
-            - name: PGHOST
-              value: {{ include "copia.database.host" . | quote }}
-            - name: PGPORT
-              value: {{ include "copia.database.port" . | quote }}
-            - name: PGUSER
-              value: {{ include "copia.database.user" . | quote }}
-            - name: PGPASSWORD
-              value: {{ .Values.copia.config.database.PASSWD | quote }}
-            - name: PGDATABASE
-              value: {{ include "copia.database.name" . | quote }}
+        {{- $sslMode := "prefer" }}
+        {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+        {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+        {{- end }}
+        {{- include "copia.waitPostgres.initContainer" (dict
+          "name" (printf "%s-init" .Chart.Name)
+          "host" (include "copia.database.host" .)
+          "port" (include "copia.database.port" .)
+          "user" (include "copia.database.user" .)
+          "password" .Values.copia.config.database.PASSWD
+          "database" (include "copia.database.name" .)
+          "sslMode" $sslMode
+        ) | nindent 8 }}
         {{- end }}
         {{- if $autoGen }}
         - name: render-app-ini

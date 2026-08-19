@@ -27,7 +27,7 @@ cloudnativePG:
   instances: 1
   storage:
     size: 50Gi
-    # storageClass: gp3
+    storageClass: single
 copia:
   config:
     server:

@@ -261,9 +261,9 @@ cloudnativePG:
   enabled: false
   # Fail helm install/upgrade unless postgresql.cnpg.io/v1 is registered.
   requireCRD: true
-  # Keep Cluster (and its PVCs) if the chart is uninstalled or this option is
-  # turned off. Set false only for disposable environments.
-  keepOnDelete: true
+  # When true, helm uninstall leaves the Cluster (and its PVCs). Leave false so
+  # undeploy/redeploy can bootstrap a new volume; set true only to keep data.
+  keepOnDelete: false
   # Default: <release-fullname>-pg
   clusterName: ""
   instances: 1
@@ -272,7 +272,7 @@ cloudnativePG:
   imagePullSecrets: []
   storage:
     size: 20Gi
-    storageClass: ""
+    storageClass: single
   resources: {}
   # Merged into the Cluster spec (postgresql.parameters, backup, monitoring, ...).
   extraSpec: {}

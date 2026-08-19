@@ -58,7 +58,7 @@ cloudnativePG:
   instances: 1
   storage:
     size: 50Gi
-    storageClass: gp3
+    storageClass: single
 copia:
   config:
     database:
@@ -85,8 +85,8 @@ those). `copia` is the usual owner name.
 | `cloudnativePG.instances` | `1` | Postgres pods. Use `3` for HA |
 | `cloudnativePG.imageName` | `ghcr.io/cloudnative-pg/postgresql:16` | Operand image (mirror this if air-gapped) |
 | `cloudnativePG.storage.size` | `20Gi` (chart) / `50Gi` (customer example) | Data volume |
-| `cloudnativePG.storage.storageClass` | cluster default | Must support RWO |
-| `cloudnativePG.keepOnDelete` | `true` | Helm will not delete the Cluster on uninstall |
+| `cloudnativePG.storage.storageClass` | `single` | Must support RWO |
+| `cloudnativePG.keepOnDelete` | `false` | When true, Helm will not delete the Cluster on uninstall |
 | `cloudnativePG.extraSpec` | `{}` | Merged into the Cluster spec |
 
 ### `extraSpec` examples
@@ -118,8 +118,9 @@ When `cloudnativePG.enabled` is true:
 3. If conversion-manager is enabled: a second auth Secret, a managed role, and a
    `Database` CR for `conversion_manager`
 
-The read-write Service is `<clusterName>-rw` on port 5432. Copia waits for
-Postgres with an init container before the app starts.
+The read-write Service is `<clusterName>-rw` on port 5432. Copia and
+conversion-manager wait in an init container (`pg_isready`, then `SELECT 1`)
+until that database exists, so they do not start during CNPG `initdb`.
 
 ## Conversion-manager
 
@@ -132,13 +133,21 @@ Requires CloudNativePG 1.22+ for the `Database` CRD.
 
 ## Uninstall and disable
 
-`keepOnDelete` defaults to true, so `helm uninstall` or setting `enabled: false`
-does not delete the Cluster or its PVCs. To tear the database down, delete the
-Cluster yourself after you have backups:
+By default `keepOnDelete` is false, so `helm uninstall` (Distr undeploy) deletes
+the Cluster. CloudNativePG then deletes the instance pods and PVCs. The next
+deploy creates a new Cluster and new PVCs and runs `initdb` again.
+
+If a previous install used `keepOnDelete: true`, undeploy leaves the Cluster CR
+behind. Redeploy will not create new PVCs: CloudNativePG refuses to `initdb`
+over an existing Cluster. Delete the leftover Cluster (this also removes its
+PVCs), then deploy again:
 
 ```bash
 kubectl -n copia delete cluster.postgresql.cnpg.io <clusterName>
+kubectl -n copia get pvc
 ```
+
+Set `keepOnDelete: true` only when you must keep the database across undeploy.
 
 ## Troubleshooting
 
@@ -148,5 +157,8 @@ kubectl -n copia delete cluster.postgresql.cnpg.io <clusterName>
   the operator on that blueprint.
 - **Copia crash-loop / init container waiting** — `kubectl -n copia get cluster`
   and describe the Cluster; storage and image pull are the usual causes
+- **PVC missing after undeploy/redeploy** — a leftover Cluster CR from
+  `keepOnDelete` blocks a new volume. Delete the Cluster, wait for PVCs to
+  disappear, then redeploy
 - **conversion-manager cannot log in** — confirm `DB_USER` is not `postgres`, and
   that `ConversionManagerDbPassword` matches the Secret the chart created

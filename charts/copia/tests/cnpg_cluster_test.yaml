@@ -65,6 +65,21 @@ tests:
           apiVersion: postgresql.cnpg.io/v1
           kind: Cluster
           any: true
+  - it: Cluster defaults storageClass to single
+    capabilities:
+      apiVersions:
+        - postgresql.cnpg.io/v1
+    set:
+      cloudnativePG.enabled: true
+      cloudnativePG.clusterName: copia-pg
+      copia.config.database.PASSWD: s3cret
+    documentSelector:
+      path: kind
+      value: Cluster
+    asserts:
+      - equal:
+          path: spec.storage.storageClass
+          value: single
   - it: Cluster uses bootstrap owner and storage from values
     capabilities:
       apiVersions:
@@ -103,6 +118,21 @@ tests:
       - equal:
           path: spec.bootstrap.initdb.secret.name
           value: copia-pg-app
+      - notExists:
+          path: metadata.annotations["helm.sh/resource-policy"]
+  - it: keepOnDelete annotates Cluster so Helm will not delete it
+    capabilities:
+      apiVersions:
+        - postgresql.cnpg.io/v1
+    set:
+      cloudnativePG.enabled: true
+      cloudnativePG.clusterName: copia-pg
+      cloudnativePG.keepOnDelete: true
+      copia.config.database.PASSWD: s3cret
+    documentSelector:
+      path: kind
+      value: Cluster
+    asserts:
       - equal:
           path: metadata.annotations["helm.sh/resource-policy"]
           value: keep
