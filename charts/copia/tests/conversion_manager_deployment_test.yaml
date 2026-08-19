@@ -155,4 +155,29 @@ tests:
           content:
             secretRef:
               name: conversion-manager-secrets
+  - it: waits for CloudNativePG before starting
+    set:
+      conversion_manager_service.enabled: true
+      cloudnativePG.enabled: true
+      cloudnativePG.clusterName: copia-pg
+      copia.config.database.PASSWD: s3cret
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+      conversion_manager_service.configmap.DB_USER: conversion_manager
+      conversion_manager_service.secret.DB_PASSWORD: cm-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-postgres
+      - equal:
+          path: spec.template.spec.initContainers[0].env[0].value
+          value: copia-pg-rw
+      - equal:
+          path: spec.template.spec.initContainers[0].env[2].value
+          value: conversion_manager
+      - equal:
+          path: spec.template.spec.initContainers[0].env[4].value
+          value: conversion_manager
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: pg_isready
 

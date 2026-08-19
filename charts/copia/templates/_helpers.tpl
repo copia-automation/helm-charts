@@ -135,3 +135,137 @@ Selector labels
 app.kubernetes.io/name: {{ include "app.conversion-manager.name" . }}
 app.kubernetes.io/instance: {{ include "app.conversion-manager.name" . }}
 {{- end -}}
+
+{{/*
+Return "true" when the chart should render a CloudNativePG Cluster.
+*/}}
+{{- define "copia.cnpg.enabled" -}}
+{{- if and .Values.cloudnativePG .Values.cloudnativePG.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+CloudNativePG Cluster object name. DNS label, kept short enough for -rw/-r suffixes.
+*/}}
+{{- define "copia.cnpg.clusterName" -}}
+{{- if and .Values.cloudnativePG .Values.cloudnativePG.clusterName }}
+{{- .Values.cloudnativePG.clusterName | trunc 51 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-pg" (include "app.fullname" .) | trunc 51 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Postgres application owner. Defaults to copia. Reserved CNPG roles are rejected.
+*/}}
+{{- define "copia.database.user" -}}
+{{- $user := "copia" }}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.USER }}
+{{- $user = .Values.copia.config.database.USER }}
+{{- end }}
+{{- if and (eq "true" (include "copia.cnpg.enabled" .)) (or (eq $user "postgres") (eq $user "streaming_replica")) }}
+{{- fail "cloudnativePG.enabled cannot use database USER postgres or streaming_replica (reserved by CloudNativePG)." }}
+{{- end }}
+{{- $user }}
+{{- end -}}
+
+{{/*
+Postgres database name for Copia. Defaults to copia.
+*/}}
+{{- define "copia.database.name" -}}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.NAME }}
+{{- .Values.copia.config.database.NAME }}
+{{- else }}
+copia
+{{- end }}
+{{- end -}}
+
+{{/*
+host:port used by Copia and conversion-manager. When CloudNativePG is enabled this
+is the Cluster read-write Service. A customer-set HOST/DB_HOST is an error unless
+it is empty, a localhost placeholder (chart default), or already the RW Service.
+*/}}
+{{- define "copia.cnpg.isPlaceholderHost" -}}
+{{- $h := . | toString | trim | lower -}}
+{{- if or (eq $h "") (eq $h "localhost") (hasPrefix "localhost:" $h) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.cnpg.validateHosts" -}}
+{{- if eq "true" (include "copia.cnpg.enabled" .) -}}
+{{- $expected := printf "%s-rw:5432" (include "copia.cnpg.clusterName" .) -}}
+{{- $host := "" -}}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.HOST -}}
+{{- $host = .Values.copia.config.database.HOST | toString -}}
+{{- end -}}
+{{- if and $host (ne $host $expected) (ne (include "copia.cnpg.isPlaceholderHost" $host) "true") -}}
+{{- fail "cloudnativePG.enabled is true; omit copia.config.database.HOST." -}}
+{{- end -}}
+{{- $cmHost := "" -}}
+{{- $cm := .Values.conversion_manager_service -}}
+{{- if and $cm $cm.configmap $cm.configmap.DB_HOST -}}
+{{- $cmHost = $cm.configmap.DB_HOST | toString -}}
+{{- end -}}
+{{- if and $cmHost (ne $cmHost $expected) (ne (include "copia.cnpg.isPlaceholderHost" $cmHost) "true") -}}
+{{- fail "cloudnativePG.enabled is true; omit conversion_manager_service.configmap.DB_HOST." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.database.hostPort" -}}
+{{- if eq "true" (include "copia.cnpg.enabled" .) }}
+{{- $_ := include "copia.cnpg.validateHosts" . }}
+{{- printf "%s-rw:5432" (include "copia.cnpg.clusterName" .) }}
+{{- else if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.HOST }}
+{{- .Values.copia.config.database.HOST }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.database.host" -}}
+{{- $hostPort := include "copia.database.hostPort" . | trim }}
+{{- $parts := splitList ":" $hostPort }}
+{{- index $parts 0 }}
+{{- end -}}
+
+{{- define "copia.database.port" -}}
+{{- $hostPort := include "copia.database.hostPort" . | trim }}
+{{- $parts := splitList ":" $hostPort }}
+{{- if eq (len $parts) 2 }}{{ index $parts 1 }}{{ else }}5432{{ end }}
+{{- end -}}
+
+{{/*
+Return "true" when conversion-manager should get a CNPG Database and role.
+*/}}
+{{- define "copia.cnpg.conversionManager.enabled" -}}
+{{- if eq "true" (include "copia.cnpg.enabled" .) -}}
+{{- if and .Values.conversion_manager_service .Values.conversion_manager_service.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+conversion-manager role name. Remaps reserved postgres/streaming_replica names.
+*/}}
+{{- define "copia.cnpg.conversionManager.user" -}}
+{{- $user := "conversion_manager" }}
+{{- $cm := .Values.conversion_manager_service }}
+{{- if and $cm $cm.configmap $cm.configmap.DB_USER }}
+{{- $user = $cm.configmap.DB_USER }}
+{{- end }}
+{{- if or (eq $user "postgres") (eq $user "streaming_replica") }}
+{{- $user = "conversion_manager" }}
+{{- end }}
+{{- $user }}
+{{- end -}}
+
+{{- define "copia.cnpg.conversionManager.database" -}}
+{{- $cm := .Values.conversion_manager_service }}
+{{- if and $cm $cm.configmap $cm.configmap.DB_NAME }}
+{{- $cm.configmap.DB_NAME }}
+{{- else }}
+conversion_manager
+{{- end }}
+{{- end -}}

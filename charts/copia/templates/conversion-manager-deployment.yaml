@@ -46,6 +46,22 @@ spec:
       {{- if .Values.conversion_manager_service.deployment.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ .Values.conversion_manager_service.deployment.terminationGracePeriodSeconds }}
       {{- end }}
+      {{- if eq "true" (include "copia.cnpg.conversionManager.enabled" .) }}
+      {{- $sslMode := "prefer" }}
+      {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+      {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+      {{- end }}
+      initContainers:
+        {{- include "copia.waitPostgres.initContainer" (dict
+          "name" "wait-postgres"
+          "host" (include "copia.database.host" .)
+          "port" (include "copia.database.port" .)
+          "user" (include "copia.cnpg.conversionManager.user" .)
+          "password" .Values.conversion_manager_service.secret.DB_PASSWORD
+          "database" (include "copia.cnpg.conversionManager.database" .)
+          "sslMode" $sslMode
+        ) | nindent 8 }}
+      {{- end }}
       containers:
         - name: "conversion-manager"
           image: "{{ include "cm.image" . }}"

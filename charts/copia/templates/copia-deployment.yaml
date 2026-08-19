@@ -48,30 +48,26 @@ spec:
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
-      {{- $autoGen := and (hasKey .Values.copia "config") (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) }}
-      {{- if or (and .Values.copia.config .Values.deployment.preflight) $autoGen }}
+      {{- $secretsOn := and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+      {{- $autoGen := and (hasKey .Values.copia "config") $secretsOn }}
+      {{- $cnpgOn := eq "true" (include "copia.cnpg.enabled" .) }}
+      {{- $waitPg := and .Values.copia.config (or .Values.deployment.preflight $cnpgOn) }}
+      {{- if or $waitPg $autoGen }}
       initContainers:
-        {{- if and .Values.copia.config .Values.deployment.preflight }}
-        - name: {{ .Chart.Name }}-init
-          image: postgres:latest
-          imagePullPolicy: Always
-          command: ['psql', '-c', '\q']
-          resources:
-            limits:
-              cpu: 100m
-              memory: 128Mi
-            requests:
-              cpu: 100m
-              memory: 128Mi
-          env:
-            - name: PGHOST
-              value: {{ .Values.copia.config.database.HOST }}
-            - name: PGUSER
-              value: {{ .Values.copia.config.database.USER }}
-            - name: PGPASSWORD
-              value: {{ .Values.copia.config.database.PASSWD }}
-            - name: PGDATABASE
-              value: {{ .Values.copia.config.database.NAME }}
+        {{- if $waitPg }}
+        {{- $sslMode := "prefer" }}
+        {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+        {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+        {{- end }}
+        {{- include "copia.waitPostgres.initContainer" (dict
+          "name" (printf "%s-init" .Chart.Name)
+          "host" (include "copia.database.host" .)
+          "port" (include "copia.database.port" .)
+          "user" (include "copia.database.user" .)
+          "password" .Values.copia.config.database.PASSWD
+          "database" (include "copia.database.name" .)
+          "sslMode" $sslMode
+        ) | nindent 8 }}
         {{- end }}
         {{- if $autoGen }}
         - name: render-app-ini
