@@ -1,0 +1,84 @@
+suite: Test Crossplane Postgres Claim
+templates:
+  - crossplane-claim.yaml
+tests:
+  - it: renders nothing when disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: fails when enabled without the CRD
+    set:
+      database.provider: crossplane
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "PostgresInstance CRD"
+  - it: fails when enabled with an external database HOST
+    capabilities:
+      apiVersions:
+        - aws.copia.io/v1alpha1
+    set:
+      crossplane.enabled: true
+      copia.config.database.HOST: postgres.example.com:5432
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "omit copia.config.database.HOST"
+  - it: fails when subnetIds missing
+    capabilities:
+      apiVersions:
+        - aws.copia.io/v1alpha1
+    set:
+      database.provider: crossplane
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "subnetIds"
+  - it: fails when both crossplane and cloudnativePG are enabled
+    capabilities:
+      apiVersions:
+        - aws.copia.io/v1alpha1
+        - postgresql.cnpg.io/v1
+    set:
+      crossplane.enabled: true
+      cloudnativePG.enabled: true
+      copia.config.database.PASSWD: s3cret
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "cannot both be enabled"
+  - it: renders Claim with connection secret ref when enabled via database.provider
+    capabilities:
+      apiVersions:
+        - aws.copia.io/v1alpha1
+    set:
+      database.provider: crossplane
+      crossplane.claimName: copia-poc-pg
+      crossplane.connectionSecretName: copia-db-app
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b", "subnet-c"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-poc"]
+      crossplane.parameters.instanceClass: db.t4g.micro
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PostgresInstance
+      - equal:
+          path: metadata.name
+          value: copia-poc-pg
+      - equal:
+          path: spec.writeConnectionSecretToRef.name
+          value: copia-db-app
+      - equal:
+          path: spec.parameters.region
+          value: us-east-2
+      - notExists:
+          path: metadata.annotations["helm.sh/hook"]

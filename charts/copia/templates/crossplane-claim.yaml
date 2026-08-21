@@ -1,0 +1,54 @@
+{{- if eq "true" (include "copia.crossplane.enabled" .) }}
+{{- $_ := include "copia.crossplane.validateHosts" . }}
+{{- $requireCRD := true }}
+{{- if and .Values.crossplane (hasKey .Values.crossplane "requireCRD") }}
+{{- $requireCRD = .Values.crossplane.requireCRD }}
+{{- end }}
+{{- if and $requireCRD (not (.Capabilities.APIVersions.Has "aws.copia.io/v1alpha1")) }}
+{{- fail "crossplane database provider requires PostgresInstance CRD (aws.copia.io/v1alpha1). Install the platform XRD + Composition first." }}
+{{- end }}
+{{- $params := dict
+      "region" "us-east-2"
+      "engineVersion" "15"
+      "instanceClass" "db.t4g.micro"
+      "allocatedStorage" 20
+      "dbName" (include "copia.database.name" .)
+      "username" (include "copia.database.user" .)
+      "providerConfigName" "default"
+      "skipFinalSnapshot" true
+}}
+{{- if and .Values.crossplane .Values.crossplane.providerConfigRef }}
+{{- $_ := set $params "providerConfigName" .Values.crossplane.providerConfigRef }}
+{{- end }}
+{{- if and .Values.crossplane .Values.crossplane.parameters }}
+{{- $params = mergeOverwrite $params .Values.crossplane.parameters }}
+{{- end }}
+{{- if or (not (hasKey $params "subnetIds")) (eq (len ($params.subnetIds | default list)) 0) }}
+{{- fail "crossplane.parameters.subnetIds is required (database/isolated subnet IDs for the Composition)." }}
+{{- end }}
+{{- if or (not (hasKey $params "vpcSecurityGroupIds")) (eq (len ($params.vpcSecurityGroupIds | default list)) 0) }}
+{{- fail "crossplane.parameters.vpcSecurityGroupIds is required (SG allowing 5432 from EKS workers)." }}
+{{- end }}
+{{- if not (hasKey $params "region") }}
+{{- fail "crossplane.parameters.region is required." }}
+{{- end }}
+---
+# Normal release resource (not a Helm hook). Helm must not wait on Claim Ready —
+# RDS takes 5–15 minutes. Pods/admin Job wait via pg_isready on the connection Secret.
+apiVersion: aws.copia.io/v1alpha1
+kind: PostgresInstance
+metadata:
+  name: {{ include "copia.crossplane.claimName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+  {{- if and .Values.crossplane .Values.crossplane.keepOnDelete }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  parameters:
+    {{- toYaml $params | nindent 4 }}
+  writeConnectionSecretToRef:
+    name: {{ include "copia.crossplane.connectionSecretName" . }}
+{{- end }}

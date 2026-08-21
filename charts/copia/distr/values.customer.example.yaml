@@ -28,13 +28,25 @@ cloudnativePG:
   storage:
     size: 50Gi
     storageClass: single
+# AWS RDS via Crossplane (mutually exclusive with cloudnativePG). Requires
+# Crossplane + PostgresInstance XRD/Composition. Omit HOST/PASSWD when enabled.
+# See docs/distr/crossplane.md.
+# database:
+#   provider: crossplane
+# crossplane:
+#   enabled: true
+#   parameters:
+#     region: us-east-2
+#     subnetIds: []
+#     vpcSecurityGroupIds: []
 copia:
   config:
     server:
       DOMAIN: copia.example.com
       ROOT_URL: https://copia.example.com/
     database:
-      # Required for an existing Postgres. Remove this key when using CloudNativePG.
+      # Required for an existing Postgres. Remove this key when using CloudNativePG
+      # or Crossplane.
       HOST: postgres.example.com:5432
       NAME: copia
       USER: copia

@@ -51,10 +51,12 @@ spec:
       {{- $secretsOn := and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
       {{- $autoGen := and (hasKey .Values.copia "config") $secretsOn }}
       {{- $cnpgOn := eq "true" (include "copia.cnpg.enabled" .) }}
-      {{- $waitPg := and .Values.copia.config (or .Values.deployment.preflight $cnpgOn) }}
-      {{- if or $waitPg $autoGen }}
+      {{- $xpOn := eq "true" (include "copia.crossplane.enabled" .) }}
+      {{- $renderIni := or $autoGen $xpOn }}
+      {{- $waitPg := and .Values.copia.config (or .Values.deployment.preflight $cnpgOn $xpOn) }}
+      {{- if or $waitPg $renderIni }}
       initContainers:
-        {{- if $waitPg }}
+        {{- if and $waitPg (not $xpOn) }}
         {{- $sslMode := "prefer" }}
         {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
         {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
@@ -69,7 +71,19 @@ spec:
           "sslMode" $sslMode
         ) | nindent 8 }}
         {{- end }}
-        {{- if $autoGen }}
+        {{- if $xpOn }}
+        {{- $sslMode := "require" }}
+        {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+        {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+        {{- end }}
+        {{- include "copia.waitPostgres.fromSecret.initContainer" (dict
+          "name" (printf "%s-wait-db" .Chart.Name)
+          "database" (include "copia.database.name" .)
+          "sslMode" $sslMode
+          "volumeName" "db-secret"
+        ) | nindent 8 }}
+        {{- end }}
+        {{- if $renderIni }}
         - name: render-app-ini
           image: alpine:3.22
           command: ["/bin/sh", "-c"]
@@ -77,7 +91,27 @@ spec:
             - |
               set -eu
               cp /tmp/template/app.ini /tmp/final/app.ini
-              for dir in /tmp/secrets /tmp/cm-secrets; do
+              if [ -d /tmp/db-secret ]; then
+                mkdir -p /tmp/db-mapped
+                read_secret() {
+                  for key in "$@"; do
+                    if [ -e "/tmp/db-secret/${key}" ]; then
+                      tr -d '\n' < "/tmp/db-secret/${key}"
+                      return 0
+                    fi
+                  done
+                  return 1
+                }
+                host="$(read_secret host endpoint address || true)"
+                host="${host%%:*}"
+                port="$(read_secret port || echo 5432)"
+                user="$(read_secret user username || true)"
+                pass="$(read_secret password attribute.password || true)"
+                printf '%s:%s' "$host" "$port" > /tmp/db-mapped/XP_DB_HOST
+                printf '%s' "$user" > /tmp/db-mapped/XP_DB_USER
+                printf '%s' "$pass" > /tmp/db-mapped/XP_DB_PASSWD
+              fi
+              for dir in /tmp/secrets /tmp/cm-secrets /tmp/db-mapped; do
                 [ -d "$dir" ] || continue
                 for f in "$dir"/*; do
                   [ -e "$f" ] || continue
@@ -107,10 +141,17 @@ spec:
           volumeMounts:
             - name: app-ini-template
               mountPath: /tmp/template
+            {{- if $autoGen }}
             - name: gitea-secrets
               mountPath: /tmp/secrets
             - name: conversion-manager-secrets
               mountPath: /tmp/cm-secrets
+            {{- end }}
+            {{- if $xpOn }}
+            - name: db-secret
+              mountPath: /tmp/db-secret
+              readOnly: true
+            {{- end }}
             - name: config
               mountPath: /tmp/final
         {{- end }}
@@ -223,22 +264,29 @@ spec:
       volumes:
         {{- if (hasKey .Values.copia "config") }}
         - name: config
-          {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+          {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) (eq "true" (include "copia.crossplane.enabled" .)) }}
           emptyDir: {}
           {{- else }}
           secret:
             secretName: {{ include "app.fullname" . }}-ini
           {{- end }}
-        {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+        {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) (eq "true" (include "copia.crossplane.enabled" .)) }}
         - name: app-ini-template
           secret:
             secretName: {{ include "app.fullname" . }}-ini
+        {{- end }}
+        {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
         - name: gitea-secrets
           secret:
             secretName: {{ include "app.fullname" . }}-gitea-secrets
         - name: conversion-manager-secrets
           secret:
             secretName: conversion-manager-secrets
+        {{- end }}
+        {{- if eq "true" (include "copia.crossplane.enabled" .) }}
+        - name: db-secret
+          secret:
+            secretName: {{ include "copia.crossplane.connectionSecretName" . }}
         {{- end }}
         {{- end }}
         {{- if .Values.extraVolumes }}

@@ -28,7 +28,7 @@ fields keep **Deploy** disabled.
 
 ### Database
 
-Copia needs PostgreSQL. Two supported layouts:
+Copia needs PostgreSQL. Supported layouts:
 
 - **External Postgres** (default customer values) — set `copia.config.database.HOST`
   and conversion-manager `DB_HOST` to your server.
@@ -39,7 +39,12 @@ Copia needs PostgreSQL. Two supported layouts:
   `cloudnativePG.enabled: true` and remove `HOST` / `DB_HOST`. The chart creates
   a `Cluster` CR and points the apps at it. See
   [CloudNativePG Config](./cloudnativepg.md).
-  Do not use `CORE_ADDONS__DATABASE__*` with Core `v0.7.0`.
+- **AWS RDS via Crossplane** (platform spike / future Distr AWS path) — platform
+  installs Crossplane + Composition; chart uses `database.provider=crossplane`
+  (or `crossplane.enabled`) and reads `copia-db-app`. Omit `HOST` / `PASSWD`.
+  See [Crossplane Config](./crossplane.md).
+
+Do not use `CORE_ADDONS__DATABASE__*` with Core `v0.7.0`.
 
 ## Install the Kubernetes agent
 

@@ -160,25 +160,25 @@ CloudNativePG Cluster object name. DNS label, kept short enough for -rw/-r suffi
 Postgres application owner. Defaults to copia. Reserved CNPG roles are rejected.
 */}}
 {{- define "copia.database.user" -}}
-{{- $user := "copia" }}
-{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.USER }}
-{{- $user = .Values.copia.config.database.USER }}
-{{- end }}
-{{- if and (eq "true" (include "copia.cnpg.enabled" .)) (or (eq $user "postgres") (eq $user "streaming_replica")) }}
-{{- fail "cloudnativePG.enabled cannot use database USER postgres or streaming_replica (reserved by CloudNativePG)." }}
-{{- end }}
-{{- $user }}
+{{- $user := "copia" -}}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.USER -}}
+{{- $user = .Values.copia.config.database.USER -}}
+{{- end -}}
+{{- if and (eq "true" (include "copia.cnpg.enabled" .)) (or (eq $user "postgres") (eq $user "streaming_replica")) -}}
+{{- fail "cloudnativePG.enabled cannot use database USER postgres or streaming_replica (reserved by CloudNativePG)." -}}
+{{- end -}}
+{{- $user -}}
 {{- end -}}
 
 {{/*
 Postgres database name for Copia. Defaults to copia.
 */}}
 {{- define "copia.database.name" -}}
-{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.NAME }}
-{{- .Values.copia.config.database.NAME }}
-{{- else }}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.NAME -}}
+{{- .Values.copia.config.database.NAME -}}
+{{- else -}}
 copia
-{{- end }}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -268,4 +268,50 @@ conversion-manager role name. Remaps reserved postgres/streaming_replica names.
 {{- else }}
 conversion_manager
 {{- end }}
+{{- end -}}
+
+{{/*
+Return "true" when the chart should emit a Crossplane Postgres Claim and read
+DB credentials from a connection Secret (nexus keys: user/password/host/port/dbname).
+
+Enable with crossplane.enabled=true or database.provider=crossplane (Step 10).
+Mutually exclusive with cloudnativePG.enabled.
+*/}}
+{{- define "copia.crossplane.enabled" -}}
+{{- $fromBlock := and .Values.crossplane .Values.crossplane.enabled -}}
+{{- $fromProvider := and .Values.database (eq (.Values.database.provider | default "") "crossplane") -}}
+{{- if or $fromBlock $fromProvider -}}
+{{- if eq "true" (include "copia.cnpg.enabled" .) -}}
+{{- fail "crossplane and cloudnativePG cannot both be enabled; pick one database path." -}}
+{{- end -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.crossplane.claimName" -}}
+{{- if and .Values.crossplane .Values.crossplane.claimName }}
+{{- .Values.crossplane.claimName | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-pg" (include "app.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.crossplane.connectionSecretName" -}}
+{{- if and .Values.crossplane .Values.crossplane.connectionSecretName }}
+{{- .Values.crossplane.connectionSecretName }}
+{{- else }}
+copia-db-app
+{{- end }}
+{{- end -}}
+
+{{- define "copia.crossplane.validateHosts" -}}
+{{- if eq "true" (include "copia.crossplane.enabled" .) -}}
+{{- $host := "" -}}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.HOST -}}
+{{- $host = .Values.copia.config.database.HOST | toString -}}
+{{- end -}}
+{{- if and $host (ne (include "copia.cnpg.isPlaceholderHost" $host) "true") -}}
+{{- fail "crossplane database provider is enabled; omit copia.config.database.HOST (and PASSWD) — credentials come from the connection Secret." -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
