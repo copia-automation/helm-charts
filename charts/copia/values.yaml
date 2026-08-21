@@ -277,3 +277,26 @@ cloudnativePG:
   # Merged into the Cluster spec (postgresql.parameters, backup, monitoring, ...).
   extraSpec: {}
 
+# Optional database provider switch. Set to "crossplane" as an alias for
+# crossplane.enabled=true (Step 10: --set database.provider=crossplane).
+# Mutually exclusive with cloudnativePG.enabled.
+database:
+  provider: ""
+
+# AWS RDS via Crossplane Claim. Platform must install Crossplane, the AWS
+# provider, ProviderConfig (IRSA), and the PostgresInstance XRD + Composition.
+# The chart emits a Claim (pre-install hook) and reads credentials at runtime
+# from the connection Secret (nexus keys: user, password, host, port, dbname).
+# Omit HOST and PASSWD when enabled. See docs/distr/crossplane.md.
+crossplane:
+  enabled: false
+  requireCRD: true
+  keepOnDelete: false
+  # Default: <release-fullname>-pg
+  claimName: ""
+  connectionSecretName: copia-db-app
+  providerConfigRef: default
+  # Merged into Claim spec.parameters. subnetIds + vpcSecurityGroupIds + region
+  # are required until the Composition learns tag-based subnet discovery.
+  parameters: {}
+

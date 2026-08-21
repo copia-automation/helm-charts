@@ -1,4 +1,5 @@
 {{- if and .Values.adminUser .Values.adminUser.create }}
+{{- $xpOn := eq "true" (include "copia.crossplane.enabled" .) }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -15,9 +16,30 @@ data:
     set -eu
     apk add --no-cache argon2 >/dev/null
 
-    max_attempts=120
+    {{- if $xpOn }}
+    SECRET=/etc/db-secret
+    read_secret() {
+      for key in "$@"; do
+        if [ -e "${SECRET}/${key}" ]; then
+          tr -d '\n' < "${SECRET}/${key}"
+          return 0
+        fi
+      done
+      return 1
+    }
+    host="$(read_secret host endpoint address || true)"
+    host="${host%%:*}"
+    port="$(read_secret port || echo 5432)"
+    user="$(read_secret user username || true)"
+    pass="$(read_secret password attribute.password || true)"
+    db="$(read_secret dbname database || echo {{ include "copia.database.name" . | quote }})"
+    export PGHOST="$host" PGPORT="$port" PGUSER="$user" PGPASSWORD="$pass" PGDATABASE="$db"
+    export PGSSLMODE={{ (.Values.copia.config.database.SSL_MODE | default "require") | quote }}
+    {{- end }}
+
+    max_attempts=180
     attempt=0
-    until pg_isready -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -t 2; do
+    until pg_isready -h "$PGHOST" -p "${PGPORT:-5432}" -U "$PGUSER" -d "$PGDATABASE" -t 2; do
       attempt=$((attempt + 1))
       [ "$attempt" -ge "$max_attempts" ] && echo "postgres readiness timeout" && exit 1
       echo "waiting for postgres..."; sleep 2
@@ -73,7 +95,7 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 5
-  activeDeadlineSeconds: 900
+  activeDeadlineSeconds: 1200
   ttlSecondsAfterFinished: 600
   template:
     spec:
@@ -83,6 +105,7 @@ spec:
           image: postgres:15-alpine
           command: ["/bin/sh", "/scripts/bootstrap.sh"]
           env:
+            {{- if not $xpOn }}
             - name: PGHOST
               value: {{ include "copia.database.host" . | quote }}
             - name: PGPORT
@@ -93,6 +116,7 @@ spec:
               value: {{ include "copia.database.name" . | quote }}
             - name: PGPASSWORD
               value: {{ .Values.copia.config.database.PASSWD | quote }}
+            {{- end }}
             - name: ADMIN_USERNAME
               value: {{ .Values.adminUser.username | quote }}
             - name: ADMIN_EMAIL
@@ -102,9 +126,19 @@ spec:
           volumeMounts:
             - name: script
               mountPath: /scripts
+            {{- if $xpOn }}
+            - name: db-secret
+              mountPath: /etc/db-secret
+              readOnly: true
+            {{- end }}
       volumes:
         - name: script
           configMap:
             name: {{ include "app.fullname" . }}-admin-bootstrap-script
             defaultMode: 0755
+        {{- if $xpOn }}
+        - name: db-secret
+          secret:
+            secretName: {{ include "copia.crossplane.connectionSecretName" . }}
+        {{- end }}
 {{- end }}
