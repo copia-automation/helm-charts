@@ -67,6 +67,9 @@ spec:
                       default: default
                     skipFinalSnapshot:
                       type: boolean
+                      default: false
+                    deletionProtection:
+                      type: boolean
                       default: true
                   required:
                     - region

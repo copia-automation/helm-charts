@@ -16,7 +16,12 @@ For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
    - Creates subnet group + RDS instance
    - Writes a connection Secret with **nexus keys**: `user`, `password`, `host`,
      `port`, `dbname` (remap from Crossplane's `username` / `endpoint` / …)
-4. Network inputs available to the Claim (until Composition does tag lookup):
+   - Publishes that Secret in the **Claim namespace** (same as the Helm release).
+     The chart Claim sets `spec.writeConnectionSecretToRef.name`; the platform
+     Composition must not pin `writeConnectionSecretsToNamespace` elsewhere.
+4. A `ProviderConfig` named **`default`**, or set `crossplane.providerConfigRef`
+   to match your platform install.
+5. Network inputs available to the Claim (until Composition does tag lookup):
    - database/isolated subnet IDs
    - security group allowing **5432** from EKS workers
    - AWS `region` (required; no chart default)
@@ -45,6 +50,7 @@ database:
   provider: crossplane   # or: crossplane.enabled: true
 crossplane:
   # connectionSecretName: copia-db-app  # optional nexus-style override
+  # providerConfigRef: default          # must match platform ProviderConfig name
   parameters:
     region: us-east-2
     subnetIds:
@@ -55,6 +61,10 @@ crossplane:
       - sg-poc-rds
 chartGeneratedSecrets:
   enabled: true
+# Crossplane path: conversion-manager does not read the RDS connection Secret.
+# Keep disabled unless you wire CM DB_HOST / secrets separately.
+conversion_manager_service:
+  enabled: false
 adminUser:
   create: true
   username: admin
@@ -85,8 +95,9 @@ Do **not** enable `cloudnativePG` at the same time.
 
 ## Step 10 smoke (second namespace)
 
-Disable conversion-manager for the spike (avoids its secrets-init Job). Use a
-real image and skip the GHCR preflight Job.
+Disable conversion-manager for the spike (it uses its own `DB_HOST` / Secret,
+not the Crossplane connection Secret). Use a real image and skip the GHCR
+preflight Job. For throwaway POC teardown, opt out of safe RDS deletion defaults:
 
 ```bash
 # After XRD+Composition are installed and you have subnet/SG IDs:
@@ -105,6 +116,8 @@ helm install copia-poc ./charts/copia -n crossplane-poc --create-namespace \
   --set adminUser.password='test-admin-password' \
   --set copia.config.database.HOST= \
   --set crossplane.parameters.region=us-east-2 \
+  --set crossplane.parameters.skipFinalSnapshot=true \
+  --set crossplane.parameters.deletionProtection=false \
   --set-json 'crossplane.parameters.subnetIds=["subnet-aaa","subnet-bbb","subnet-ccc"]' \
   --set-json 'crossplane.parameters.vpcSecurityGroupIds=["sg-poc"]'
 ```

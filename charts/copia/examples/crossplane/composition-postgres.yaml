@@ -3,9 +3,10 @@
 # Remaps connection Secret keys to the nexus contract:
 # user, password, host, port, dbname.
 #
-# Note: writeConnectionSecretsToNamespace + resource connectionDetails is the
-# spike path that worked with Claims on staging. Crossplane v2 platforms may
-# prefer composing an explicit Secret in the claim namespace instead.
+# Connection Secret: the chart Claim sets spec.writeConnectionSecretToRef (name
+# only), so Crossplane publishes the aggregate secret in the Claim namespace
+# (the Helm release namespace). Do not pin writeConnectionSecretsToNamespace to
+# crossplane-system — the Deployment mounts the Secret in .Release.Namespace.
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
@@ -16,7 +17,6 @@ spec:
   compositeTypeRef:
     apiVersion: aws.copia.io/v1alpha1
     kind: XPostgresInstance
-  writeConnectionSecretsToNamespace: crossplane-system
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -68,15 +68,12 @@ spec:
                   allocatedStorage: 20
                   storageEncrypted: true
                   backupRetentionPeriod: 7
-                  # Spike default: allow Claim delete to destroy the instance.
-                  # Production Compositions should set deletionProtection: true
-                  # and skipFinalSnapshot: false (or expose both via XRD params).
-                  deletionProtection: false
+                  deletionProtection: true
                   dbName: copia
                   username: copia
                   autoGeneratePassword: true
                   publiclyAccessible: false
-                  skipFinalSnapshot: true
+                  skipFinalSnapshot: false
                   passwordSecretRef:
                     namespace: crossplane-system
                     key: password
@@ -112,6 +109,17 @@ spec:
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.parameters.skipFinalSnapshot
                 toFieldPath: spec.forProvider.skipFinalSnapshot
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.deletionProtection
+                toFieldPath: spec.forProvider.deletionProtection
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.finalSnapshotIdentifier
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-final"
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.parameters.providerConfigName
                 toFieldPath: spec.providerConfigRef.name

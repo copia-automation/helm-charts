@@ -35,6 +35,7 @@ cloudnativePG:
 #   provider: crossplane
 # crossplane:
 #   enabled: true
+#   # providerConfigRef: default  # must match platform ProviderConfig name
 #   parameters:
 #     region: us-east-2
 #     subnetIds:
@@ -42,6 +43,7 @@ cloudnativePG:
 #       - subnet-bbb
 #     vpcSecurityGroupIds:
 #       - sg-aaa
+# POC teardown only: skipFinalSnapshot=true, deletionProtection=false
 copia:
   config:
     server:

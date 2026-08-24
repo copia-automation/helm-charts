@@ -14,7 +14,8 @@
       "dbName" (include "copia.database.name" .)
       "username" (include "copia.database.user" .)
       "providerConfigName" "default"
-      "skipFinalSnapshot" true
+      "skipFinalSnapshot" false
+      "deletionProtection" true
 }}
 {{- if and .Values.crossplane .Values.crossplane.providerConfigRef }}
 {{- $_ := set $params "providerConfigName" .Values.crossplane.providerConfigRef }}

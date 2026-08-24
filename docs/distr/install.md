@@ -43,7 +43,8 @@ Copia needs PostgreSQL. Supported layouts:
   installs Crossplane + Composition; chart uses `database.provider=crossplane`
   (or `crossplane.enabled`) and reads the connection Secret
   (`<release>-db-app` by default). Omit `HOST` / `PASSWD`.
-  See [Crossplane Config](./crossplane.md).
+  Keep `conversion_manager_service.enabled=false` unless conversion-manager
+  database wiring is added separately. See [Crossplane Config](./crossplane.md).
 
 Do not use `CORE_ADDONS__DATABASE__*` with Core `v0.7.0`.
 
