@@ -508,6 +508,7 @@
       "properties": {
         "provider": {
           "type": "string",
+          "enum": ["", "crossplane"],
           "description": "Empty (external HOST/PASSWD), or \"crossplane\"."
         }
       }

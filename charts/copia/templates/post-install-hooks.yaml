@@ -34,10 +34,18 @@ data:
     pass="$(read_secret password attribute.password || true)"
     db="$(read_secret dbname database || echo {{ include "copia.database.name" . | quote }})"
     export PGHOST="$host" PGPORT="$port" PGUSER="$user" PGPASSWORD="$pass" PGDATABASE="$db"
-    export PGSSLMODE={{ (.Values.copia.config.database.SSL_MODE | default "require") | quote }}
+    {{- $sslMode := "require" }}
+    {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+    {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+    {{- end }}
+    export PGSSLMODE={{ $sslMode | quote }}
     {{- end }}
 
+    {{- if $xpOn }}
+    max_attempts=450
+    {{- else }}
     max_attempts=180
+    {{- end }}
     attempt=0
     until pg_isready -h "$PGHOST" -p "${PGPORT:-5432}" -U "$PGUSER" -d "$PGDATABASE" -t 2; do
       attempt=$((attempt + 1))
@@ -95,7 +103,9 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 5
-  activeDeadlineSeconds: 1200
+  # Crossplane path: kubelet blocks on Secret mount until RDS is ready (5–15m),
+  # then readiness + schema waits. Non-Crossplane path stays at 20m.
+  activeDeadlineSeconds: {{ if $xpOn }}3600{{ else }}1200{{ end }}
   ttlSecondsAfterFinished: 600
   template:
     spec:

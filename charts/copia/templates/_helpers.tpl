@@ -300,7 +300,7 @@ true
 {{- if and .Values.crossplane .Values.crossplane.connectionSecretName }}
 {{- .Values.crossplane.connectionSecretName }}
 {{- else }}
-copia-db-app
+{{- printf "%s-db-app" (include "app.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end -}}
 

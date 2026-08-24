@@ -37,16 +37,19 @@ cloudnativePG:
 #   enabled: true
 #   parameters:
 #     region: us-east-2
-#     subnetIds: []
-#     vpcSecurityGroupIds: []
+#     subnetIds:
+#       - subnet-aaa
+#       - subnet-bbb
+#     vpcSecurityGroupIds:
+#       - sg-aaa
 copia:
   config:
     server:
       DOMAIN: copia.example.com
       ROOT_URL: https://copia.example.com/
     database:
-      # Required for an existing Postgres. Remove this key when using CloudNativePG
-      # or Crossplane.
+      # Required for an existing Postgres. Remove HOST and PASSWD when using
+      # CloudNativePG or Crossplane.
       HOST: postgres.example.com:5432
       NAME: copia
       USER: copia

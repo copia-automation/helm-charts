@@ -107,9 +107,11 @@ spec:
                 port="$(read_secret port || echo 5432)"
                 user="$(read_secret user username || true)"
                 pass="$(read_secret password attribute.password || true)"
+                dbname="$(read_secret dbname database || echo {{ include "copia.database.name" . | quote }})"
                 printf '%s:%s' "$host" "$port" > /tmp/db-mapped/XP_DB_HOST
                 printf '%s' "$user" > /tmp/db-mapped/XP_DB_USER
                 printf '%s' "$pass" > /tmp/db-mapped/XP_DB_PASSWD
+                printf '%s' "$dbname" > /tmp/db-mapped/XP_DB_NAME
               fi
               for dir in /tmp/secrets /tmp/cm-secrets /tmp/db-mapped; do
                 [ -d "$dir" ] || continue

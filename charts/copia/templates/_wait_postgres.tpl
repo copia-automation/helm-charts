@@ -57,7 +57,7 @@ initdb.
 
 {{/*
 Init container that waits on Postgres using credentials from a connection Secret
-(Crossplane writeConnectionSecretToRef / nexus-style copia-db-app).
+(Crossplane writeConnectionSecretToRef / nexus-style connection Secret).
 
 Secret keys (preferred): host, port, user, password, dbname
 Also accepts Crossplane defaults: endpoint/username (and optional attribute.*).

@@ -2,6 +2,10 @@
 # Staging / spike Composition (Crossplane v2 pipeline mode).
 # Remaps connection Secret keys to the nexus contract:
 # user, password, host, port, dbname.
+#
+# Note: writeConnectionSecretsToNamespace + resource connectionDetails is the
+# spike path that worked with Claims on staging. Crossplane v2 platforms may
+# prefer composing an explicit Secret in the claim namespace instead.
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
@@ -62,6 +66,12 @@ spec:
                   engineVersion: "15"
                   instanceClass: db.t4g.micro
                   allocatedStorage: 20
+                  storageEncrypted: true
+                  backupRetentionPeriod: 7
+                  # Spike default: allow Claim delete to destroy the instance.
+                  # Production Compositions should set deletionProtection: true
+                  # and skipFinalSnapshot: false (or expose both via XRD params).
+                  deletionProtection: false
                   dbName: copia
                   username: copia
                   autoGeneratePassword: true

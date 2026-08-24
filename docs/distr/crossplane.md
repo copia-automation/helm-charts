@@ -1,7 +1,7 @@
 # Crossplane Config
 
 This guide covers provisioning Copia's Postgres on **AWS RDS via Crossplane**.
-The chart emits a `PostgresInstance` Claim (pre-install hook) and reads
+The chart emits a `PostgresInstance` Claim as a normal release resource and reads
 credentials at **runtime** from a connection Secret. It does **not** install
 Crossplane or the AWS provider.
 
@@ -19,6 +19,7 @@ For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
 4. Network inputs available to the Claim (until Composition does tag lookup):
    - database/isolated subnet IDs
    - security group allowing **5432** from EKS workers
+   - AWS `region` (required; no chart default)
 
 Example XRD/Composition for a staging spike live under
 `charts/copia/examples/crossplane/` (Crossplane **v2 pipeline** Composition +
@@ -36,12 +37,14 @@ kubectl get composition xpostgresinstances.aws.copia.io
 
 Enable Crossplane and **omit** `HOST` and `PASSWD`. Supply Claim network
 parameters (staging spike) and an admin password for the post-install Job.
+The connection Secret defaults to `<release-name>-db-app`; override with
+`connectionSecretName: copia-db-app` if you need the fixed nexus name.
 
 ```yaml
 database:
   provider: crossplane   # or: crossplane.enabled: true
 crossplane:
-  connectionSecretName: copia-db-app
+  # connectionSecretName: copia-db-app  # optional nexus-style override
   parameters:
     region: us-east-2
     subnetIds:
@@ -60,8 +63,7 @@ adminUser:
 copia:
   config:
     database:
-      NAME: copia
-      USER: copia
+      # NAME/USER are overridden at runtime from the connection Secret when present
       SSL_MODE: require
       # omit HOST and PASSWD
 ```
@@ -72,12 +74,14 @@ Do **not** enable `cloudnativePG` at the same time.
 
 1. Helm applies a `PostgresInstance` Claim with the release (not a pre-install
    hook — Helm must not wait on RDS Ready, which takes 5–15 minutes).
-2. Crossplane reconciles the Claim → AWS RDS → Secret `copia-db-app`.
+2. Crossplane reconciles the Claim → AWS RDS → connection Secret
+   (`<release>-db-app` by default).
 3. Deployment **init** mounts the Secret and runs `pg_isready` / `psql`
    (kubelet blocks start until the Secret exists).
-4. `render-app-ini` substitutes `HOST` / `USER` / `PASSWD` from the Secret
-   (placeholders `###XP_DB_*###`).
+4. `render-app-ini` substitutes `HOST` / `USER` / `PASSWD` / `NAME` from the
+   Secret (placeholders `###XP_DB_*###`).
 5. Post-install **admin bootstrap** Job also reads the Secret (not Helm values).
+   On the Crossplane path the Job deadline is 60m to cover RDS provisioning.
 
 ## Step 10 smoke (second namespace)
 
@@ -87,7 +91,7 @@ real image and skip the GHCR preflight Job.
 ```bash
 # After XRD+Composition are installed and you have subnet/SG IDs:
 helm install copia-poc ./charts/copia -n crossplane-poc --create-namespace \
-  --timeout 20m \
+  --timeout 60m \
   --values charts/copia/distr/values.base.yaml \
   --set image.repository=ghcr.io/copia-automation/copia-web-app-selfhosted-releases \
   --set image.tag=v0.57.0 \
@@ -109,9 +113,9 @@ Verify:
 
 ```bash
 kubectl get postgresinstance -n crossplane-poc
-kubectl get secret copia-db-app -n crossplane-poc -o json | jq -r '.data | keys[]'
+kubectl get secret copia-poc-db-app -n crossplane-poc -o json | jq -r '.data | keys[]'
 kubectl logs -n crossplane-poc -l app.kubernetes.io/name=copia -c copia-wait-db
-kubectl logs -n crossplane-poc job/copia-poc-copia-admin-bootstrap
+kubectl logs -n crossplane-poc job/copia-poc-admin-bootstrap
 ```
 
 Port-forward and log in with `admin` / your test admin password once the

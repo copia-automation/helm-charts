@@ -28,6 +28,17 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "omit copia.config.database.HOST"
+  - it: fails when region missing
+    capabilities:
+      apiVersions:
+        - aws.copia.io/v1alpha1
+    set:
+      database.provider: crossplane
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "region is required"
   - it: fails when subnetIds missing
     capabilities:
       apiVersions:
@@ -54,6 +65,19 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "cannot both be enabled"
+  - it: defaults connection Secret to release-scoped name
+    capabilities:
+      apiVersions:
+        - aws.copia.io/v1alpha1
+    set:
+      database.provider: crossplane
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b", "subnet-c"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-poc"]
+    asserts:
+      - equal:
+          path: spec.writeConnectionSecretToRef.name
+          value: RELEASE-NAME-copia-db-app
   - it: renders Claim with connection secret ref when enabled via database.provider
     capabilities:
       apiVersions:

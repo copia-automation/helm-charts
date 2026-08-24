@@ -8,7 +8,6 @@
 {{- fail "crossplane database provider requires PostgresInstance CRD (aws.copia.io/v1alpha1). Install the platform XRD + Composition first." }}
 {{- end }}
 {{- $params := dict
-      "region" "us-east-2"
       "engineVersion" "15"
       "instanceClass" "db.t4g.micro"
       "allocatedStorage" 20
@@ -29,7 +28,7 @@
 {{- if or (not (hasKey $params "vpcSecurityGroupIds")) (eq (len ($params.vpcSecurityGroupIds | default list)) 0) }}
 {{- fail "crossplane.parameters.vpcSecurityGroupIds is required (SG allowing 5432 from EKS workers)." }}
 {{- end }}
-{{- if not (hasKey $params "region") }}
+{{- if or (not (hasKey $params "region")) (empty (index $params "region")) }}
 {{- fail "crossplane.parameters.region is required." }}
 {{- end }}
 ---

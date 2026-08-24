@@ -31,6 +31,9 @@ spec:
               properties:
                 parameters:
                   type: object
+                  # Preserve undeclared keys so chart crossplane.parameters merges
+                  # are not silently pruned before they reach the Composition.
+                  x-kubernetes-preserve-unknown-fields: true
                   properties:
                     region:
                       type: string

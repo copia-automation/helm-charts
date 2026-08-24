@@ -41,7 +41,8 @@ Copia needs PostgreSQL. Supported layouts:
   [CloudNativePG Config](./cloudnativepg.md).
 - **AWS RDS via Crossplane** (platform spike / future Distr AWS path) — platform
   installs Crossplane + Composition; chart uses `database.provider=crossplane`
-  (or `crossplane.enabled`) and reads `copia-db-app`. Omit `HOST` / `PASSWD`.
+  (or `crossplane.enabled`) and reads the connection Secret
+  (`<release>-db-app` by default). Omit `HOST` / `PASSWD`.
   See [Crossplane Config](./crossplane.md).
 
 Do not use `CORE_ADDONS__DATABASE__*` with Core `v0.7.0`.
