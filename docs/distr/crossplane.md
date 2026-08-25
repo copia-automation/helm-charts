@@ -14,11 +14,15 @@ For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
 2. Upbound AWS RDS provider + `ProviderConfig` (IRSA / Pod Identity)
 3. XRD + Composition for `PostgresInstance` (`aws.copia.io/v1alpha1`) that:
    - Creates subnet group + RDS instance
-   - Writes a connection Secret with **nexus keys**: `user`, `password`, `host`,
-     `port`, `dbname` (remap from Crossplane's `username` / `endpoint` / …)
-   - Publishes that Secret in the **Claim namespace** (same as the Helm release).
-     The chart Claim sets `spec.writeConnectionSecretToRef.name`; the platform
-     Composition must not pin `writeConnectionSecretsToNamespace` elsewhere.
+   - Sets Composition `spec.writeConnectionSecretsToNamespace` (e.g.
+     `crossplane-system`) so the composite gets a staging connection Secret.
+     **Without this field the Claim can still report Ready=True but no Secret
+     is ever published** — a silent failure that hangs chart init.
+   - Remaps connection details to **nexus keys**: `user`, `password`, `host`,
+     `port`, `dbname` (from Crossplane's `username` / `endpoint` / …)
+   - The chart Claim then sets `spec.writeConnectionSecretToRef.name` so
+     Crossplane **copies** that Secret into the Claim / Helm release namespace
+     (where the Deployment mounts it). Two fields, two namespaces — both required.
 4. A `ProviderConfig` named **`default`**, or set `crossplane.providerConfigRef`
    to match your platform install.
 5. Network inputs available to the Claim (until Composition does tag lookup):
@@ -28,7 +32,8 @@ For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
 
 Example XRD/Composition for a staging spike live under
 `charts/copia/examples/crossplane/` (Crossplane **v2 pipeline** Composition +
-`function-patch-and-transform`).
+`function-patch-and-transform`). Validated with Crossplane **2.4.0** (claim-style
+XRD `scope: LegacyCluster`).
 
 ```bash
 kubectl apply -k charts/copia/examples/crossplane

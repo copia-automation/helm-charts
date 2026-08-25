@@ -3,10 +3,12 @@
 # Remaps connection Secret keys to the nexus contract:
 # user, password, host, port, dbname.
 #
-# Connection Secret: the chart Claim sets spec.writeConnectionSecretToRef (name
-# only), so Crossplane publishes the aggregate secret in the Claim namespace
-# (the Helm release namespace). Do not pin writeConnectionSecretsToNamespace to
-# crossplane-system — the Deployment mounts the Secret in .Release.Namespace.
+# Two different namespaces for connection secrets:
+# 1) writeConnectionSecretsToNamespace (required) — XR staging namespace where
+#    Crossplane writes the composite's aggregated Secret. Without this field the
+#    Claim can still report Ready=True but no connection Secret is ever published.
+# 2) Claim writeConnectionSecretToRef (chart) — copies that Secret into the
+#    Claim / Helm release namespace under the name the chart mounts.
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
@@ -14,6 +16,7 @@ metadata:
   labels:
     aws.copia.io/provider: aws
 spec:
+  writeConnectionSecretsToNamespace: crossplane-system
   compositeTypeRef:
     apiVersion: aws.copia.io/v1alpha1
     kind: XPostgresInstance
@@ -106,6 +109,9 @@ spec:
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.parameters.vpcSecurityGroupIds
                 toFieldPath: spec.forProvider.vpcSecurityGroupIds
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.publiclyAccessible
+                toFieldPath: spec.forProvider.publiclyAccessible
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.parameters.skipFinalSnapshot
                 toFieldPath: spec.forProvider.skipFinalSnapshot

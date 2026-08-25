@@ -5,6 +5,9 @@ kind: CompositeResourceDefinition
 metadata:
   name: xpostgresinstances.aws.copia.io
 spec:
+  # Explicit: claim-style XRD (immutable once created). Keeps Claim + connection
+  # Secret behavior on Crossplane 2.x; tested with Crossplane 2.4.0.
+  scope: LegacyCluster
   group: aws.copia.io
   names:
     kind: XPostgresInstance
@@ -62,6 +65,9 @@ spec:
                       items:
                         type: string
                       minItems: 1
+                    publiclyAccessible:
+                      type: boolean
+                      default: false
                     providerConfigName:
                       type: string
                       default: default
