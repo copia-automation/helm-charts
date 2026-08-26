@@ -66,10 +66,14 @@ crossplane:
       - sg-poc-rds
 chartGeneratedSecrets:
   enabled: true
-# Crossplane path: conversion-manager does not read the RDS connection Secret.
-# Keep disabled unless you wire CM DB_HOST / secrets separately.
 conversion_manager_service:
-  enabled: false
+  enabled: true
+  configmap:
+    DB_NAME: conversion_manager
+    DB_USER: conversion_manager
+    # omit DB_HOST — chart reads RDS endpoint from the connection Secret
+  secret:
+    DB_PASSWORD: "{{ .Secrets.ConversionManagerDbPassword }}"
 adminUser:
   create: true
   username: admin
@@ -98,11 +102,28 @@ Do **not** enable `cloudnativePG` at the same time.
 5. Post-install **admin bootstrap** Job also reads the Secret (not Helm values).
    On the Crossplane path the Job deadline is 60m to cover RDS provisioning.
 
+### Conversion-manager (same RDS, second database)
+
+When `conversion_manager_service.enabled` is true on the Crossplane path, the
+chart mirrors CloudNativePG:
+
+1. **One RDS** from the `PostgresInstance` Claim (Copia owner/database).
+2. Conversion-manager Deployment **init** connects with master credentials from
+   the connection Secret and creates the `conversion_manager` role + database
+   (idempotent).
+3. A second init waits until conversion-manager can log in.
+4. `DB_HOST` is taken from the RDS connection Secret at runtime (`host:port`);
+   omit `conversion_manager_service.configmap.DB_HOST`. Set `DB_USER`,
+   `DB_NAME`, and `secret.DB_PASSWORD` as with CloudNativePG.
+
+Requires Distr secret **`ConversionManagerDbPassword`** when using
+`chartGeneratedSecrets.enabled=true`.
+
 ## Step 10 smoke (second namespace)
 
-Disable conversion-manager for the spike (it uses its own `DB_HOST` / Secret,
-not the Crossplane connection Secret). Use a real image and skip the GHCR
-preflight Job. For throwaway POC teardown, opt out of safe RDS deletion defaults:
+Use a real image and skip the GHCR preflight Job. For throwaway POC teardown,
+opt out of safe RDS deletion defaults. Conversion-manager can stay disabled for
+a Copia-only spike, or enable it to validate the second-database bootstrap:
 
 ```bash
 # After XRD+Composition are installed and you have subnet/SG IDs:
@@ -112,8 +133,10 @@ helm install copia-poc ./charts/copia -n crossplane-poc --create-namespace \
   --set image.repository=ghcr.io/copia-automation/copia-web-app-selfhosted-releases \
   --set image.tag=v0.57.0 \
   --set ghcrCheck=false \
-  --set conversion_manager_service.enabled=false \
   --set database.provider=crossplane \
+  --set conversion_manager_service.enabled=true \
+  --set conversion_manager_service.configmap.DB_HOST= \
+  --set conversion_manager_service.secret.DB_PASSWORD='cm-test-password' \
   --set chartGeneratedSecrets.enabled=true \
   --set adminUser.create=true \
   --set adminUser.username=admin \

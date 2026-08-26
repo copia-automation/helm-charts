@@ -42,9 +42,9 @@ Copia needs PostgreSQL. Supported layouts:
 - **AWS RDS via Crossplane** (platform spike / future Distr AWS path) — platform
   installs Crossplane + Composition; chart uses `database.provider=crossplane`
   (or `crossplane.enabled`) and reads the connection Secret
-  (`<release>-db-app` by default). Omit `HOST` / `PASSWD`.
-  Keep `conversion_manager_service.enabled=false` unless conversion-manager
-  database wiring is added separately. See [Crossplane Config](./crossplane.md).
+  (`<release>-db-app` by default). Omit `HOST` / `PASSWD` (and CM `DB_HOST`).
+  Conversion-manager uses the same RDS with a second database when enabled.
+  See [Crossplane Config](./crossplane.md).
 
 Do not use `CORE_ADDONS__DATABASE__*` with Core `v0.7.0`.
 

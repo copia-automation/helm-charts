@@ -180,4 +180,51 @@ tests:
       - matchRegex:
           path: spec.template.spec.initContainers[0].args[0]
           pattern: pg_isready
+  - it: bootstraps and waits on Crossplane RDS before starting
+    capabilities:
+      apiVersions:
+        - aws.copia.io/v1alpha1
+    set:
+      conversion_manager_service.enabled: true
+      database.provider: crossplane
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-a"]
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+      conversion_manager_service.configmap.DB_USER: conversion_manager
+      conversion_manager_service.secret.DB_PASSWORD: cm-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: cm-bootstrap-db
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: wait-postgres
+      - notExists:
+          path: spec.template.spec.initContainers[1].env
+      - matchRegex:
+          path: spec.template.spec.initContainers[1].args[0]
+          pattern: conversion_manager
+      - equal:
+          path: spec.template.spec.containers[0].command[0]
+          value: /bin/sh
+      - equal:
+          path: spec.template.spec.volumes[0].secret.secretName
+          value: RELEASE-NAME-db-app
+      - equal:
+          path: spec.template.spec.volumes[1].emptyDir
+          value: {}
+  - it: fails when Crossplane CM is enabled without DB_PASSWORD
+    capabilities:
+      apiVersions:
+        - aws.copia.io/v1alpha1
+    set:
+      conversion_manager_service.enabled: true
+      database.provider: crossplane
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "conversion_manager_service.secret.DB_PASSWORD"
 

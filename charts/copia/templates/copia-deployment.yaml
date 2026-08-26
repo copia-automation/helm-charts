@@ -78,7 +78,7 @@ spec:
         {{- end }}
         {{- include "copia.waitPostgres.fromSecret.initContainer" (dict
           "name" (printf "%s-wait-db" .Chart.Name)
-          "database" (include "copia.database.name" .)
+          "defaultDatabase" (include "copia.database.name" .)
           "sslMode" $sslMode
           "volumeName" "db-secret"
         ) | nindent 8 }}

@@ -1,5 +1,8 @@
 # Conversion Manager deployment template
 {{- if and .Values.conversion_manager_service.enabled (eq .Values.conversion_manager_service.enabled true)}}
+{{- if eq "true" (include "copia.crossplane.conversionManager.enabled" .) }}
+{{- $_ := include "copia.crossplane.validateConversionManager" . }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -46,12 +49,38 @@ spec:
       {{- if .Values.conversion_manager_service.deployment.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ .Values.conversion_manager_service.deployment.terminationGracePeriodSeconds }}
       {{- end }}
-      {{- if eq "true" (include "copia.cnpg.conversionManager.enabled" .) }}
+      {{- $cnpgCmOn := eq "true" (include "copia.cnpg.conversionManager.enabled" .) }}
+      {{- $xpCmOn := eq "true" (include "copia.crossplane.conversionManager.enabled" .) }}
+      {{- if or $cnpgCmOn $xpCmOn }}
       {{- $sslMode := "prefer" }}
       {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
       {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
       {{- end }}
+      {{- if $xpCmOn }}
+      {{- $sslMode = "require" }}
+      {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+      {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+      {{- end }}
+      {{- end }}
       initContainers:
+        {{- if $xpCmOn }}
+        {{- include "copia.crossplane.bootstrapConversionManager.initContainer" (dict
+          "cmUser" (include "copia.cnpg.conversionManager.user" .)
+          "cmDatabase" (include "copia.cnpg.conversionManager.database" .)
+          "cmPassword" .Values.conversion_manager_service.secret.DB_PASSWORD
+          "sslMode" $sslMode
+          "volumeName" "db-secret"
+          "writeDbHostVolume" "cm-db"
+        ) | nindent 8 }}
+        {{- include "copia.waitPostgres.fromSecret.initContainer" (dict
+          "name" "wait-postgres"
+          "user" (include "copia.cnpg.conversionManager.user" .)
+          "password" .Values.conversion_manager_service.secret.DB_PASSWORD
+          "appDatabase" (include "copia.cnpg.conversionManager.database" .)
+          "sslMode" $sslMode
+          "volumeName" "db-secret"
+        ) | nindent 8 }}
+        {{- else if $cnpgCmOn }}
         {{- include "copia.waitPostgres.initContainer" (dict
           "name" "wait-postgres"
           "host" (include "copia.database.host" .)
@@ -61,11 +90,22 @@ spec:
           "database" (include "copia.cnpg.conversionManager.database" .)
           "sslMode" $sslMode
         ) | nindent 8 }}
+        {{- end }}
       {{- end }}
       containers:
         - name: "conversion-manager"
           image: "{{ include "cm.image" . }}"
           imagePullPolicy: {{ .Values.conversion_manager_service.deployment.image.imagePullPolicy }}
+          {{- if $xpCmOn }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              if [ -f /cm-db/DB_HOST ]; then
+                export DB_HOST="$(tr -d '\n' < /cm-db/DB_HOST)"
+              fi
+              exec yarn run:prod
+          {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "app.conversion-manager.fullname" . }}-configmap
@@ -94,9 +134,16 @@ spec:
           startupProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.startupProbe | nindent 12 }}
           {{- end }}
-          {{- if .Values.conversion_manager_service.deployment.volumeMounts }}
+          {{- if or .Values.conversion_manager_service.deployment.volumeMounts $xpCmOn }}
           volumeMounts:
+            {{- if .Values.conversion_manager_service.deployment.volumeMounts }}
             {{- toYaml .Values.conversion_manager_service.deployment.volumeMounts | nindent 12 }}
+            {{- end }}
+            {{- if $xpCmOn }}
+            - name: cm-db
+              mountPath: /cm-db
+              readOnly: true
+            {{- end }}
           {{- end }}
           resources:
             {{- toYaml .Values.conversion_manager_service.deployment.resources | nindent 12 }}
@@ -116,8 +163,17 @@ spec:
       tolerations:
         {{- toYaml .Values.conversion_manager_service.deployment.tolerations | nindent 8 }}
       {{- end }}
-      {{- if .Values.conversion_manager_service.deployment.volumes }}
+      {{- if or $xpCmOn .Values.conversion_manager_service.deployment.volumes }}
       volumes:
+        {{- if $xpCmOn }}
+        - name: db-secret
+          secret:
+            secretName: {{ include "copia.crossplane.connectionSecretName" . }}
+        - name: cm-db
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.conversion_manager_service.deployment.volumes }}
         {{- toYaml .Values.conversion_manager_service.deployment.volumes | nindent 8 }}
+        {{- end }}
       {{- end }}
 {{- end }}

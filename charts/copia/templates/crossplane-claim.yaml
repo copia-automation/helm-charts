@@ -1,5 +1,6 @@
 {{- if eq "true" (include "copia.crossplane.enabled" .) }}
 {{- $_ := include "copia.crossplane.validateHosts" . }}
+{{- $_ := include "copia.crossplane.validateConversionManager" . }}
 {{- $requireCRD := true }}
 {{- if and .Values.crossplane (hasKey .Values.crossplane "requireCRD") }}
 {{- $requireCRD = .Values.crossplane.requireCRD }}

@@ -67,11 +67,42 @@ tests:
       - equal:
           path: data.DB_NAME
           value: "conversion_manager"
-  - it: fails when CloudNativePG is enabled with an external DB_HOST
+  - it: fails when Crossplane is enabled with an external DB_HOST
     set:
       conversion_manager_service.enabled: true
       cloudnativePG.enabled: true
       conversion_manager_service.configmap.DB_HOST: postgres.example.com:5432
+    asserts:
+      - failedTemplate:
+          errorPattern: "omit conversion_manager_service.configmap.DB_HOST"
+  - it: Crossplane omits DB_HOST and remaps DB_USER when CM is enabled
+    set:
+      conversion_manager_service.enabled: true
+      database.provider: crossplane
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-a"]
+      conversion_manager_service.configmap.DB_USER: postgres
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+      conversion_manager_service.secret.DB_PASSWORD: cm-secret
+    asserts:
+      - notExists:
+          path: data.DB_HOST
+      - equal:
+          path: data.DB_USER
+          value: "conversion_manager"
+      - equal:
+          path: data.DB_NAME
+          value: "conversion_manager"
+  - it: fails when Crossplane CM is enabled with an external DB_HOST
+    set:
+      conversion_manager_service.enabled: true
+      database.provider: crossplane
+      crossplane.parameters.region: us-east-2
+      crossplane.parameters.subnetIds: ["subnet-a", "subnet-b"]
+      crossplane.parameters.vpcSecurityGroupIds: ["sg-a"]
+      conversion_manager_service.configmap.DB_HOST: postgres.example.com:5432
+      conversion_manager_service.secret.DB_PASSWORD: cm-secret
     asserts:
       - failedTemplate:
           errorPattern: "omit conversion_manager_service.configmap.DB_HOST"

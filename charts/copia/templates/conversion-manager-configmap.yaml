@@ -1,7 +1,14 @@
 {{- if and .Values.conversion_manager_service.configmap (eq .Values.conversion_manager_service.enabled true)}}
+{{- if eq "true" (include "copia.crossplane.conversionManager.enabled" .) }}
+{{- $_ := include "copia.crossplane.validateConversionManager" . }}
+{{- end }}
 {{- $cm := deepCopy .Values.conversion_manager_service.configmap }}
 {{- if eq "true" (include "copia.cnpg.enabled" .) }}
   {{- $_ := set $cm "DB_HOST" (include "copia.database.hostPort" .) }}
+  {{- $_ := set $cm "DB_USER" (include "copia.cnpg.conversionManager.user" .) }}
+  {{- $_ := set $cm "DB_NAME" (include "copia.cnpg.conversionManager.database" .) }}
+{{- else if eq "true" (include "copia.crossplane.conversionManager.enabled" .) }}
+  {{- $_ := unset $cm "DB_HOST" }}
   {{- $_ := set $cm "DB_USER" (include "copia.cnpg.conversionManager.user" .) }}
   {{- $_ := set $cm "DB_NAME" (include "copia.cnpg.conversionManager.database" .) }}
 {{- end }}

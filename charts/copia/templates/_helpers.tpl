@@ -304,6 +304,14 @@ true
 {{- end }}
 {{- end -}}
 
+{{- define "copia.crossplane.conversionManager.enabled" -}}
+{{- if eq "true" (include "copia.crossplane.enabled" .) -}}
+{{- if and .Values.conversion_manager_service .Values.conversion_manager_service.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "copia.crossplane.validateHosts" -}}
 {{- if eq "true" (include "copia.crossplane.enabled" .) -}}
 {{- $host := "" -}}
@@ -312,6 +320,23 @@ true
 {{- end -}}
 {{- if and $host (ne (include "copia.cnpg.isPlaceholderHost" $host) "true") -}}
 {{- fail "crossplane database provider is enabled; omit copia.config.database.HOST (and PASSWD) — credentials come from the connection Secret." -}}
+{{- end -}}
+{{- $cmHost := "" -}}
+{{- $cm := .Values.conversion_manager_service -}}
+{{- if and $cm $cm.configmap $cm.configmap.DB_HOST -}}
+{{- $cmHost = $cm.configmap.DB_HOST | toString -}}
+{{- end -}}
+{{- if and $cmHost (ne (include "copia.cnpg.isPlaceholderHost" $cmHost) "true") -}}
+{{- fail "crossplane database provider is enabled; omit conversion_manager_service.configmap.DB_HOST." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.crossplane.validateConversionManager" -}}
+{{- if eq "true" (include "copia.crossplane.conversionManager.enabled" .) -}}
+{{- $_ := include "copia.crossplane.validateHosts" . -}}
+{{- if not (and .Values.conversion_manager_service.secret .Values.conversion_manager_service.secret.DB_PASSWORD) -}}
+{{- fail "crossplane with conversion-manager requires conversion_manager_service.secret.DB_PASSWORD." -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
