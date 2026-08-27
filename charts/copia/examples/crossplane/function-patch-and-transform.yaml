@@ -1,8 +1,0 @@
----
-# Required by Crossplane v2 Compositions (legacy spec.resources was removed).
-apiVersion: pkg.crossplane.io/v1
-kind: Function
-metadata:
-  name: function-patch-and-transform
-spec:
-  package: xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.10.9

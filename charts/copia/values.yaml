@@ -278,7 +278,7 @@ cloudnativePG:
   extraSpec: {}
 
 # Optional database provider switch. Set to "crossplane" as an alias for
-# crossplane.enabled=true (Step 10: --set database.provider=crossplane).
+# crossplane.enabled=true (--set database.provider=crossplane).
 # Mutually exclusive with cloudnativePG.enabled.
 database:
   provider: ""

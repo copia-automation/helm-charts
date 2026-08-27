@@ -274,7 +274,7 @@ conversion_manager
 Return "true" when the chart should emit a Crossplane Postgres Claim and read
 DB credentials from a connection Secret (nexus keys: user/password/host/port/dbname).
 
-Enable with crossplane.enabled=true or database.provider=crossplane (Step 10).
+Enable with crossplane.enabled=true or database.provider=crossplane.
 Mutually exclusive with cloudnativePG.enabled.
 */}}
 {{- define "copia.crossplane.enabled" -}}

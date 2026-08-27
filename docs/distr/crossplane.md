@@ -30,23 +30,13 @@ For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
    - security group allowing **5432** from EKS workers
    - AWS `region` (required; no chart default)
 
-Example XRD/Composition for a staging spike live under
-`charts/copia/examples/crossplane/` (Crossplane **v2 pipeline** Composition +
-`function-patch-and-transform`). Validated with Crossplane **2.4.0** (claim-style
-XRD `scope: LegacyCluster`).
+The chart does **not** install Crossplane, the AWS provider, or the
+`PostgresInstance` XRD/Composition. Those are platform responsibilities.
 
-```bash
-kubectl apply -k charts/copia/examples/crossplane
-kubectl wait function.pkg.crossplane.io/function-patch-and-transform \
-  --for=condition=Healthy --timeout=2m
-kubectl get crd postgresinstances.aws.copia.io
-kubectl get composition xpostgresinstances.aws.copia.io
-```
-
-## Customer / smoke values
+## Customer values
 
 Enable Crossplane and **omit** `HOST` and `PASSWD`. Supply Claim network
-parameters (staging spike) and an admin password for the post-install Job.
+parameters and an admin password for the post-install Job.
 The connection Secret defaults to `<release-name>-db-app`; override with
 `connectionSecretName: copia-db-app` if you need the fixed nexus name.
 
@@ -119,14 +109,13 @@ chart mirrors CloudNativePG:
 Requires Distr secret **`ConversionManagerDbPassword`** when using
 `chartGeneratedSecrets.enabled=true`.
 
-## Step 10 smoke (second namespace)
+## Smoke test
 
-Use a real image and skip the GHCR preflight Job. For throwaway POC teardown,
-opt out of safe RDS deletion defaults. Conversion-manager can stay disabled for
-a Copia-only spike, or enable it to validate the second-database bootstrap:
+Use a dedicated namespace (not production Copia). For throwaway teardown, opt
+out of safe RDS deletion defaults (`skipFinalSnapshot`, `deletionProtection`).
 
 ```bash
-# After XRD+Composition are installed and you have subnet/SG IDs:
+# After platform XRD+Composition are installed and you have subnet/SG IDs:
 helm install copia-poc ./charts/copia -n crossplane-poc --create-namespace \
   --timeout 60m \
   --values charts/copia/distr/values.base.yaml \

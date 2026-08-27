@@ -39,8 +39,8 @@ Copia needs PostgreSQL. Supported layouts:
   `cloudnativePG.enabled: true` and remove `HOST` / `DB_HOST`. The chart creates
   a `Cluster` CR and points the apps at it. See
   [CloudNativePG Config](./cloudnativepg.md).
-- **AWS RDS via Crossplane** (platform spike / future Distr AWS path) — platform
-  installs Crossplane + Composition; chart uses `database.provider=crossplane`
+- **AWS RDS via Crossplane** (future Distr AWS path) — platform installs
+  Crossplane + Composition; chart uses `database.provider=crossplane`
   (or `crossplane.enabled`) and reads the connection Secret
   (`<release>-db-app` by default). Omit `HOST` / `PASSWD` (and CM `DB_HOST`).
   Conversion-manager uses the same RDS with a second database when enabled.
