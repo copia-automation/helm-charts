@@ -1,5 +1,5 @@
 {{- if and .Values.adminUser .Values.adminUser.create }}
-{{- $xpOn := eq "true" (include "copia.crossplane.enabled" .) }}
+{{- $rdsOn := eq "true" (include "copia.rds.enabled" .) }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -16,23 +16,25 @@ data:
     set -eu
     apk add --no-cache argon2 >/dev/null
 
-    {{- if $xpOn }}
-    SECRET=/etc/db-secret
-    read_secret() {
+    {{- if $rdsOn }}
+    CONN=/etc/db-connection
+    APP=/etc/app-credentials
+    read_file() {
+      dir="$1"; shift
       for key in "$@"; do
-        if [ -e "${SECRET}/${key}" ]; then
-          tr -d '\n' < "${SECRET}/${key}"
+        if [ -e "${dir}/${key}" ]; then
+          tr -d '\n' < "${dir}/${key}"
           return 0
         fi
       done
       return 1
     }
-    host="$(read_secret host endpoint address || true)"
+    host="$(read_file "$CONN" host endpoint address || true)"
     host="${host%%:*}"
-    port="$(read_secret port || echo 5432)"
-    user="$(read_secret user username || true)"
-    pass="$(read_secret password attribute.password || true)"
-    db="$(read_secret dbname database || echo {{ include "copia.database.name" . | quote }})"
+    port="$(read_file "$CONN" port || echo 5432)"
+    user="$(read_file "$APP" username user || true)"
+    pass="$(read_file "$APP" password || true)"
+    db={{ include "copia.database.name" . | quote }}
     export PGHOST="$host" PGPORT="$port" PGUSER="$user" PGPASSWORD="$pass" PGDATABASE="$db"
     {{- $sslMode := "require" }}
     {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
@@ -41,7 +43,7 @@ data:
     export PGSSLMODE={{ $sslMode | quote }}
     {{- end }}
 
-    {{- if $xpOn }}
+    {{- if $rdsOn }}
     max_attempts=450
     {{- else }}
     max_attempts=180
@@ -103,9 +105,9 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 5
-  # Crossplane path: kubelet blocks on Secret mount until RDS is ready (5–15m),
-  # then readiness + schema waits. Non-Crossplane path stays at 20m.
-  activeDeadlineSeconds: {{ if $xpOn }}3600{{ else }}1200{{ end }}
+  # RDS path: kubelet blocks on Secret mounts until Instance + app-role are ready
+  # (5–15m+), then readiness + schema waits. Non-RDS path stays at 20m.
+  activeDeadlineSeconds: {{ if $rdsOn }}3600{{ else }}1200{{ end }}
   ttlSecondsAfterFinished: 600
   template:
     spec:
@@ -115,7 +117,7 @@ spec:
           image: postgres:15-alpine
           command: ["/bin/sh", "/scripts/bootstrap.sh"]
           env:
-            {{- if not $xpOn }}
+            {{- if not $rdsOn }}
             - name: PGHOST
               value: {{ include "copia.database.host" . | quote }}
             - name: PGPORT
@@ -136,9 +138,12 @@ spec:
           volumeMounts:
             - name: script
               mountPath: /scripts
-            {{- if $xpOn }}
-            - name: db-secret
-              mountPath: /etc/db-secret
+            {{- if $rdsOn }}
+            - name: db-connection
+              mountPath: /etc/db-connection
+              readOnly: true
+            - name: app-credentials
+              mountPath: /etc/app-credentials
               readOnly: true
             {{- end }}
       volumes:
@@ -146,9 +151,12 @@ spec:
           configMap:
             name: {{ include "app.fullname" . }}-admin-bootstrap-script
             defaultMode: 0755
-        {{- if $xpOn }}
-        - name: db-secret
+        {{- if $rdsOn }}
+        - name: db-connection
           secret:
-            secretName: {{ include "copia.crossplane.connectionSecretName" . }}
+            secretName: {{ include "copia.rds.connectionSecretName" . }}
+        - name: app-credentials
+          secret:
+            secretName: {{ include "copia.rds.appCredentialsSecretName" . }}
         {{- end }}
 {{- end }}

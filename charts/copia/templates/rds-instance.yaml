@@ -1,0 +1,112 @@
+{{- if eq "true" (include "copia.rds.enabled" .) }}
+{{- $_ := include "copia.rds.validate" . }}
+{{- $requireCRD := true }}
+{{- if and .Values.rds (hasKey .Values.rds "requireCRD") }}
+{{- $requireCRD = .Values.rds.requireCRD }}
+{{- end }}
+{{- if and $requireCRD (not (.Capabilities.APIVersions.Has "rds.aws.upbound.io/v1beta3")) }}
+{{- fail "rds database provider requires Instance CRD (rds.aws.upbound.io/v1beta3). Enable database.postgres.driver=rds on the infrastructure agent (Windsor provisioning add-on) first." }}
+{{- end }}
+{{- $region := .Values.rds.region }}
+{{- $subnetGroup := .Values.rds.dbSubnetGroupName }}
+{{- $sgs := .Values.rds.vpcSecurityGroupIds }}
+{{- $engineVersion := .Values.rds.engineVersion | default "16" }}
+{{- $deletionPolicy := .Values.rds.deletionPolicy | default "Delete" }}
+{{- $skipFinal := true }}
+{{- if hasKey .Values.rds "skipFinalSnapshot" }}
+{{- $skipFinal = .Values.rds.skipFinalSnapshot }}
+{{- end }}
+{{- $delProtect := false }}
+{{- if hasKey .Values.rds "deletionProtection" }}
+{{- $delProtect = .Values.rds.deletionProtection }}
+{{- end }}
+{{- $public := false }}
+{{- if hasKey .Values.rds "publiclyAccessible" }}
+{{- $public = .Values.rds.publiclyAccessible }}
+{{- end }}
+{{- $kms := .Values.rds.kmsKeyId | default "" }}
+---
+# Cluster-scoped managed resource (Windsor provisioning contract). Platform
+# installs Crossplane + provider-aws-rds; this chart only defines the Instance.
+# App login comes from Windsor app-role Secret <instance>-app-credentials
+# (username/password). Host/port come from writeConnectionSecretToRef below.
+apiVersion: rds.aws.upbound.io/v1beta3
+kind: Instance
+metadata:
+  name: {{ include "copia.rds.instanceName" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+  {{- if and .Values.rds .Values.rds.keepOnDelete }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  deletionPolicy: {{ $deletionPolicy }}
+  writeConnectionSecretToRef:
+    name: {{ include "copia.rds.connectionSecretName" . }}
+    namespace: {{ .Release.Namespace }}
+  forProvider:
+    region: {{ $region | quote }}
+    engine: postgres
+    engineVersion: {{ $engineVersion | quote }}
+    instanceClass: {{ .Values.rds.instanceClass | default "db.t4g.micro" | quote }}
+    allocatedStorage: {{ .Values.rds.allocatedStorage | default 20 }}
+    dbSubnetGroupName: {{ $subnetGroup | quote }}
+    vpcSecurityGroupIds:
+      {{- toYaml $sgs | nindent 6 }}
+    dbName: {{ include "copia.database.name" . | quote }}
+    username: {{ include "copia.database.user" . | quote }}
+    manageMasterUserPassword: true
+    storageEncrypted: true
+    {{- if $kms }}
+    kmsKeyId: {{ $kms | quote }}
+    {{- end }}
+    publiclyAccessible: {{ $public }}
+    skipFinalSnapshot: {{ $skipFinal }}
+    deletionProtection: {{ $delProtect }}
+{{- if eq "true" (include "copia.rds.conversionManager.enabled" .) }}
+{{- $cmClass := .Values.rds.instanceClass | default "db.t4g.micro" }}
+{{- $cmStorage := .Values.rds.allocatedStorage | default 20 }}
+{{- if and .Values.rds.conversionManager .Values.rds.conversionManager.instanceClass }}
+{{- $cmClass = .Values.rds.conversionManager.instanceClass }}
+{{- end }}
+{{- if and .Values.rds.conversionManager .Values.rds.conversionManager.allocatedStorage }}
+{{- $cmStorage = .Values.rds.conversionManager.allocatedStorage }}
+{{- end }}
+---
+apiVersion: rds.aws.upbound.io/v1beta3
+kind: Instance
+metadata:
+  name: {{ include "copia.rds.conversionManager.instanceName" . }}
+  labels:
+    {{- include "app.conversion-manager.labels" . | nindent 4 }}
+  {{- if and .Values.rds .Values.rds.keepOnDelete }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  deletionPolicy: {{ $deletionPolicy }}
+  writeConnectionSecretToRef:
+    name: {{ include "copia.rds.conversionManager.connectionSecretName" . }}
+    namespace: {{ .Release.Namespace }}
+  forProvider:
+    region: {{ $region | quote }}
+    engine: postgres
+    engineVersion: {{ $engineVersion | quote }}
+    instanceClass: {{ $cmClass | quote }}
+    allocatedStorage: {{ $cmStorage }}
+    dbSubnetGroupName: {{ $subnetGroup | quote }}
+    vpcSecurityGroupIds:
+      {{- toYaml $sgs | nindent 6 }}
+    dbName: {{ include "copia.cnpg.conversionManager.database" . | quote }}
+    username: {{ include "copia.cnpg.conversionManager.user" . | quote }}
+    manageMasterUserPassword: true
+    storageEncrypted: true
+    {{- if $kms }}
+    kmsKeyId: {{ $kms | quote }}
+    {{- end }}
+    publiclyAccessible: {{ $public }}
+    skipFinalSnapshot: {{ $skipFinal }}
+    deletionProtection: {{ $delProtect }}
+{{- end }}
+{{- end }}

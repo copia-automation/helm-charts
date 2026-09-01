@@ -1,0 +1,131 @@
+suite: Test RDS Instance (Windsor Crossplane path)
+templates:
+  - rds-instance.yaml
+tests:
+  - it: renders nothing when disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: fails when enabled without the CRD
+    set:
+      database.provider: rds
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: cluster-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "rds.aws.upbound.io/v1beta3"
+  - it: fails when enabled with an external database HOST
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      rds.enabled: true
+      copia.config.database.HOST: postgres.example.com:5432
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: cluster-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "omit copia.config.database.HOST"
+  - it: fails when region missing
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      database.provider: rds
+      rds.dbSubnetGroupName: cluster-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "region is required"
+  - it: fails when dbSubnetGroupName missing
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      database.provider: rds
+      rds.region: us-east-2
+      rds.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "dbSubnetGroupName"
+  - it: fails when both rds and cloudnativePG are enabled
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+        - postgresql.cnpg.io/v1
+    set:
+      rds.enabled: true
+      cloudnativePG.enabled: true
+      copia.config.database.PASSWD: s3cret
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: cluster-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "cannot both be enabled"
+  - it: renders Copia Instance with connection secret and sizing
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      database.provider: rds
+      rds.instanceName: copia-poc-pg
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: staging-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-poc"]
+      rds.instanceClass: db.t4g.small
+      rds.allocatedStorage: 100
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Instance
+      - equal:
+          path: metadata.name
+          value: copia-poc-pg
+      - equal:
+          path: spec.writeConnectionSecretToRef.name
+          value: copia-poc-pg-connection
+      - equal:
+          path: spec.forProvider.manageMasterUserPassword
+          value: true
+      - equal:
+          path: spec.forProvider.instanceClass
+          value: db.t4g.small
+      - equal:
+          path: spec.forProvider.allocatedStorage
+          value: 100
+      - equal:
+          path: spec.forProvider.dbSubnetGroupName
+          value: staging-crossplane-rds
+  - it: renders a second Instance for conversion-manager with own sizing
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      database.provider: rds
+      conversion_manager_service.enabled: true
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: staging-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-poc"]
+      rds.instanceClass: db.t4g.small
+      rds.allocatedStorage: 100
+      rds.conversionManager.instanceClass: db.t4g.micro
+      rds.conversionManager.allocatedStorage: 20
+    asserts:
+      - hasDocuments:
+          count: 2
+  - it: accepts legacy database.provider=crossplane alias
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      database.provider: crossplane
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: staging-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - isKind:
+          of: Instance

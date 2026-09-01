@@ -25,31 +25,31 @@ main() {
   log::success "Distr overlay with cloudnativePG.enabled renders cleanly"
 
   log::exec_command helm template copia charts/copia \
-    --api-versions aws.copia.io/v1alpha1 \
+    --api-versions rds.aws.upbound.io/v1beta3 \
     --values charts/copia/distr/values.base.yaml \
-    --set database.provider=crossplane \
+    --set database.provider=rds \
     --set chartGeneratedSecrets.enabled=true \
+    --set conversion_manager_service.enabled=false \
     --set copia.config.database.HOST= \
-    --set crossplane.parameters.region=us-east-2 \
-    --set-json 'crossplane.parameters.subnetIds=["subnet-a","subnet-b"]' \
-    --set-json 'crossplane.parameters.vpcSecurityGroupIds=["sg-a"]' \
+    --set rds.region=us-east-2 \
+    --set rds.dbSubnetGroupName=cluster-crossplane-rds \
+    --set-json 'rds.vpcSecurityGroupIds=["sg-a"]' \
     >/dev/null
-  log::success "Chart with database.provider=crossplane renders cleanly"
+  log::success "Chart with database.provider=rds renders cleanly"
 
   log::exec_command helm template copia charts/copia \
-    --api-versions aws.copia.io/v1alpha1 \
+    --api-versions rds.aws.upbound.io/v1beta3 \
     --values charts/copia/distr/values.base.yaml \
-    --set database.provider=crossplane \
+    --set database.provider=rds \
     --set chartGeneratedSecrets.enabled=true \
     --set conversion_manager_service.enabled=true \
     --set conversion_manager_service.configmap.DB_HOST= \
-    --set conversion_manager_service.secret.DB_PASSWORD=cm-secret \
     --set copia.config.database.HOST= \
-    --set crossplane.parameters.region=us-east-2 \
-    --set-json 'crossplane.parameters.subnetIds=["subnet-a","subnet-b"]' \
-    --set-json 'crossplane.parameters.vpcSecurityGroupIds=["sg-a"]' \
+    --set rds.region=us-east-2 \
+    --set rds.dbSubnetGroupName=cluster-crossplane-rds \
+    --set-json 'rds.vpcSecurityGroupIds=["sg-a"]' \
     >/dev/null
-  log::success "Chart with crossplane + conversion-manager renders cleanly"
+  log::success "Chart with rds + conversion-manager renders cleanly"
 }
 
 main "$@"

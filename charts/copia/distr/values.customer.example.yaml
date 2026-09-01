@@ -28,22 +28,22 @@ cloudnativePG:
   storage:
     size: 50Gi
     storageClass: single
-# AWS RDS via Crossplane (mutually exclusive with cloudnativePG). Requires
-# Crossplane + PostgresInstance XRD/Composition. Omit HOST/PASSWD when enabled.
-# See docs/distr/crossplane.md.
+# AWS RDS via Crossplane Instance (mutually exclusive with cloudnativePG).
+# Requires Windsor database.postgres.driver=rds + app-role for credentials.
+# Omit HOST/PASSWD when enabled. See docs/distr/crossplane.md.
 # database:
-#   provider: crossplane
-# crossplane:
+#   provider: rds
+# rds:
 #   enabled: true
-#   # providerConfigRef: default  # must match platform ProviderConfig name
-#   parameters:
-#     region: us-east-2
-#     subnetIds:
-#       - subnet-aaa
-#       - subnet-bbb
-#     vpcSecurityGroupIds:
-#       - sg-aaa
-# POC teardown only: skipFinalSnapshot=true, deletionProtection=false
+#   region: us-east-2
+#   dbSubnetGroupName: mycluster-crossplane-rds
+#   vpcSecurityGroupIds:
+#     - sg-aaa
+#   instanceClass: db.t4g.small
+#   allocatedStorage: 100
+#   conversionManager:
+#     instanceClass: db.t4g.micro
+#     allocatedStorage: 20
 copia:
   config:
     server:

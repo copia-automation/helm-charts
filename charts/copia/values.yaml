@@ -277,28 +277,49 @@ cloudnativePG:
   # Merged into the Cluster spec (postgresql.parameters, backup, monitoring, ...).
   extraSpec: {}
 
-# Optional database provider switch. Set to "crossplane" as an alias for
-# crossplane.enabled=true (--set database.provider=crossplane).
+# Optional database provider switch.
+#   "rds"        — AWS RDS via Crossplane Instance (Windsor driver=rds)
+#   "crossplane" — legacy alias for "rds"
 # Mutually exclusive with cloudnativePG.enabled.
 database:
   provider: ""
 
-# AWS RDS via Crossplane Claim. Platform must install Crossplane, the AWS
-# provider, ProviderConfig (IRSA), and the PostgresInstance XRD + Composition.
-# The chart emits a Claim as a normal release resource and reads credentials at
-# runtime from the connection Secret (nexus keys: user, password, host, port,
-# dbname). Omit HOST and PASSWD when enabled. See docs/distr/crossplane.md.
-crossplane:
+# AWS RDS via Crossplane Instance (Windsor provisioning add-on).
+# Platform installs Crossplane + provider-aws-rds when
+# database.postgres.driver=rds. This chart emits Instance CR(s) and reads:
+#   - <instance>-app-credentials  (username/password from Windsor app-role)
+#   - <instance>-connection       (host/port from Instance writeConnectionSecretToRef)
+# Omit HOST and PASSWD when enabled. See docs/distr/crossplane.md.
+rds:
   enabled: false
   requireCRD: true
   keepOnDelete: false
-  # Default: <release-fullname>-pg
-  claimName: ""
-  # Default: <release-fullname>-db-app (override e.g. copia-db-app for nexus parity)
+  # Default: <release-fullname>-pg (cluster-scoped Instance name)
+  instanceName: ""
+  # Defaults: <instanceName>-app-credentials / <instanceName>-connection
+  appCredentialsSecretName: ""
   connectionSecretName: ""
-  providerConfigRef: default
-  # Merged into Claim spec.parameters. Keys not declared on the platform XRD may
-  # be pruned unless the XRD preserves unknown fields. Required today:
-  # region, subnetIds, vpcSecurityGroupIds.
-  parameters: {}
+  region: ""
+  # Platform Terraform creates <cluster>-crossplane-rds
+  dbSubnetGroupName: ""
+  vpcSecurityGroupIds: []
+  instanceClass: db.t4g.micro
+  allocatedStorage: 20
+  engineVersion: "16"
+  kmsKeyId: ""
+  deletionPolicy: Delete
+  skipFinalSnapshot: true
+  deletionProtection: false
+  publiclyAccessible: false
+  # Second Instance when conversion_manager_service.enabled (own class/size).
+  conversionManager:
+    instanceName: ""
+    instanceClass: db.t4g.micro
+    allocatedStorage: 20
+    appCredentialsSecretName: ""
+    connectionSecretName: ""
+
+# Deprecated: use rds.* instead. crossplane.enabled still enables the RDS path.
+crossplane:
+  enabled: false
 

@@ -271,55 +271,103 @@ conversion_manager
 {{- end -}}
 
 {{/*
-Return "true" when the chart should emit a Crossplane Postgres Claim and read
-DB credentials from a connection Secret (nexus keys: user/password/host/port/dbname).
+Return "true" when the chart should emit AWS RDS Instance CRs (Windsor
+database.postgres.driver=rds). Platform installs Crossplane + provider-aws-rds;
+the chart creates rds.aws.upbound.io/v1beta3 Instance(s) and reads app
+credentials from Windsor app-role Secrets (<instance>-app-credentials).
 
-Enable with crossplane.enabled=true or database.provider=crossplane.
+Enable with rds.enabled=true, database.provider=rds, or the legacy aliases
+crossplane.enabled / database.provider=crossplane.
 Mutually exclusive with cloudnativePG.enabled.
 */}}
-{{- define "copia.crossplane.enabled" -}}
-{{- $fromBlock := and .Values.crossplane .Values.crossplane.enabled -}}
-{{- $fromProvider := and .Values.database (eq (.Values.database.provider | default "") "crossplane") -}}
-{{- if or $fromBlock $fromProvider -}}
+{{- define "copia.rds.enabled" -}}
+{{- $fromBlock := and .Values.rds .Values.rds.enabled -}}
+{{- $fromProvider := and .Values.database (or (eq (.Values.database.provider | default "") "rds") (eq (.Values.database.provider | default "") "crossplane")) -}}
+{{- $legacyCrossplane := and .Values.crossplane .Values.crossplane.enabled -}}
+{{- if or $fromBlock $fromProvider $legacyCrossplane -}}
 {{- if eq "true" (include "copia.cnpg.enabled" .) -}}
-{{- fail "crossplane and cloudnativePG cannot both be enabled; pick one database path." -}}
+{{- fail "rds (Crossplane AWS RDS) and cloudnativePG cannot both be enabled; pick one database path." -}}
 {{- end -}}
 true
 {{- end -}}
 {{- end -}}
 
-{{- define "copia.crossplane.claimName" -}}
-{{- if and .Values.crossplane .Values.crossplane.claimName }}
-{{- .Values.crossplane.claimName | trunc 63 | trimSuffix "-" }}
+{{/* Legacy alias — prefer copia.rds.enabled. */}}
+{{- define "copia.crossplane.enabled" -}}
+{{- include "copia.rds.enabled" . -}}
+{{- end -}}
+
+{{- define "copia.rds.instanceName" -}}
+{{- if and .Values.rds .Values.rds.instanceName }}
+{{- .Values.rds.instanceName | trunc 63 | trimSuffix "-" }}
 {{- else }}
 {{- printf "%s-pg" (include "app.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end -}}
 
-{{- define "copia.crossplane.connectionSecretName" -}}
-{{- if and .Values.crossplane .Values.crossplane.connectionSecretName }}
-{{- .Values.crossplane.connectionSecretName }}
+{{/*
+Windsor app-role publishes <instance>-app-credentials (username + password only).
+*/}}
+{{- define "copia.rds.appCredentialsSecretName" -}}
+{{- if and .Values.rds .Values.rds.appCredentialsSecretName }}
+{{- .Values.rds.appCredentialsSecretName }}
 {{- else }}
-{{- printf "%s-db-app" (include "app.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-app-credentials" (include "copia.rds.instanceName" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end -}}
 
-{{- define "copia.crossplane.conversionManager.enabled" -}}
-{{- if eq "true" (include "copia.crossplane.enabled" .) -}}
+{{/*
+Host/port come from Crossplane writeConnectionSecretToRef on the Instance
+(Windsor app-credentials Secret does not include endpoint).
+*/}}
+{{- define "copia.rds.connectionSecretName" -}}
+{{- if and .Values.rds .Values.rds.connectionSecretName }}
+{{- .Values.rds.connectionSecretName }}
+{{- else }}
+{{- printf "%s-connection" (include "copia.rds.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.rds.conversionManager.enabled" -}}
+{{- if eq "true" (include "copia.rds.enabled" .) -}}
 {{- if and .Values.conversion_manager_service .Values.conversion_manager_service.enabled -}}
 true
 {{- end -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "copia.crossplane.validateHosts" -}}
-{{- if eq "true" (include "copia.crossplane.enabled" .) -}}
+{{- define "copia.rds.conversionManager.instanceName" -}}
+{{- if and .Values.rds .Values.rds.conversionManager .Values.rds.conversionManager.instanceName }}
+{{- .Values.rds.conversionManager.instanceName | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-cm-pg" (include "app.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.rds.conversionManager.appCredentialsSecretName" -}}
+{{- if and .Values.rds .Values.rds.conversionManager .Values.rds.conversionManager.appCredentialsSecretName }}
+{{- .Values.rds.conversionManager.appCredentialsSecretName }}
+{{- else }}
+{{- printf "%s-app-credentials" (include "copia.rds.conversionManager.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.rds.conversionManager.connectionSecretName" -}}
+{{- if and .Values.rds .Values.rds.conversionManager .Values.rds.conversionManager.connectionSecretName }}
+{{- .Values.rds.conversionManager.connectionSecretName }}
+{{- else }}
+{{- printf "%s-connection" (include "copia.rds.conversionManager.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.rds.validate" -}}
+{{- if eq "true" (include "copia.rds.enabled" .) -}}
 {{- $host := "" -}}
 {{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.HOST -}}
 {{- $host = .Values.copia.config.database.HOST | toString -}}
 {{- end -}}
 {{- if and $host (ne (include "copia.cnpg.isPlaceholderHost" $host) "true") -}}
-{{- fail "crossplane database provider is enabled; omit copia.config.database.HOST (and PASSWD) — credentials come from the connection Secret." -}}
+{{- fail "rds database provider is enabled; omit copia.config.database.HOST (and PASSWD) — credentials come from Windsor app-role + Instance connection Secrets." -}}
 {{- end -}}
 {{- $cmHost := "" -}}
 {{- $cm := .Values.conversion_manager_service -}}
@@ -327,16 +375,41 @@ true
 {{- $cmHost = $cm.configmap.DB_HOST | toString -}}
 {{- end -}}
 {{- if and $cmHost (ne (include "copia.cnpg.isPlaceholderHost" $cmHost) "true") -}}
-{{- fail "crossplane database provider is enabled; omit conversion_manager_service.configmap.DB_HOST." -}}
+{{- fail "rds database provider is enabled; omit conversion_manager_service.configmap.DB_HOST." -}}
+{{- end -}}
+{{- $region := "" -}}
+{{- if and .Values.rds .Values.rds.region -}}
+{{- $region = .Values.rds.region | toString -}}
+{{- end -}}
+{{- if empty $region -}}
+{{- fail "rds.region is required." -}}
+{{- end -}}
+{{- $subnetGroup := "" -}}
+{{- if and .Values.rds .Values.rds.dbSubnetGroupName -}}
+{{- $subnetGroup = .Values.rds.dbSubnetGroupName | toString -}}
+{{- end -}}
+{{- if empty $subnetGroup -}}
+{{- fail "rds.dbSubnetGroupName is required (platform creates <cluster>-crossplane-rds)." -}}
+{{- end -}}
+{{- if or (not (hasKey (.Values.rds | default dict) "vpcSecurityGroupIds")) (eq (len (.Values.rds.vpcSecurityGroupIds | default list)) 0) -}}
+{{- fail "rds.vpcSecurityGroupIds is required." -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
 
+{{/* Legacy aliases used by older templates/tests. */}}
+{{- define "copia.crossplane.conversionManager.enabled" -}}
+{{- include "copia.rds.conversionManager.enabled" . -}}
+{{- end -}}
+{{- define "copia.crossplane.validateHosts" -}}
+{{- include "copia.rds.validate" . -}}
+{{- end -}}
 {{- define "copia.crossplane.validateConversionManager" -}}
-{{- if eq "true" (include "copia.crossplane.conversionManager.enabled" .) -}}
-{{- $_ := include "copia.crossplane.validateHosts" . -}}
-{{- if not (and .Values.conversion_manager_service.secret .Values.conversion_manager_service.secret.DB_PASSWORD) -}}
-{{- fail "crossplane with conversion-manager requires conversion_manager_service.secret.DB_PASSWORD." -}}
+{{- include "copia.rds.validate" . -}}
 {{- end -}}
+{{- define "copia.crossplane.connectionSecretName" -}}
+{{- include "copia.rds.connectionSecretName" . -}}
 {{- end -}}
+{{- define "copia.crossplane.claimName" -}}
+{{- include "copia.rds.instanceName" . -}}
 {{- end -}}

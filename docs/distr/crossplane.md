@@ -1,69 +1,65 @@
-# Crossplane Config
+# AWS RDS via Crossplane (Windsor)
 
-This guide covers provisioning Copia's Postgres on **AWS RDS via Crossplane**.
-The chart emits a `PostgresInstance` Claim as a normal release resource and reads
-credentials at **runtime** from a connection Secret. It does **not** install
-Crossplane or the AWS provider.
+This guide covers provisioning Copia's Postgres on **AWS RDS** using the
+Windsor Core provisioning add-on (`database.postgres.driver=rds`). The chart
+emits `rds.aws.upbound.io/v1beta3` **Instance** CRs (same posture as
+CloudNativePG's `Cluster` CR). It does **not** install Crossplane, the AWS
+provider, or Claims/XRD/Composition.
 
-Use this for the AWS / Distr path once Crossplane is a platform capability.
 For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
 
-## Prerequisites (platform)
+## Prerequisites (platform / infrastructure agent)
 
-1. Crossplane core installed and healthy
-2. Upbound AWS RDS provider + `ProviderConfig` (IRSA / Pod Identity)
-3. XRD + Composition for `PostgresInstance` (`aws.copia.io/v1alpha1`) that:
-   - Creates subnet group + RDS instance
-   - Sets Composition `spec.writeConnectionSecretsToNamespace` (e.g.
-     `crossplane-system`) so the composite gets a staging connection Secret.
-     **Without this field the Claim can still report Ready=True but no Secret
-     is ever published** — a silent failure that hangs chart init.
-   - Remaps connection details to **nexus keys**: `user`, `password`, `host`,
-     `port`, `dbname` (from Crossplane's `username` / `endpoint` / …)
-   - The chart Claim then sets `spec.writeConnectionSecretToRef.name` so
-     Crossplane **copies** that Secret into the Claim / Helm release namespace
-     (where the Deployment mounts it). Two fields, two namespaces — both required.
-4. A `ProviderConfig` named **`default`**, or set `crossplane.providerConfigRef`
-   to match your platform install.
-5. Network inputs available to the Claim (until Composition does tag lookup):
-   - database/isolated subnet IDs
-   - security group allowing **5432** from EKS workers
-   - AWS `region` (required; no chart default)
+On the infrastructure application, enable Windsor's RDS driver (names vary by
+Distr/Windsor version), e.g.:
 
-The chart does **not** install Crossplane, the AWS provider, or the
-`PostgresInstance` XRD/Composition. Those are platform responsibilities.
+```bash
+CORE_DATABASE__POSTGRES__ENABLED=true
+CORE_DATABASE__POSTGRES__DRIVER=rds
+```
+
+That installs Crossplane, `provider-aws-rds`, a `default` `ProviderConfig`
+(Pod Identity), DB subnet group, and Kyverno policies. See
+[Windsor Core provisioning](https://github.com/windsorcli/core/blob/main/kustomize/provisioning/README.md).
+
+Also wire **app-role** for each Instance the chart creates (Copia, and
+conversion-manager when enabled). App-role publishes
+`<instance>-app-credentials` (`username` + `password`) into the release
+namespace. Required substitutions:
+
+| Key | Example (Copia) | Example (CM) |
+|-----|-----------------|--------------|
+| `pg_instance_name` | `copia-pg` | `copia-cm-pg` |
+| `pg_database_name` | `copia` | `conversion_manager` |
+| `pg_target_namespace` | release namespace | same |
+| `pg_grant_sql` | grants for `copia_app` | grants for `conversion_manager_app` |
+
+Without app-role, pods block forever waiting on the credentials Secret.
 
 ## Customer values
 
-Enable Crossplane and **omit** `HOST` and `PASSWD`. Supply Claim network
-parameters and an admin password for the post-install Job.
-The connection Secret defaults to `<release-name>-db-app`; override with
-`connectionSecretName: copia-db-app` if you need the fixed nexus name.
+Enable RDS and **omit** `HOST` / `PASSWD` (and CM `DB_HOST` / `DB_PASSWORD`).
+Supply region, subnet group, and security groups from platform outputs:
 
 ```yaml
 database:
-  provider: crossplane   # or: crossplane.enabled: true
-crossplane:
-  # connectionSecretName: copia-db-app  # optional nexus-style override
-  # providerConfigRef: default          # must match platform ProviderConfig name
-  parameters:
-    region: us-east-2
-    subnetIds:
-      - subnet-aaa
-      - subnet-bbb
-      - subnet-ccc
-    vpcSecurityGroupIds:
-      - sg-poc-rds
-chartGeneratedSecrets:
-  enabled: true
+  provider: rds   # or: rds.enabled: true
+rds:
+  region: us-east-2
+  dbSubnetGroupName: mycluster-crossplane-rds
+  vpcSecurityGroupIds:
+    - sg-poc-rds
+  instanceClass: db.t4g.small
+  allocatedStorage: 100
+  # Optional second Instance sizing when conversion-manager is enabled:
+  conversionManager:
+    instanceClass: db.t4g.micro
+    allocatedStorage: 20
 conversion_manager_service:
   enabled: true
   configmap:
     DB_NAME: conversion_manager
-    DB_USER: conversion_manager
-    # omit DB_HOST — chart reads RDS endpoint from the connection Secret
-  secret:
-    DB_PASSWORD: "{{ .Secrets.ConversionManagerDbPassword }}"
+    # omit DB_HOST / DB_USER — filled at runtime from Secrets
 adminUser:
   create: true
   username: admin
@@ -72,7 +68,6 @@ adminUser:
 copia:
   config:
     database:
-      # NAME/USER are overridden at runtime from the connection Secret when present
       SSL_MODE: require
       # omit HOST and PASSWD
 ```
@@ -81,80 +76,51 @@ Do **not** enable `cloudnativePG` at the same time.
 
 ## How the chart behaves
 
-1. Helm applies a `PostgresInstance` Claim with the release (not a pre-install
-   hook — Helm must not wait on RDS Ready, which takes 5–15 minutes).
-2. Crossplane reconciles the Claim → AWS RDS → connection Secret
-   (`<release>-db-app` by default).
-3. Deployment **init** mounts the Secret and runs `pg_isready` / `psql`
-   (kubelet blocks start until the Secret exists).
-4. `render-app-ini` substitutes `HOST` / `USER` / `PASSWD` / `NAME` from the
-   Secret (placeholders `###XP_DB_*###`).
-5. Post-install **admin bootstrap** Job also reads the Secret (not Helm values).
-   On the Crossplane path the Job deadline is 60m to cover RDS provisioning.
-
-### Conversion-manager (same RDS, second database)
-
-When `conversion_manager_service.enabled` is true on the Crossplane path, the
-chart mirrors CloudNativePG:
-
-1. **One RDS** from the `PostgresInstance` Claim (Copia owner/database).
-2. Conversion-manager Deployment **init** connects with master credentials from
-   the connection Secret and creates the `conversion_manager` role + database
-   (idempotent).
-3. A second init waits until conversion-manager can log in.
-4. `DB_HOST` is taken from the RDS connection Secret at runtime (`host:port`);
-   omit `conversion_manager_service.configmap.DB_HOST`. Set `DB_USER`,
-   `DB_NAME`, and `secret.DB_PASSWORD` as with CloudNativePG.
-
-Requires Distr secret **`ConversionManagerDbPassword`** when using
-`chartGeneratedSecrets.enabled=true`.
+1. Helm applies one `Instance` for Copia (and a second for conversion-manager
+   when CM is enabled). Instances are cluster-scoped; no Claim.
+2. Crossplane creates RDS with `manageMasterUserPassword: true` (master in
+   AWS Secrets Manager — apps do not use it).
+3. Windsor **app-role** CronJob creates `<dbname>_app` and writes
+   `<instance>-app-credentials` (`username`, `password`).
+4. Instance `writeConnectionSecretToRef` publishes host/port into
+   `<instance>-connection` (app-credentials does not include endpoint).
+5. Deployment init waits until both Secrets exist, then `pg_isready` with the
+   **app** user. `render-app-ini` / CM entrypoint fill HOST/USER/PASSWD from
+   those Secrets.
+6. Admin bootstrap Job uses the same Secrets (60m deadline for RDS).
 
 ## Smoke test
 
-Use a dedicated namespace (not production Copia). For throwaway teardown, opt
-out of safe RDS deletion defaults (`skipFinalSnapshot`, `deletionProtection`).
-
 ```bash
-# After platform XRD+Composition are installed and you have subnet/SG IDs:
-helm install copia-poc ./charts/copia -n crossplane-poc --create-namespace \
+helm upgrade --install copia-poc ./charts/copia -n crossplane-poc --create-namespace \
   --timeout 60m \
   --values charts/copia/distr/values.base.yaml \
-  --set image.repository=ghcr.io/copia-automation/copia-web-app-selfhosted-releases \
-  --set image.tag=v0.57.0 \
-  --set ghcrCheck=false \
-  --set database.provider=crossplane \
+  --set database.provider=rds \
+  --set rds.region=us-east-2 \
+  --set rds.dbSubnetGroupName=YOUR-cluster-crossplane-rds \
+  --set-json 'rds.vpcSecurityGroupIds=["sg-..."]' \
+  --set rds.instanceClass=db.t4g.micro \
+  --set rds.allocatedStorage=20 \
   --set conversion_manager_service.enabled=true \
   --set conversion_manager_service.configmap.DB_HOST= \
-  --set conversion_manager_service.secret.DB_PASSWORD='cm-test-password' \
   --set chartGeneratedSecrets.enabled=true \
   --set adminUser.create=true \
-  --set adminUser.username=admin \
-  --set adminUser.email=admin@example.com \
   --set adminUser.password='test-admin-password' \
   --set copia.config.database.HOST= \
-  --set crossplane.parameters.region=us-east-2 \
-  --set crossplane.parameters.skipFinalSnapshot=true \
-  --set crossplane.parameters.deletionProtection=false \
-  --set-json 'crossplane.parameters.subnetIds=["subnet-aaa","subnet-bbb","subnet-ccc"]' \
-  --set-json 'crossplane.parameters.vpcSecurityGroupIds=["sg-poc"]'
+  --set ghcrCheck=false
 ```
 
 Verify:
 
 ```bash
-kubectl get postgresinstance -n crossplane-poc
-kubectl get secret copia-poc-db-app -n crossplane-poc -o json | jq -r '.data | keys[]'
+kubectl get instance.rds.aws.upbound.io
+kubectl get secret -n crossplane-poc | grep -E 'connection|app-credentials'
 kubectl logs -n crossplane-poc -l app.kubernetes.io/name=copia -c copia-wait-db
-kubectl logs -n crossplane-poc job/copia-poc-admin-bootstrap
 ```
-
-Port-forward and log in with `admin` / your test admin password once the
-Deployment is Ready.
 
 ## Cleanup
 
 ```bash
 helm uninstall copia-poc -n crossplane-poc
-# wait for Claim/RDS finalizers; confirm instance gone in AWS
-kubectl delete postgresinstance -n crossplane-poc --all
+kubectl delete instance.rds.aws.upbound.io --all
 ```

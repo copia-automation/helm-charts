@@ -1,7 +1,7 @@
 # Conversion Manager deployment template
 {{- if and .Values.conversion_manager_service.enabled (eq .Values.conversion_manager_service.enabled true)}}
-{{- if eq "true" (include "copia.crossplane.conversionManager.enabled" .) }}
-{{- $_ := include "copia.crossplane.validateConversionManager" . }}
+{{- if eq "true" (include "copia.rds.conversionManager.enabled" .) }}
+{{- $_ := include "copia.rds.validate" . }}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
@@ -50,35 +50,26 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.conversion_manager_service.deployment.terminationGracePeriodSeconds }}
       {{- end }}
       {{- $cnpgCmOn := eq "true" (include "copia.cnpg.conversionManager.enabled" .) }}
-      {{- $xpCmOn := eq "true" (include "copia.crossplane.conversionManager.enabled" .) }}
-      {{- if or $cnpgCmOn $xpCmOn }}
+      {{- $rdsCmOn := eq "true" (include "copia.rds.conversionManager.enabled" .) }}
+      {{- if or $cnpgCmOn $rdsCmOn }}
       {{- $sslMode := "prefer" }}
       {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
       {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
       {{- end }}
-      {{- if $xpCmOn }}
+      {{- if $rdsCmOn }}
       {{- $sslMode = "require" }}
       {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
       {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
       {{- end }}
       {{- end }}
       initContainers:
-        {{- if $xpCmOn }}
-        {{- include "copia.crossplane.bootstrapConversionManager.initContainer" (dict
-          "cmUser" (include "copia.cnpg.conversionManager.user" .)
-          "cmDatabase" (include "copia.cnpg.conversionManager.database" .)
-          "cmPassword" .Values.conversion_manager_service.secret.DB_PASSWORD
-          "sslMode" $sslMode
-          "volumeName" "db-secret"
-          "writeDbHostVolume" "cm-db"
-        ) | nindent 8 }}
-        {{- include "copia.waitPostgres.fromSecret.initContainer" (dict
+        {{- if $rdsCmOn }}
+        {{- include "copia.waitPostgres.windsor.initContainer" (dict
           "name" "wait-postgres"
-          "user" (include "copia.cnpg.conversionManager.user" .)
-          "password" .Values.conversion_manager_service.secret.DB_PASSWORD
           "appDatabase" (include "copia.cnpg.conversionManager.database" .)
           "sslMode" $sslMode
-          "volumeName" "db-secret"
+          "writeDbHostPath" "/cm-db/DB_HOST"
+          "writeDbHostVolume" "cm-db"
         ) | nindent 8 }}
         {{- else if $cnpgCmOn }}
         {{- include "copia.waitPostgres.initContainer" (dict
@@ -96,13 +87,19 @@ spec:
         - name: "conversion-manager"
           image: "{{ include "cm.image" . }}"
           imagePullPolicy: {{ .Values.conversion_manager_service.deployment.image.imagePullPolicy }}
-          {{- if $xpCmOn }}
+          {{- if $rdsCmOn }}
           command: ["/bin/sh", "-c"]
           args:
             - |
               set -eu
               if [ -f /cm-db/DB_HOST ]; then
                 export DB_HOST="$(tr -d '\n' < /cm-db/DB_HOST)"
+              fi
+              if [ -f /etc/app-credentials/username ]; then
+                export DB_USER="$(tr -d '\n' < /etc/app-credentials/username)"
+              fi
+              if [ -f /etc/app-credentials/password ]; then
+                export DB_PASSWORD="$(tr -d '\n' < /etc/app-credentials/password)"
               fi
               exec yarn run:prod
           {{- end }}
@@ -134,14 +131,17 @@ spec:
           startupProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.startupProbe | nindent 12 }}
           {{- end }}
-          {{- if or .Values.conversion_manager_service.deployment.volumeMounts $xpCmOn }}
+          {{- if or .Values.conversion_manager_service.deployment.volumeMounts $rdsCmOn }}
           volumeMounts:
             {{- if .Values.conversion_manager_service.deployment.volumeMounts }}
             {{- toYaml .Values.conversion_manager_service.deployment.volumeMounts | nindent 12 }}
             {{- end }}
-            {{- if $xpCmOn }}
+            {{- if $rdsCmOn }}
             - name: cm-db
               mountPath: /cm-db
+              readOnly: true
+            - name: app-credentials
+              mountPath: /etc/app-credentials
               readOnly: true
             {{- end }}
           {{- end }}
@@ -163,12 +163,15 @@ spec:
       tolerations:
         {{- toYaml .Values.conversion_manager_service.deployment.tolerations | nindent 8 }}
       {{- end }}
-      {{- if or $xpCmOn .Values.conversion_manager_service.deployment.volumes }}
+      {{- if or $rdsCmOn .Values.conversion_manager_service.deployment.volumes }}
       volumes:
-        {{- if $xpCmOn }}
-        - name: db-secret
+        {{- if $rdsCmOn }}
+        - name: db-connection
           secret:
-            secretName: {{ include "copia.crossplane.connectionSecretName" . }}
+            secretName: {{ include "copia.rds.conversionManager.connectionSecretName" . }}
+        - name: app-credentials
+          secret:
+            secretName: {{ include "copia.rds.conversionManager.appCredentialsSecretName" . }}
         - name: cm-db
           emptyDir: {}
         {{- end }}
