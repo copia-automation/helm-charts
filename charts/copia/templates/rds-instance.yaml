@@ -27,9 +27,9 @@
 {{- $kms := .Values.rds.kmsKeyId | default "" }}
 ---
 # Cluster-scoped managed resource (Windsor provisioning contract). Platform
-# installs Crossplane + provider-aws-rds; this chart only defines the Instance.
-# App login comes from Windsor app-role Secret <instance>-app-credentials
-# (username/password). Host/port come from writeConnectionSecretToRef below.
+# installs Crossplane + provider-aws-rds; this chart defines the Instance.
+# App login: chart-owned app-role CronJob (rds-app-role.yaml) publishes
+# <instance>-app-credentials. Host/port come from writeConnectionSecretToRef.
 apiVersion: rds.aws.upbound.io/v1beta3
 kind: Instance
 metadata:

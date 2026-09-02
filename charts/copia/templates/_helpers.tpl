@@ -273,8 +273,9 @@ conversion_manager
 {{/*
 Return "true" when the chart should emit AWS RDS Instance CRs (Windsor
 database.postgres.driver=rds). Platform installs Crossplane + provider-aws-rds;
-the chart creates rds.aws.upbound.io/v1beta3 Instance(s) and reads app
-credentials from Windsor app-role Secrets (<instance>-app-credentials).
+the chart creates Instance(s) and opts into app-role (CronJob + RBAC) so
+<instance>-app-credentials appear in the release namespace — same split as CNPG
+(operator/platform vs chart CR), with the chart supplying grants.
 
 Enable with rds.enabled=true, database.provider=rds, or the legacy aliases
 crossplane.enabled / database.provider=crossplane.

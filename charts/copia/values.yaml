@@ -286,8 +286,10 @@ database:
 
 # AWS RDS via Crossplane Instance (Windsor provisioning add-on).
 # Platform installs Crossplane + provider-aws-rds when
-# database.postgres.driver=rds. This chart emits Instance CR(s) and reads:
-#   - <instance>-app-credentials  (username/password from Windsor app-role)
+# database.postgres.driver=rds. This chart emits Instance CR(s) and opts into
+# Windsor-equivalent app-role (CronJob in system-provisioning) so helm install
+# publishes credentials without a separate Flux facet:
+#   - <instance>-app-credentials  (username/password from chart app-role)
 #   - <instance>-connection       (host/port from Instance writeConnectionSecretToRef)
 # Omit HOST and PASSWD when enabled. See docs/distr/crossplane.md.
 rds:
@@ -311,6 +313,20 @@ rds:
   skipFinalSnapshot: true
   deletionProtection: false
   publiclyAccessible: false
+  # Chart-owned app-role (Windsor crossplane/aws-rds/app-role mechanics).
+  # Uses platform SA rds-secret-reader; set enabled=false only if you wire
+  # that component yourself.
+  appRole:
+    enabled: true
+    namespace: system-provisioning
+    serviceAccountName: rds-secret-reader
+    schedule: "*/5 * * * *"
+    # Optional override (one line, semicolon-separated). Default grants
+    # CONNECT/USAGE/CREATE + ALL on tables/sequences for <dbname>_app.
+    grantSql: ""
+    conversionManagerGrantSql: ""
+    kubectlImage: ""
+    postgresImage: ""
   # Second Instance when conversion_manager_service.enabled (own class/size).
   conversionManager:
     instanceName: ""
@@ -318,6 +334,7 @@ rds:
     allocatedStorage: 20
     appCredentialsSecretName: ""
     connectionSecretName: ""
+    grantSql: ""
 
 # Deprecated: use rds.* instead. crossplane.enabled still enables the RDS path.
 crossplane:

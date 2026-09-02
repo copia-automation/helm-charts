@@ -3,8 +3,9 @@
 This guide covers provisioning Copia's Postgres on **AWS RDS** using the
 Windsor Core provisioning add-on (`database.postgres.driver=rds`). The chart
 emits `rds.aws.upbound.io/v1beta3` **Instance** CRs (same posture as
-CloudNativePG's `Cluster` CR). It does **not** install Crossplane, the AWS
-provider, or Claims/XRD/Composition.
+CloudNativePG's `Cluster` CR) and **opts into app-role** so credentials are
+published on helm install. It does **not** install Crossplane or the AWS
+provider.
 
 For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
 
@@ -19,22 +20,9 @@ CORE_DATABASE__POSTGRES__DRIVER=rds
 ```
 
 That installs Crossplane, `provider-aws-rds`, a `default` `ProviderConfig`
-(Pod Identity), DB subnet group, and Kyverno policies. See
+(Pod Identity), DB subnet group, Kyverno policies, and the shared
+`rds-secret-reader` ServiceAccount in `system-provisioning`. See
 [Windsor Core provisioning](https://github.com/windsorcli/core/blob/main/kustomize/provisioning/README.md).
-
-Also wire **app-role** for each Instance the chart creates (Copia, and
-conversion-manager when enabled). App-role publishes
-`<instance>-app-credentials` (`username` + `password`) into the release
-namespace. Required substitutions:
-
-| Key | Example (Copia) | Example (CM) |
-|-----|-----------------|--------------|
-| `pg_instance_name` | `copia-pg` | `copia-cm-pg` |
-| `pg_database_name` | `copia` | `conversion_manager` |
-| `pg_target_namespace` | release namespace | same |
-| `pg_grant_sql` | grants for `copia_app` | grants for `conversion_manager_app` |
-
-Without app-role, pods block forever waiting on the credentials Secret.
 
 ## Customer values
 
@@ -80,14 +68,19 @@ Do **not** enable `cloudnativePG` at the same time.
    when CM is enabled). Instances are cluster-scoped; no Claim.
 2. Crossplane creates RDS with `manageMasterUserPassword: true` (master in
    AWS Secrets Manager — apps do not use it).
-3. Windsor **app-role** CronJob creates `<dbname>_app` and writes
-   `<instance>-app-credentials` (`username`, `password`).
+3. Chart-owned **app-role** CronJob(s) in `system-provisioning` (same mechanics
+   as Windsor `crossplane/aws-rds/app-role`) create `<dbname>_app` and write
+   `<instance>-app-credentials` (`username`, `password`) into the release
+   namespace. Uses platform SA `rds-secret-reader`.
 4. Instance `writeConnectionSecretToRef` publishes host/port into
-   `<instance>-connection` (app-credentials does not include endpoint).
+   `<instance>-connection`.
 5. Deployment init waits until both Secrets exist, then `pg_isready` with the
    **app** user. `render-app-ini` / CM entrypoint fill HOST/USER/PASSWD from
    those Secrets.
 6. Admin bootstrap Job uses the same Secrets (60m deadline for RDS).
+
+Set `rds.appRole.enabled=false` only if you wire Windsor's app-role component
+yourself (duplicate CronJobs would race).
 
 ## Smoke test
 
@@ -114,6 +107,7 @@ Verify:
 
 ```bash
 kubectl get instance.rds.aws.upbound.io
+kubectl get cronjob -n system-provisioning | grep provision-app-role
 kubectl get secret -n crossplane-poc | grep -E 'connection|app-credentials'
 kubectl logs -n crossplane-poc -l app.kubernetes.io/name=copia -c copia-wait-db
 ```

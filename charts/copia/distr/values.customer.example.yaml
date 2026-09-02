@@ -29,7 +29,7 @@ cloudnativePG:
     size: 50Gi
     storageClass: single
 # AWS RDS via Crossplane Instance (mutually exclusive with cloudnativePG).
-# Requires Windsor database.postgres.driver=rds + app-role for credentials.
+# Requires Windsor database.postgres.driver=rds (chart opts into app-role).
 # Omit HOST/PASSWD when enabled. See docs/distr/crossplane.md.
 # database:
 #   provider: rds
