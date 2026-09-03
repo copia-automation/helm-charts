@@ -1,4 +1,5 @@
 {{- if and .Values.adminUser .Values.adminUser.create }}
+{{- $rdsOn := eq "true" (include "copia.rds.enabled" .) }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -15,9 +16,40 @@ data:
     set -eu
     apk add --no-cache argon2 >/dev/null
 
-    max_attempts=120
+    {{- if $rdsOn }}
+    CONN=/etc/db-connection
+    APP=/etc/app-credentials
+    read_file() {
+      dir="$1"; shift
+      for key in "$@"; do
+        if [ -e "${dir}/${key}" ]; then
+          tr -d '\n' < "${dir}/${key}"
+          return 0
+        fi
+      done
+      return 1
+    }
+    host="$(read_file "$CONN" host endpoint address || true)"
+    host="${host%%:*}"
+    port="$(read_file "$CONN" port || echo 5432)"
+    user="$(read_file "$APP" username user || true)"
+    pass="$(read_file "$APP" password || true)"
+    db={{ include "copia.database.name" . | quote }}
+    export PGHOST="$host" PGPORT="$port" PGUSER="$user" PGPASSWORD="$pass" PGDATABASE="$db"
+    {{- $sslMode := "require" }}
+    {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+    {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+    {{- end }}
+    export PGSSLMODE={{ $sslMode | quote }}
+    {{- end }}
+
+    {{- if $rdsOn }}
+    max_attempts=450
+    {{- else }}
+    max_attempts=180
+    {{- end }}
     attempt=0
-    until pg_isready -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -t 2; do
+    until pg_isready -h "$PGHOST" -p "${PGPORT:-5432}" -U "$PGUSER" -d "$PGDATABASE" -t 2; do
       attempt=$((attempt + 1))
       [ "$attempt" -ge "$max_attempts" ] && echo "postgres readiness timeout" && exit 1
       echo "waiting for postgres..."; sleep 2
@@ -73,7 +105,9 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 5
-  activeDeadlineSeconds: 900
+  # RDS path: kubelet blocks on Secret mounts until Instance + app-role are ready
+  # (5–15m+), then readiness + schema waits. Non-RDS path stays at 20m.
+  activeDeadlineSeconds: {{ if $rdsOn }}3600{{ else }}1200{{ end }}
   ttlSecondsAfterFinished: 600
   template:
     spec:
@@ -83,6 +117,7 @@ spec:
           image: postgres:15-alpine
           command: ["/bin/sh", "/scripts/bootstrap.sh"]
           env:
+            {{- if not $rdsOn }}
             - name: PGHOST
               value: {{ include "copia.database.host" . | quote }}
             - name: PGPORT
@@ -93,6 +128,7 @@ spec:
               value: {{ include "copia.database.name" . | quote }}
             - name: PGPASSWORD
               value: {{ .Values.copia.config.database.PASSWD | quote }}
+            {{- end }}
             - name: ADMIN_USERNAME
               value: {{ .Values.adminUser.username | quote }}
             - name: ADMIN_EMAIL
@@ -102,9 +138,25 @@ spec:
           volumeMounts:
             - name: script
               mountPath: /scripts
+            {{- if $rdsOn }}
+            - name: db-connection
+              mountPath: /etc/db-connection
+              readOnly: true
+            - name: app-credentials
+              mountPath: /etc/app-credentials
+              readOnly: true
+            {{- end }}
       volumes:
         - name: script
           configMap:
             name: {{ include "app.fullname" . }}-admin-bootstrap-script
             defaultMode: 0755
+        {{- if $rdsOn }}
+        - name: db-connection
+          secret:
+            secretName: {{ include "copia.rds.connectionSecretName" . }}
+        - name: app-credentials
+          secret:
+            secretName: {{ include "copia.rds.appCredentialsSecretName" . }}
+        {{- end }}
 {{- end }}

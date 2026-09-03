@@ -1,0 +1,101 @@
+suite: Test RDS app-role (chart-owned Windsor opt-in)
+templates:
+  - rds-app-role.yaml
+tests:
+  - it: renders nothing when rds disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: renders ClusterRole CronJob and namespace Role for Copia
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      database.provider: rds
+      rds.instanceName: copia-poc-pg
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: staging-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-poc"]
+    asserts:
+      - hasDocuments:
+          count: 5
+      - documentSelector:
+          path: kind
+          value: ClusterRole
+        equal:
+          path: metadata.name
+          value: copia-poc-pg-app-reader
+      - documentSelector:
+          path: kind
+          value: ClusterRole
+        equal:
+          path: rules[0].resourceNames[0]
+          value: copia-poc-pg
+      - documentSelector:
+          path: kind
+          value: CronJob
+        equal:
+          path: metadata.name
+          value: copia-poc-pg-provision-app-role
+      - documentSelector:
+          path: kind
+          value: CronJob
+        equal:
+          path: metadata.namespace
+          value: system-provisioning
+      - documentSelector:
+          path: kind
+          value: CronJob
+        equal:
+          path: spec.jobTemplate.spec.template.spec.serviceAccountName
+          value: rds-secret-reader
+      - documentSelector:
+          path: kind
+          value: CronJob
+        matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: "copia-poc-pg-app-credentials"
+      - documentSelector:
+          path: kind
+          value: CronJob
+        matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: "copia_app"
+      - documentSelector:
+          path: kind
+          value: Role
+        equal:
+          path: metadata.name
+          value: copia-poc-pg-app-reader
+  - it: renders a second app-role set for conversion-manager
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      database.provider: rds
+      conversion_manager_service.enabled: true
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: staging-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-poc"]
+    asserts:
+      - hasDocuments:
+          count: 10
+      - documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-copia-cm-pg-provision-app-role
+        equal:
+          path: kind
+          value: CronJob
+  - it: can disable chart app-role when wiring Windsor component separately
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      database.provider: rds
+      rds.appRole.enabled: false
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: staging-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-poc"]
+    asserts:
+      - hasDocuments:
+          count: 0

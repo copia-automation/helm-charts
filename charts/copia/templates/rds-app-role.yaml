@@ -1,0 +1,36 @@
+{{- if eq "true" (include "copia.rds.appRole.enabled" .) }}
+{{- $_ := include "copia.rds.validate" . }}
+{{- $copiaGrant := "" }}
+{{- if and .Values.rds .Values.rds.appRole .Values.rds.appRole.grantSql }}
+{{- $copiaGrant = .Values.rds.appRole.grantSql }}
+{{- else }}
+{{- $copiaGrant = include "copia.rds.appRole.defaultGrantSql" (include "copia.database.name" .) }}
+{{- end }}
+{{- include "copia.rds.appRole.resources" (dict
+  "root" .
+  "instanceName" (include "copia.rds.instanceName" .)
+  "databaseName" (include "copia.database.name" .)
+  "secretName" (include "copia.rds.appCredentialsSecretName" .)
+  "grantSql" $copiaGrant
+  "labels" (include "app.labels" .)
+) }}
+{{- if eq "true" (include "copia.rds.conversionManager.enabled" .) }}
+{{- $cmGrant := "" }}
+{{- if and .Values.rds .Values.rds.conversionManager .Values.rds.conversionManager.grantSql }}
+{{- $cmGrant = .Values.rds.conversionManager.grantSql }}
+{{- else if and .Values.rds .Values.rds.appRole .Values.rds.appRole.conversionManagerGrantSql }}
+{{- $cmGrant = .Values.rds.appRole.conversionManagerGrantSql }}
+{{- else }}
+{{- $cmGrant = include "copia.rds.appRole.defaultGrantSql" (include "copia.cnpg.conversionManager.database" .) }}
+{{- end }}
+
+{{- include "copia.rds.appRole.resources" (dict
+  "root" .
+  "instanceName" (include "copia.rds.conversionManager.instanceName" .)
+  "databaseName" (include "copia.cnpg.conversionManager.database" .)
+  "secretName" (include "copia.rds.conversionManager.appCredentialsSecretName" .)
+  "grantSql" $cmGrant
+  "labels" (include "app.conversion-manager.labels" .)
+) }}
+{{- end }}
+{{- end }}

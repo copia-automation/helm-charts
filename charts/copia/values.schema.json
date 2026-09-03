@@ -501,6 +501,79 @@
         }
       }
     },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional provider switch. Set provider to rds (or legacy crossplane) for AWS RDS via Crossplane Instance.",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["", "rds", "crossplane"],
+          "description": "Empty (external HOST/PASSWD), \"rds\" (Windsor Crossplane Instance), or legacy \"crossplane\"."
+        }
+      }
+    },
+    "rds": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "AWS RDS via Crossplane Instance (Windsor database.postgres.driver=rds). Chart emits Instance CRs and opts into app-role CronJobs that publish <instance>-app-credentials.",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "requireCRD": { "type": "boolean" },
+        "keepOnDelete": { "type": "boolean" },
+        "instanceName": { "type": "string" },
+        "appCredentialsSecretName": { "type": "string" },
+        "connectionSecretName": { "type": "string" },
+        "region": { "type": "string" },
+        "dbSubnetGroupName": { "type": "string" },
+        "vpcSecurityGroupIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "instanceClass": { "type": "string" },
+        "allocatedStorage": { "type": "integer", "minimum": 20 },
+        "engineVersion": { "type": "string" },
+        "kmsKeyId": { "type": "string" },
+        "deletionPolicy": { "type": "string" },
+        "skipFinalSnapshot": { "type": "boolean" },
+        "deletionProtection": { "type": "boolean" },
+        "publiclyAccessible": { "type": "boolean" },
+        "appRole": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Chart-owned Windsor app-role CronJob + RBAC (default on when rds is enabled).",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "namespace": { "type": "string" },
+            "serviceAccountName": { "type": "string" },
+            "schedule": { "type": "string" },
+            "grantSql": { "type": "string" },
+            "conversionManagerGrantSql": { "type": "string" },
+            "kubectlImage": { "type": "string" },
+            "postgresImage": { "type": "string" }
+          }
+        },
+        "conversionManager": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Second RDS Instance for conversion-manager (own class/size).",
+          "properties": {
+            "instanceName": { "type": "string" },
+            "instanceClass": { "type": "string" },
+            "allocatedStorage": { "type": "integer", "minimum": 20 },
+            "appCredentialsSecretName": { "type": "string" },
+            "connectionSecretName": { "type": "string" },
+            "grantSql": { "type": "string" }
+          }
+        }
+      }
+    },
+    "crossplane": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Deprecated. Use rds.*. crossplane.enabled still enables the RDS path."
+    },
 
     "resources": {
       "type": "object",

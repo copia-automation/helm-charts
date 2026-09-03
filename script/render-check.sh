@@ -23,6 +23,33 @@ main() {
     --set conversion_manager_service.configmap.DB_HOST= \
     >/dev/null
   log::success "Distr overlay with cloudnativePG.enabled renders cleanly"
+
+  log::exec_command helm template copia charts/copia \
+    --api-versions rds.aws.upbound.io/v1beta3 \
+    --values charts/copia/distr/values.base.yaml \
+    --set database.provider=rds \
+    --set chartGeneratedSecrets.enabled=true \
+    --set conversion_manager_service.enabled=false \
+    --set copia.config.database.HOST= \
+    --set rds.region=us-east-2 \
+    --set rds.dbSubnetGroupName=cluster-crossplane-rds \
+    --set-json 'rds.vpcSecurityGroupIds=["sg-a"]' \
+    >/dev/null
+  log::success "Chart with database.provider=rds renders cleanly"
+
+  log::exec_command helm template copia charts/copia \
+    --api-versions rds.aws.upbound.io/v1beta3 \
+    --values charts/copia/distr/values.base.yaml \
+    --set database.provider=rds \
+    --set chartGeneratedSecrets.enabled=true \
+    --set conversion_manager_service.enabled=true \
+    --set conversion_manager_service.configmap.DB_HOST= \
+    --set copia.config.database.HOST= \
+    --set rds.region=us-east-2 \
+    --set rds.dbSubnetGroupName=cluster-crossplane-rds \
+    --set-json 'rds.vpcSecurityGroupIds=["sg-a"]' \
+    >/dev/null
+  log::success "Chart with rds + conversion-manager renders cleanly"
 }
 
 main "$@"

@@ -75,3 +75,31 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "omit conversion_manager_service.configmap.DB_HOST"
+  - it: RDS path omits DB_HOST and DB_USER when CM is enabled
+    set:
+      conversion_manager_service.enabled: true
+      database.provider: rds
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: cluster-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+      conversion_manager_service.configmap.DB_USER: postgres
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+    asserts:
+      - notExists:
+          path: data.DB_HOST
+      - notExists:
+          path: data.DB_USER
+      - equal:
+          path: data.DB_NAME
+          value: "conversion_manager"
+  - it: fails when RDS CM is enabled with an external DB_HOST
+    set:
+      conversion_manager_service.enabled: true
+      database.provider: rds
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: cluster-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+      conversion_manager_service.configmap.DB_HOST: postgres.example.com:5432
+    asserts:
+      - failedTemplate:
+          errorPattern: "omit conversion_manager_service.configmap.DB_HOST"

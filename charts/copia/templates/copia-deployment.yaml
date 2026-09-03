@@ -51,10 +51,12 @@ spec:
       {{- $secretsOn := and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
       {{- $autoGen := and (hasKey .Values.copia "config") $secretsOn }}
       {{- $cnpgOn := eq "true" (include "copia.cnpg.enabled" .) }}
-      {{- $waitPg := and .Values.copia.config (or .Values.deployment.preflight $cnpgOn) }}
-      {{- if or $waitPg $autoGen }}
+      {{- $rdsOn := eq "true" (include "copia.rds.enabled" .) }}
+      {{- $renderIni := or $autoGen $rdsOn }}
+      {{- $waitPg := and .Values.copia.config (or .Values.deployment.preflight $cnpgOn $rdsOn) }}
+      {{- if or $waitPg $renderIni }}
       initContainers:
-        {{- if $waitPg }}
+        {{- if and $waitPg (not $rdsOn) }}
         {{- $sslMode := "prefer" }}
         {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
         {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
@@ -69,7 +71,18 @@ spec:
           "sslMode" $sslMode
         ) | nindent 8 }}
         {{- end }}
-        {{- if $autoGen }}
+        {{- if $rdsOn }}
+        {{- $sslMode := "require" }}
+        {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+        {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+        {{- end }}
+        {{- include "copia.waitPostgres.windsor.initContainer" (dict
+          "name" (printf "%s-wait-db" .Chart.Name)
+          "appDatabase" (include "copia.database.name" .)
+          "sslMode" $sslMode
+        ) | nindent 8 }}
+        {{- end }}
+        {{- if $renderIni }}
         - name: render-app-ini
           image: alpine:3.22
           command: ["/bin/sh", "-c"]
@@ -77,7 +90,41 @@ spec:
             - |
               set -eu
               cp /tmp/template/app.ini /tmp/final/app.ini
-              for dir in /tmp/secrets /tmp/cm-secrets; do
+              mkdir -p /tmp/db-mapped
+              read_secret() {
+                dir="$1"; shift
+                for key in "$@"; do
+                  if [ -e "${dir}/${key}" ]; then
+                    tr -d '\n' < "${dir}/${key}"
+                    return 0
+                  fi
+                done
+                return 1
+              }
+              if [ -d /tmp/db-connection ] && [ -d /tmp/app-credentials ]; then
+                host="$(read_secret /tmp/db-connection host endpoint address || true)"
+                host="${host%%:*}"
+                port="$(read_secret /tmp/db-connection port || echo 5432)"
+                user="$(read_secret /tmp/app-credentials username user || true)"
+                pass="$(read_secret /tmp/app-credentials password || true)"
+                dbname={{ include "copia.database.name" . | quote }}
+                printf '%s:%s' "$host" "$port" > /tmp/db-mapped/XP_DB_HOST
+                printf '%s' "$user" > /tmp/db-mapped/XP_DB_USER
+                printf '%s' "$pass" > /tmp/db-mapped/XP_DB_PASSWD
+                printf '%s' "$dbname" > /tmp/db-mapped/XP_DB_NAME
+              elif [ -d /tmp/db-secret ]; then
+                host="$(read_secret /tmp/db-secret host endpoint address || true)"
+                host="${host%%:*}"
+                port="$(read_secret /tmp/db-secret port || echo 5432)"
+                user="$(read_secret /tmp/db-secret user username || true)"
+                pass="$(read_secret /tmp/db-secret password attribute.password || true)"
+                dbname="$(read_secret /tmp/db-secret dbname database || echo {{ include "copia.database.name" . | quote }})"
+                printf '%s:%s' "$host" "$port" > /tmp/db-mapped/XP_DB_HOST
+                printf '%s' "$user" > /tmp/db-mapped/XP_DB_USER
+                printf '%s' "$pass" > /tmp/db-mapped/XP_DB_PASSWD
+                printf '%s' "$dbname" > /tmp/db-mapped/XP_DB_NAME
+              fi
+              for dir in /tmp/secrets /tmp/cm-secrets /tmp/db-mapped; do
                 [ -d "$dir" ] || continue
                 for f in "$dir"/*; do
                   [ -e "$f" ] || continue
@@ -107,10 +154,20 @@ spec:
           volumeMounts:
             - name: app-ini-template
               mountPath: /tmp/template
+            {{- if $autoGen }}
             - name: gitea-secrets
               mountPath: /tmp/secrets
             - name: conversion-manager-secrets
               mountPath: /tmp/cm-secrets
+            {{- end }}
+            {{- if $rdsOn }}
+            - name: db-connection
+              mountPath: /tmp/db-connection
+              readOnly: true
+            - name: app-credentials
+              mountPath: /tmp/app-credentials
+              readOnly: true
+            {{- end }}
             - name: config
               mountPath: /tmp/final
         {{- end }}
@@ -223,22 +280,32 @@ spec:
       volumes:
         {{- if (hasKey .Values.copia "config") }}
         - name: config
-          {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+          {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) (eq "true" (include "copia.rds.enabled" .)) }}
           emptyDir: {}
           {{- else }}
           secret:
             secretName: {{ include "app.fullname" . }}-ini
           {{- end }}
-        {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+        {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) (eq "true" (include "copia.rds.enabled" .)) }}
         - name: app-ini-template
           secret:
             secretName: {{ include "app.fullname" . }}-ini
+        {{- end }}
+        {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
         - name: gitea-secrets
           secret:
             secretName: {{ include "app.fullname" . }}-gitea-secrets
         - name: conversion-manager-secrets
           secret:
             secretName: conversion-manager-secrets
+        {{- end }}
+        {{- if eq "true" (include "copia.rds.enabled" .) }}
+        - name: db-connection
+          secret:
+            secretName: {{ include "copia.rds.connectionSecretName" . }}
+        - name: app-credentials
+          secret:
+            secretName: {{ include "copia.rds.appCredentialsSecretName" . }}
         {{- end }}
         {{- end }}
         {{- if .Values.extraVolumes }}

@@ -180,4 +180,31 @@ tests:
       - matchRegex:
           path: spec.template.spec.initContainers[0].args[0]
           pattern: pg_isready
+  - it: waits on Windsor app-credentials for RDS before starting
+    capabilities:
+      apiVersions:
+        - rds.aws.upbound.io/v1beta3
+    set:
+      conversion_manager_service.enabled: true
+      database.provider: rds
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: cluster-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-postgres
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: app-credentials
+      - equal:
+          path: spec.template.spec.containers[0].command[0]
+          value: /bin/sh
+      - equal:
+          path: spec.template.spec.volumes[0].secret.secretName
+          value: RELEASE-NAME-copia-cm-pg-connection
+      - equal:
+          path: spec.template.spec.volumes[1].secret.secretName
+          value: RELEASE-NAME-copia-cm-pg-app-credentials
 

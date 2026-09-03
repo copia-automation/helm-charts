@@ -1,5 +1,8 @@
 # Conversion Manager deployment template
 {{- if and .Values.conversion_manager_service.enabled (eq .Values.conversion_manager_service.enabled true)}}
+{{- if eq "true" (include "copia.rds.conversionManager.enabled" .) }}
+{{- $_ := include "copia.rds.validate" . }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -46,12 +49,29 @@ spec:
       {{- if .Values.conversion_manager_service.deployment.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ .Values.conversion_manager_service.deployment.terminationGracePeriodSeconds }}
       {{- end }}
-      {{- if eq "true" (include "copia.cnpg.conversionManager.enabled" .) }}
+      {{- $cnpgCmOn := eq "true" (include "copia.cnpg.conversionManager.enabled" .) }}
+      {{- $rdsCmOn := eq "true" (include "copia.rds.conversionManager.enabled" .) }}
+      {{- if or $cnpgCmOn $rdsCmOn }}
       {{- $sslMode := "prefer" }}
       {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
       {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
       {{- end }}
+      {{- if $rdsCmOn }}
+      {{- $sslMode = "require" }}
+      {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+      {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+      {{- end }}
+      {{- end }}
       initContainers:
+        {{- if $rdsCmOn }}
+        {{- include "copia.waitPostgres.windsor.initContainer" (dict
+          "name" "wait-postgres"
+          "appDatabase" (include "copia.cnpg.conversionManager.database" .)
+          "sslMode" $sslMode
+          "writeDbHostPath" "/cm-db/DB_HOST"
+          "writeDbHostVolume" "cm-db"
+        ) | nindent 8 }}
+        {{- else if $cnpgCmOn }}
         {{- include "copia.waitPostgres.initContainer" (dict
           "name" "wait-postgres"
           "host" (include "copia.database.host" .)
@@ -61,11 +81,28 @@ spec:
           "database" (include "copia.cnpg.conversionManager.database" .)
           "sslMode" $sslMode
         ) | nindent 8 }}
+        {{- end }}
       {{- end }}
       containers:
         - name: "conversion-manager"
           image: "{{ include "cm.image" . }}"
           imagePullPolicy: {{ .Values.conversion_manager_service.deployment.image.imagePullPolicy }}
+          {{- if $rdsCmOn }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              if [ -f /cm-db/DB_HOST ]; then
+                export DB_HOST="$(tr -d '\n' < /cm-db/DB_HOST)"
+              fi
+              if [ -f /etc/app-credentials/username ]; then
+                export DB_USER="$(tr -d '\n' < /etc/app-credentials/username)"
+              fi
+              if [ -f /etc/app-credentials/password ]; then
+                export DB_PASSWORD="$(tr -d '\n' < /etc/app-credentials/password)"
+              fi
+              exec yarn run:prod
+          {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "app.conversion-manager.fullname" . }}-configmap
@@ -94,9 +131,19 @@ spec:
           startupProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.startupProbe | nindent 12 }}
           {{- end }}
-          {{- if .Values.conversion_manager_service.deployment.volumeMounts }}
+          {{- if or .Values.conversion_manager_service.deployment.volumeMounts $rdsCmOn }}
           volumeMounts:
+            {{- if .Values.conversion_manager_service.deployment.volumeMounts }}
             {{- toYaml .Values.conversion_manager_service.deployment.volumeMounts | nindent 12 }}
+            {{- end }}
+            {{- if $rdsCmOn }}
+            - name: cm-db
+              mountPath: /cm-db
+              readOnly: true
+            - name: app-credentials
+              mountPath: /etc/app-credentials
+              readOnly: true
+            {{- end }}
           {{- end }}
           resources:
             {{- toYaml .Values.conversion_manager_service.deployment.resources | nindent 12 }}
@@ -116,8 +163,20 @@ spec:
       tolerations:
         {{- toYaml .Values.conversion_manager_service.deployment.tolerations | nindent 8 }}
       {{- end }}
-      {{- if .Values.conversion_manager_service.deployment.volumes }}
+      {{- if or $rdsCmOn .Values.conversion_manager_service.deployment.volumes }}
       volumes:
+        {{- if $rdsCmOn }}
+        - name: db-connection
+          secret:
+            secretName: {{ include "copia.rds.conversionManager.connectionSecretName" . }}
+        - name: app-credentials
+          secret:
+            secretName: {{ include "copia.rds.conversionManager.appCredentialsSecretName" . }}
+        - name: cm-db
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.conversion_manager_service.deployment.volumes }}
         {{- toYaml .Values.conversion_manager_service.deployment.volumes | nindent 8 }}
+        {{- end }}
       {{- end }}
 {{- end }}

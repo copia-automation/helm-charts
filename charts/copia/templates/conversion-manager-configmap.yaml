@@ -1,8 +1,16 @@
 {{- if and .Values.conversion_manager_service.configmap (eq .Values.conversion_manager_service.enabled true)}}
+{{- if eq "true" (include "copia.rds.conversionManager.enabled" .) }}
+{{- $_ := include "copia.rds.validate" . }}
+{{- end }}
 {{- $cm := deepCopy .Values.conversion_manager_service.configmap }}
 {{- if eq "true" (include "copia.cnpg.enabled" .) }}
   {{- $_ := set $cm "DB_HOST" (include "copia.database.hostPort" .) }}
   {{- $_ := set $cm "DB_USER" (include "copia.cnpg.conversionManager.user" .) }}
+  {{- $_ := set $cm "DB_NAME" (include "copia.cnpg.conversionManager.database" .) }}
+{{- else if eq "true" (include "copia.rds.conversionManager.enabled" .) }}
+  {{- /* DB_HOST / DB_USER / DB_PASSWORD come from Instance connection + Windsor app-credentials at runtime. */ -}}
+  {{- $_ := unset $cm "DB_HOST" }}
+  {{- $_ := unset $cm "DB_USER" }}
   {{- $_ := set $cm "DB_NAME" (include "copia.cnpg.conversionManager.database" .) }}
 {{- end }}
 apiVersion: v1
