@@ -1,0 +1,106 @@
+{{- if eq (include "copia.postgresCheck.enabled" .) "true" }}
+{{- $copiaOn := eq (include "copia.postgresCheck.copia" .) "true" }}
+{{- $cmOn := eq (include "copia.postgresCheck.conversionManager" .) "true" }}
+{{- $checkSecret := printf "%s-postgres-check" (include "app.fullname" .) }}
+{{- $sslMode := "prefer" }}
+{{- if and .Values.copia.config .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+{{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+{{- end }}
+{{- $passwd := "" }}
+{{- if and .Values.copia.config .Values.copia.config.database .Values.copia.config.database.PASSWD }}
+{{- $passwd = .Values.copia.config.database.PASSWD }}
+{{- end }}
+{{- $cm := .Values.conversion_manager_service }}
+{{- $cmSslMode := "prefer" }}
+{{- if and $cm $cm.configmap $cm.configmap.SSL_MODE }}
+{{- $cmSslMode = $cm.configmap.SSL_MODE }}
+{{- end }}
+{{- $cmPass := "" }}
+{{- if and $cm $cm.secret $cm.secret.DB_PASSWORD }}
+{{- $cmPass = $cm.secret.DB_PASSWORD }}
+{{- end }}
+{{- $cmHost := "" }}
+{{- $cmPort := "5432" }}
+{{- $cmUser := "postgres" }}
+{{- $cmName := "conversion_manager" }}
+{{- if $cmOn }}
+{{- $cmHostPort := $cm.configmap.DB_HOST | toString }}
+{{- $cmParts := splitList ":" $cmHostPort }}
+{{- $cmHost = index $cmParts 0 }}
+{{- if eq (len $cmParts) 2 }}
+{{- $cmPort = index $cmParts 1 }}
+{{- end }}
+{{- if $cm.configmap.DB_USER }}
+{{- $cmUser = $cm.configmap.DB_USER }}
+{{- end }}
+{{- if $cm.configmap.DB_NAME }}
+{{- $cmName = $cm.configmap.DB_NAME }}
+{{- end }}
+{{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $checkSecret }}
+  labels: {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-16"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+type: Opaque
+stringData:
+  {{- if $copiaOn }}
+  copia: {{ $passwd | quote }}
+  {{- end }}
+  {{- if $cmOn }}
+  conversion-manager: {{ $cmPass | quote }}
+  {{- end }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "app.fullname" . }}-postgres-check
+  labels: {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-15"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 180
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        {{- if $copiaOn }}
+        {{- include "copia.checkPostgres.container" (dict
+          "name" "check-copia"
+          "host" (include "copia.database.host" .)
+          "port" (include "copia.database.port" .)
+          "user" (include "copia.database.user" .)
+          "passwordSecretName" $checkSecret
+          "passwordSecretKey" "copia"
+          "database" (include "copia.database.name" .)
+          "sslMode" $sslMode
+          "label" "copia.config.database"
+        ) | nindent 8 }}
+        {{- end }}
+        {{- if $cmOn }}
+        {{- include "copia.checkPostgres.container" (dict
+          "name" "check-conversion-manager"
+          "host" $cmHost
+          "port" $cmPort
+          "user" $cmUser
+          "passwordSecretName" $checkSecret
+          "passwordSecretKey" "conversion-manager"
+          "database" $cmName
+          "sslMode" $cmSslMode
+          "label" "conversion_manager_service"
+        ) | nindent 8 }}
+        {{- end }}
+{{- end }}

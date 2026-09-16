@@ -53,12 +53,12 @@ spec:
       {{- $rdsCmOn := eq "true" (include "copia.rds.conversionManager.enabled" .) }}
       {{- if or $cnpgCmOn $rdsCmOn }}
       {{- $sslMode := "prefer" }}
-      {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+      {{- if and .Values.copia.config .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
       {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
       {{- end }}
       {{- if $rdsCmOn }}
       {{- $sslMode = "require" }}
-      {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+      {{- if and .Values.copia.config .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
       {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
       {{- end }}
       {{- end }}

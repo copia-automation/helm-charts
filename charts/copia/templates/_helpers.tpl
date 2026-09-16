@@ -236,6 +236,74 @@ true
 {{- end -}}
 
 {{/*
+Return "true" when an in-chart database is enabled. External HOST is the default.
+*/}}
+{{- define "copia.database.managed" -}}
+{{- if eq "true" (include "copia.cnpg.enabled" .) -}}
+true
+{{- else if eq "true" (include "copia.rds.enabled" .) -}}
+true
+{{- else if and .Values.azureSQL .Values.azureSQL.enabled -}}
+true
+{{- else if and .Values.cloudSQL .Values.cloudSQL.enabled -}}
+true
+{{- else if and .Values.gcpCloudSQL .Values.gcpCloudSQL.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return "true" for a host that is empty or a localhost chart placeholder.
+*/}}
+{{- define "copia.postgresCheck.hasExternalHost" -}}
+{{- $host := . | toString | trim -}}
+{{- if and $host (ne (include "copia.cnpg.isPlaceholderHost" $host) "true") -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Pre-install/pre-upgrade postgres login check. Default on for an external host.
+Skipped when the chart manages the database or HOST is a localhost placeholder.
+*/}}
+{{- define "copia.postgresCheck.wanted" -}}
+{{- if and .Values.postgresCheck (ne (include "copia.database.managed" .) "true") -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.postgresCheck.copia" -}}
+{{- if eq (include "copia.postgresCheck.wanted" .) "true" -}}
+{{- $host := "" -}}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.HOST -}}
+{{- $host = .Values.copia.config.database.HOST -}}
+{{- end -}}
+{{- if eq (include "copia.postgresCheck.hasExternalHost" $host) "true" -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.postgresCheck.conversionManager" -}}
+{{- if eq (include "copia.postgresCheck.wanted" .) "true" -}}
+{{- $cm := .Values.conversion_manager_service -}}
+{{- if and $cm $cm.enabled $cm.configmap $cm.configmap.DB_HOST -}}
+{{- if eq (include "copia.postgresCheck.hasExternalHost" $cm.configmap.DB_HOST) "true" -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.postgresCheck.enabled" -}}
+{{- $copia := eq (include "copia.postgresCheck.copia" .) "true" -}}
+{{- $cm := eq (include "copia.postgresCheck.conversionManager" .) "true" -}}
+{{- if or $copia $cm -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
 Return "true" when conversion-manager should get a CNPG Database and role.
 */}}
 {{- define "copia.cnpg.conversionManager.enabled" -}}
@@ -277,8 +345,8 @@ the chart creates Instance(s) and opts into app-role (CronJob + RBAC) so
 <instance>-app-credentials appear in the release namespace — same split as CNPG
 (operator/platform vs chart CR), with the chart supplying grants.
 
-Enable with rds.enabled=true, database.provider=rds, or the legacy aliases
-crossplane.enabled / database.provider=crossplane.
+Enable with rds.enabled=true. Legacy aliases still work: database.provider=rds,
+database.provider=crossplane, or crossplane.enabled.
 Mutually exclusive with cloudnativePG.enabled.
 */}}
 {{- define "copia.rds.enabled" -}}
