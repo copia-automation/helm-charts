@@ -1,6 +1,7 @@
 {{/*
 Container that verifies Postgres accepts the provided credentials. Fail-fast
 relative to waitPostgres: this is a pre-install config check, not a startup wait.
+PGPASSWORD comes from a hook Secret (passwordSecretName / passwordSecretKey).
 */}}
 {{- define "copia.checkPostgres.container" -}}
 - name: {{ .name }}
@@ -52,7 +53,10 @@ relative to waitPostgres: this is a pre-install config check, not a startup wait
     - name: PGUSER
       value: {{ .user | quote }}
     - name: PGPASSWORD
-      value: {{ .password | quote }}
+      valueFrom:
+        secretKeyRef:
+          name: {{ .passwordSecretName | quote }}
+          key: {{ .passwordSecretKey | quote }}
     - name: PGDATABASE
       value: {{ .database | quote }}
     - name: PGSSLMODE

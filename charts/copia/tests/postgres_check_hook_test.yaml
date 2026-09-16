@@ -71,6 +71,29 @@ tests:
       - hasDocuments:
           count: 0
 
+  - it: should store Copia password in a pre-install Secret
+    set:
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    documentSelector:
+      path: kind
+      value: Secret
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: postgres-check$
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: pre-install,pre-upgrade
+      - equal:
+          path: metadata.annotations["helm.sh/hook-weight"]
+          value: "-16"
+      - equal:
+          path: stringData.copia
+          value: password
+
   - it: should create a pre-install Job for an external Copia database
     set:
       copia.config.database.HOST: postgres.example.com:5432
@@ -78,11 +101,10 @@ tests:
       copia.config.database.NAME: copia
       copia.config.database.PASSWD: password
       copia.config.database.SSL_MODE: require
+    documentSelector:
+      path: kind
+      value: Job
     asserts:
-      - hasDocuments:
-          count: 1
-      - isKind:
-          of: Job
       - matchRegex:
           path: metadata.name
           pattern: postgres-check$
@@ -119,9 +141,12 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[3].value
           value: copia
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[4].valueFrom.secretKeyRef.name
+          pattern: postgres-check$
       - equal:
-          path: spec.template.spec.containers[0].env[4].value
-          value: password
+          path: spec.template.spec.containers[0].env[4].valueFrom.secretKeyRef.key
+          value: copia
       - equal:
           path: spec.template.spec.containers[0].env[5].value
           value: copia
@@ -142,9 +167,10 @@ tests:
       conversion_manager_service.configmap.DB_USER: conversion_manager
       conversion_manager_service.configmap.DB_NAME: conversion_manager
       conversion_manager_service.secret.DB_PASSWORD: cm-secret
+    documentSelector:
+      path: kind
+      value: Job
     asserts:
-      - hasDocuments:
-          count: 1
       - equal:
           path: spec.template.spec.containers[0].name
           value: check-conversion-manager
@@ -158,11 +184,38 @@ tests:
           path: spec.template.spec.containers[0].env[3].value
           value: conversion_manager
       - equal:
-          path: spec.template.spec.containers[0].env[4].value
-          value: cm-secret
+          path: spec.template.spec.containers[0].env[4].valueFrom.secretKeyRef.key
+          value: conversion-manager
       - equal:
           path: spec.template.spec.containers[0].env[5].value
           value: conversion_manager
+      - equal:
+          path: spec.template.spec.containers[0].env[6].value
+          value: prefer
+
+  - it: should use conversion-manager SSL_MODE, not Copia SSL_MODE
+    set:
+      copia.config.database.HOST: copia-db.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+      copia.config.database.SSL_MODE: require
+      conversion_manager_service.enabled: true
+      conversion_manager_service.configmap.DB_HOST: cm-db.example.com:5433
+      conversion_manager_service.configmap.DB_USER: conversion_manager
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+      conversion_manager_service.configmap.SSL_MODE: verify-full
+      conversion_manager_service.secret.DB_PASSWORD: cm-secret
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[6].value
+          value: require
+      - equal:
+          path: spec.template.spec.containers[1].env[6].value
+          value: verify-full
 
   - it: should check both databases when both have external hosts
     set:
@@ -175,6 +228,9 @@ tests:
       conversion_manager_service.configmap.DB_USER: conversion_manager
       conversion_manager_service.configmap.DB_NAME: conversion_manager
       conversion_manager_service.secret.DB_PASSWORD: cm-secret
+    documentSelector:
+      path: kind
+      value: Job
     asserts:
       - equal:
           path: spec.template.spec.containers[0].name
@@ -199,6 +255,9 @@ tests:
       copia.config.database.NAME: copia
       copia.config.database.PASSWD: password
       conversion_manager_service.enabled: true
+    documentSelector:
+      path: kind
+      value: Job
     asserts:
       - equal:
           path: spec.template.spec.containers[0].name
