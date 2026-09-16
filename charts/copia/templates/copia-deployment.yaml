@@ -73,7 +73,7 @@ spec:
         {{- end }}
         {{- if $rdsOn }}
         {{- $sslMode := "require" }}
-        {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+        {{- if and .Values.copia.config .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
         {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
         {{- end }}
         {{- include "copia.waitPostgres.windsor.initContainer" (dict
