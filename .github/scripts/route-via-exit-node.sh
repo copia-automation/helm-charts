@@ -25,8 +25,10 @@ pick_node() {
       ((.HostName // "") | test($re))
       or ((.DNSName // "") | dns_label | test($re));
     def exit_id:
-      if ((.DNSName // "") != "") then (.DNSName | rtrimstr("."))
-      else .HostName end;
+      ((.TailscaleIPs // []) | map(select(contains(":") | not)) | .[0])
+      // (.TailscaleIPs // [])[0]
+      // ((.DNSName // "") | dns_label)
+      // .HostName;
     [.Peer[]?
      | select(.Online == true and .ExitNodeOption == true)
      | select(is_match)]
