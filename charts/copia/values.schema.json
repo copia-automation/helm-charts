@@ -446,6 +446,11 @@
       "type": "array",
       "description": "Repo auth secrets."
     },
+    "postgresCheck": {
+      "type": "boolean",
+      "default": true,
+      "description": "Pre-install check of customer Postgres credentials. Skipped for in-chart providers."
+    },
     "cloudnativePG": {
       "type": "object",
       "additionalProperties": false,
@@ -504,12 +509,12 @@
     "database": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Optional provider switch. Set provider to rds (or legacy crossplane) for AWS RDS via Crossplane Instance.",
+      "description": "Optional provider switch. Empty/external uses HOST/PASSWD; other values are in-chart databases.",
       "properties": {
         "provider": {
           "type": "string",
-          "enum": ["", "rds", "crossplane"],
-          "description": "Empty (external HOST/PASSWD), \"rds\" (Windsor Crossplane Instance), or legacy \"crossplane\"."
+          "enum": ["", "external", "rds", "crossplane", "azure", "azure-sql", "cloudsql", "gcp"],
+          "description": "Empty or \"external\" for a customer DB. rds/crossplane, azure/azure-sql, and cloudsql/gcp are chart-managed."
         }
       }
     },

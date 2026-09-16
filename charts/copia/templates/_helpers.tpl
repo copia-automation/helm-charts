@@ -236,6 +236,83 @@ true
 {{- end -}}
 
 {{/*
+Return "true" when the chart (or Windsor) provisions the database. External
+HOST/PASSWD is the default; CNPG, RDS, Azure SQL, and Cloud SQL are managed.
+*/}}
+{{- define "copia.database.managed" -}}
+{{- if eq "true" (include "copia.cnpg.enabled" .) -}}
+true
+{{- else if eq "true" (include "copia.rds.enabled" .) -}}
+true
+{{- else if and .Values.azureSQL .Values.azureSQL.enabled -}}
+true
+{{- else if and .Values.cloudSQL .Values.cloudSQL.enabled -}}
+true
+{{- else if and .Values.gcpCloudSQL .Values.gcpCloudSQL.enabled -}}
+true
+{{- else -}}
+{{- $p := "" -}}
+{{- if and .Values.database .Values.database.provider -}}
+{{- $p = .Values.database.provider | toString | lower -}}
+{{- end -}}
+{{- if and $p (ne $p "external") -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return "true" for a host that is empty or a localhost chart placeholder.
+*/}}
+{{- define "copia.postgresCheck.hasExternalHost" -}}
+{{- $host := . | toString | trim -}}
+{{- if and $host (ne (include "copia.cnpg.isPlaceholderHost" $host) "true") -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Pre-install/pre-upgrade postgres login check. Default on for an external host.
+Skipped when the chart manages the database or HOST is a localhost placeholder.
+*/}}
+{{- define "copia.postgresCheck.wanted" -}}
+{{- if and .Values.postgresCheck (ne (include "copia.database.managed" .) "true") -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.postgresCheck.copia" -}}
+{{- if eq (include "copia.postgresCheck.wanted" .) "true" -}}
+{{- $host := "" -}}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.HOST -}}
+{{- $host = .Values.copia.config.database.HOST -}}
+{{- end -}}
+{{- if eq (include "copia.postgresCheck.hasExternalHost" $host) "true" -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.postgresCheck.conversionManager" -}}
+{{- if eq (include "copia.postgresCheck.wanted" .) "true" -}}
+{{- $cm := .Values.conversion_manager_service -}}
+{{- if and $cm $cm.enabled $cm.configmap $cm.configmap.DB_HOST -}}
+{{- if eq (include "copia.postgresCheck.hasExternalHost" $cm.configmap.DB_HOST) "true" -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.postgresCheck.enabled" -}}
+{{- $copia := eq (include "copia.postgresCheck.copia" .) "true" -}}
+{{- $cm := eq (include "copia.postgresCheck.conversionManager" .) "true" -}}
+{{- if or $copia $cm -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
 Return "true" when conversion-manager should get a CNPG Database and role.
 */}}
 {{- define "copia.cnpg.conversionManager.enabled" -}}

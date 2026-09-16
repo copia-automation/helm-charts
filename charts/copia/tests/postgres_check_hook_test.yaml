@@ -1,0 +1,254 @@
+suite: Test Postgres pre-install check hook
+templates:
+  - postgres-check-hook.yaml
+tests:
+  - it: should render nothing by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render nothing for localhost HOST
+    set:
+      copia.config.database.HOST: localhost:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render nothing when CloudNativePG is enabled
+    set:
+      cloudnativePG.enabled: true
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render nothing when RDS is enabled
+    set:
+      rds.enabled: true
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render nothing when database.provider is rds
+    set:
+      database.provider: rds
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render nothing when database.provider is azure
+    set:
+      database.provider: azure
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render nothing when database.provider is cloudsql
+    set:
+      database.provider: cloudsql
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render nothing when Azure SQL is enabled
+    set:
+      azureSQL.enabled: true
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render nothing when Cloud SQL is enabled
+    set:
+      cloudSQL.enabled: true
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should still check an external host when provider is external
+    set:
+      database.provider: external
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: check-copia
+
+  - it: should render nothing when postgresCheck is false
+    set:
+      postgresCheck: false
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should create a pre-install Job for an external Copia database
+    set:
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+      copia.config.database.SSL_MODE: require
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Job
+      - matchRegex:
+          path: metadata.name
+          pattern: postgres-check$
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: pre-install,pre-upgrade
+      - equal:
+          path: metadata.annotations["helm.sh/hook-weight"]
+          value: "-15"
+      - equal:
+          path: metadata.annotations["helm.sh/hook-delete-policy"]
+          value: before-hook-creation,hook-succeeded
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.backoffLimit
+          value: 1
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: check-copia
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: postgres:16-alpine
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: copia.config.database
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: postgres.example.com
+      - equal:
+          path: spec.template.spec.containers[0].env[2].value
+          value: "5432"
+      - equal:
+          path: spec.template.spec.containers[0].env[3].value
+          value: copia
+      - equal:
+          path: spec.template.spec.containers[0].env[4].value
+          value: password
+      - equal:
+          path: spec.template.spec.containers[0].env[5].value
+          value: copia
+      - equal:
+          path: spec.template.spec.containers[0].env[6].value
+          value: require
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: postgres check failed
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: pg_isready
+
+  - it: should check conversion-manager when enabled with an external DB_HOST
+    set:
+      conversion_manager_service.enabled: true
+      conversion_manager_service.configmap.DB_HOST: postgres.example.com:5432
+      conversion_manager_service.configmap.DB_USER: conversion_manager
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+      conversion_manager_service.secret.DB_PASSWORD: cm-secret
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: check-conversion-manager
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: conversion_manager_service
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: postgres.example.com
+      - equal:
+          path: spec.template.spec.containers[0].env[3].value
+          value: conversion_manager
+      - equal:
+          path: spec.template.spec.containers[0].env[4].value
+          value: cm-secret
+      - equal:
+          path: spec.template.spec.containers[0].env[5].value
+          value: conversion_manager
+
+  - it: should check both databases when both have external hosts
+    set:
+      copia.config.database.HOST: copia-db.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+      conversion_manager_service.enabled: true
+      conversion_manager_service.configmap.DB_HOST: cm-db.example.com:5433
+      conversion_manager_service.configmap.DB_USER: conversion_manager
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+      conversion_manager_service.secret.DB_PASSWORD: cm-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: check-copia
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: copia-db.example.com
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: check-conversion-manager
+      - equal:
+          path: spec.template.spec.containers[1].env[1].value
+          value: cm-db.example.com
+      - equal:
+          path: spec.template.spec.containers[1].env[2].value
+          value: "5433"
+
+  - it: should not check conversion-manager localhost placeholder
+    set:
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.USER: copia
+      copia.config.database.NAME: copia
+      copia.config.database.PASSWD: password
+      conversion_manager_service.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: check-copia
+      - isNull:
+          path: spec.template.spec.containers[1]

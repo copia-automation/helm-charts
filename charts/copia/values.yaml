@@ -24,6 +24,11 @@ image:
 imagePullSecrets:
   - name: ghcr-login-secret
 ghcrCheck: true
+# Pre-install/pre-upgrade Job that logs in with customer-provided Postgres
+# credentials. Default on for any external HOST/DB_HOST. Skipped when the chart
+# manages the database (CloudNativePG, RDS, Azure SQL, Cloud SQL) or HOST is a
+# localhost placeholder. Set false to disable.
+postgresCheck: true
 service:
   #clusterIP: None
   #loadBalancerIP:
@@ -277,9 +282,12 @@ cloudnativePG:
   # Merged into the Cluster spec (postgresql.parameters, backup, monitoring, ...).
   extraSpec: {}
 
-# Optional database provider switch.
-#   "rds"        — AWS RDS via Crossplane Instance (Windsor driver=rds)
-#   "crossplane" — legacy alias for "rds"
+# Optional database provider switch. Empty means an external DB (HOST/PASSWD);
+# the pre-install postgres check runs against that host by default.
+# In-chart providers manage their own database and skip that check:
+#   "rds" / "crossplane" — AWS RDS via Crossplane Instance
+#   "azure" / "azure-sql" — Azure SQL (upcoming)
+#   "cloudsql" / "gcp" — GCP Cloud SQL (upcoming)
 # Mutually exclusive with cloudnativePG.enabled.
 database:
   provider: ""

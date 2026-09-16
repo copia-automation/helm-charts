@@ -1,0 +1,75 @@
+{{- if eq (include "copia.postgresCheck.enabled" .) "true" }}
+{{- $sslMode := "prefer" }}
+{{- if and .Values.copia.config .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
+{{- $sslMode = .Values.copia.config.database.SSL_MODE }}
+{{- end }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "app.fullname" . }}-postgres-check
+  labels: {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-15"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 180
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        {{- if eq (include "copia.postgresCheck.copia" .) "true" }}
+        {{- $passwd := "" }}
+        {{- if and .Values.copia.config.database .Values.copia.config.database.PASSWD }}
+        {{- $passwd = .Values.copia.config.database.PASSWD }}
+        {{- end }}
+        {{- include "copia.checkPostgres.container" (dict
+          "name" "check-copia"
+          "host" (include "copia.database.host" .)
+          "port" (include "copia.database.port" .)
+          "user" (include "copia.database.user" .)
+          "password" $passwd
+          "database" (include "copia.database.name" .)
+          "sslMode" $sslMode
+          "label" "copia.config.database"
+        ) | nindent 8 }}
+        {{- end }}
+        {{- if eq (include "copia.postgresCheck.conversionManager" .) "true" }}
+        {{- $cm := .Values.conversion_manager_service }}
+        {{- $cmHostPort := $cm.configmap.DB_HOST | toString }}
+        {{- $cmParts := splitList ":" $cmHostPort }}
+        {{- $cmPort := "5432" }}
+        {{- if eq (len $cmParts) 2 }}
+        {{- $cmPort = index $cmParts 1 }}
+        {{- end }}
+        {{- $cmUser := "postgres" }}
+        {{- if $cm.configmap.DB_USER }}
+        {{- $cmUser = $cm.configmap.DB_USER }}
+        {{- end }}
+        {{- $cmName := "conversion_manager" }}
+        {{- if $cm.configmap.DB_NAME }}
+        {{- $cmName = $cm.configmap.DB_NAME }}
+        {{- end }}
+        {{- $cmPass := "" }}
+        {{- if and $cm.secret $cm.secret.DB_PASSWORD }}
+        {{- $cmPass = $cm.secret.DB_PASSWORD }}
+        {{- end }}
+        {{- include "copia.checkPostgres.container" (dict
+          "name" "check-conversion-manager"
+          "host" (index $cmParts 0)
+          "port" $cmPort
+          "user" $cmUser
+          "password" $cmPass
+          "database" $cmName
+          "sslMode" $sslMode
+          "label" "conversion_manager_service"
+        ) | nindent 8 }}
+        {{- end }}
+{{- end }}
