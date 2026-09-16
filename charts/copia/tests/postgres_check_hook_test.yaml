@@ -38,39 +38,6 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should render nothing when database.provider is rds
-    set:
-      database.provider: rds
-      copia.config.database.HOST: postgres.example.com:5432
-      copia.config.database.USER: copia
-      copia.config.database.NAME: copia
-      copia.config.database.PASSWD: password
-    asserts:
-      - hasDocuments:
-          count: 0
-
-  - it: should render nothing when database.provider is azure
-    set:
-      database.provider: azure
-      copia.config.database.HOST: postgres.example.com:5432
-      copia.config.database.USER: copia
-      copia.config.database.NAME: copia
-      copia.config.database.PASSWD: password
-    asserts:
-      - hasDocuments:
-          count: 0
-
-  - it: should render nothing when database.provider is cloudsql
-    set:
-      database.provider: cloudsql
-      copia.config.database.HOST: postgres.example.com:5432
-      copia.config.database.USER: copia
-      copia.config.database.NAME: copia
-      copia.config.database.PASSWD: password
-    asserts:
-      - hasDocuments:
-          count: 0
-
   - it: should render nothing when Azure SQL is enabled
     set:
       azureSQL.enabled: true
@@ -92,20 +59,6 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
-
-  - it: should still check an external host when provider is external
-    set:
-      database.provider: external
-      copia.config.database.HOST: postgres.example.com:5432
-      copia.config.database.USER: copia
-      copia.config.database.NAME: copia
-      copia.config.database.PASSWD: password
-    asserts:
-      - hasDocuments:
-          count: 1
-      - equal:
-          path: spec.template.spec.containers[0].name
-          value: check-copia
 
   - it: should render nothing when postgresCheck is false
     set:

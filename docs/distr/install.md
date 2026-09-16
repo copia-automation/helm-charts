@@ -30,8 +30,10 @@ fields keep **Deploy** disabled.
 
 Copia needs PostgreSQL. Supported layouts:
 
-- **External Postgres** (default customer values) — set `copia.config.database.HOST`
-  and conversion-manager `DB_HOST` to your server.
+- **Existing Postgres** (default) — any database you already run, including RDS,
+  Cloud SQL, or Azure SQL created in Terraform or the cloud console. Set
+  `copia.config.database.HOST` and conversion-manager `DB_HOST`. Do **not** set
+  `rds.enabled` or `cloudnativePG.enabled`.
 - **In-cluster CloudNativePG** — on the **infrastructure** application, set
   `CORE_DATABASE__POSTGRES__ENABLED=true` and
   `CORE_DATABASE__POSTGRES__DRIVER=cloudnativepg` (Windsor Core `v0.7.0`). Wait
@@ -39,10 +41,10 @@ Copia needs PostgreSQL. Supported layouts:
   `cloudnativePG.enabled: true` and remove `HOST` / `DB_HOST`. The chart creates
   a `Cluster` CR and points the apps at it. See
   [CloudNativePG Config](./cloudnativepg.md).
-- **AWS RDS via Crossplane** (Distr AWS / Windsor `driver=rds`) — platform
-  installs Crossplane + provider; chart emits `Instance` CRs and opts into
-  app-role CronJobs that publish `<instance>-app-credentials`, plus connection
-  Secrets for host. Omit `HOST` / `PASSWD` (and CM `DB_HOST`). See
+- **Chart-provisioned AWS RDS** (Distr AWS / Windsor `driver=rds`) — only when
+  this chart should create the RDS instance. Platform installs Crossplane; the
+  chart emits `Instance` CRs. Omit `HOST` / `PASSWD` and set `rds.enabled: true`.
+  If RDS already exists, use **Existing Postgres** instead. See
   [Crossplane Config](./crossplane.md).
 
 Do not use `CORE_ADDONS__DATABASE__*` with Core `v0.7.0`.

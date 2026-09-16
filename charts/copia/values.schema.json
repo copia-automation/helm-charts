@@ -509,19 +509,19 @@
     "database": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Optional provider switch. Empty/external uses HOST/PASSWD; other values are in-chart databases.",
+      "description": "Deprecated alias. Prefer rds.enabled for AWS RDS. Empty means a customer-provided HOST.",
       "properties": {
         "provider": {
           "type": "string",
-          "enum": ["", "external", "rds", "crossplane", "azure", "azure-sql", "cloudsql", "gcp"],
-          "description": "Empty or \"external\" for a customer DB. rds/crossplane, azure/azure-sql, and cloudsql/gcp are chart-managed."
+          "enum": ["", "rds", "crossplane"],
+          "description": "Deprecated. \"rds\" or \"crossplane\" is the same as rds.enabled=true."
         }
       }
     },
     "rds": {
       "type": "object",
       "additionalProperties": false,
-      "description": "AWS RDS via Crossplane Instance (Windsor database.postgres.driver=rds). Chart emits Instance CRs and opts into app-role CronJobs that publish <instance>-app-credentials.",
+      "description": "Chart-provisioned RDS only. Leave disabled if the database already exists.",
       "required": ["enabled"],
       "properties": {
         "enabled": { "type": "boolean" },

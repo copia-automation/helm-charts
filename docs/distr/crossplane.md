@@ -7,6 +7,10 @@ CloudNativePG's `Cluster` CR) and **opts into app-role** so credentials are
 published on helm install. It does **not** install Crossplane or the AWS
 provider.
 
+If you already created RDS (Terraform, console, another chart), do not follow
+this guide. Leave `rds.enabled` false and set `copia.config.database.HOST` like
+any other existing Postgres.
+
 For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
 
 ## Prerequisites (platform / infrastructure agent)
@@ -30,9 +34,8 @@ Enable RDS and **omit** `HOST` / `PASSWD` (and CM `DB_HOST` / `DB_PASSWORD`).
 Supply region, subnet group, and security groups from platform outputs:
 
 ```yaml
-database:
-  provider: rds   # or: rds.enabled: true
 rds:
+  enabled: true
   region: us-east-2
   dbSubnetGroupName: mycluster-crossplane-rds
   vpcSecurityGroupIds:
@@ -88,7 +91,7 @@ yourself (duplicate CronJobs would race).
 helm upgrade --install copia-poc ./charts/copia -n crossplane-poc --create-namespace \
   --timeout 60m \
   --values charts/copia/distr/values.base.yaml \
-  --set database.provider=rds \
+  --set rds.enabled=true \
   --set rds.region=us-east-2 \
   --set rds.dbSubnetGroupName=YOUR-cluster-crossplane-rds \
   --set-json 'rds.vpcSecurityGroupIds=["sg-..."]' \

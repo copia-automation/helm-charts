@@ -236,8 +236,7 @@ true
 {{- end -}}
 
 {{/*
-Return "true" when the chart (or Windsor) provisions the database. External
-HOST/PASSWD is the default; CNPG, RDS, Azure SQL, and Cloud SQL are managed.
+Return "true" when an in-chart database is enabled. External HOST is the default.
 */}}
 {{- define "copia.database.managed" -}}
 {{- if eq "true" (include "copia.cnpg.enabled" .) -}}
@@ -250,14 +249,6 @@ true
 true
 {{- else if and .Values.gcpCloudSQL .Values.gcpCloudSQL.enabled -}}
 true
-{{- else -}}
-{{- $p := "" -}}
-{{- if and .Values.database .Values.database.provider -}}
-{{- $p = .Values.database.provider | toString | lower -}}
-{{- end -}}
-{{- if and $p (ne $p "external") -}}
-true
-{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -354,8 +345,8 @@ the chart creates Instance(s) and opts into app-role (CronJob + RBAC) so
 <instance>-app-credentials appear in the release namespace — same split as CNPG
 (operator/platform vs chart CR), with the chart supplying grants.
 
-Enable with rds.enabled=true, database.provider=rds, or the legacy aliases
-crossplane.enabled / database.provider=crossplane.
+Enable with rds.enabled=true. Legacy aliases still work: database.provider=rds,
+database.provider=crossplane, or crossplane.enabled.
 Mutually exclusive with cloudnativePG.enabled.
 */}}
 {{- define "copia.rds.enabled" -}}

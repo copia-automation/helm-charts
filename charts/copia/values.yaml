@@ -24,10 +24,9 @@ image:
 imagePullSecrets:
   - name: ghcr-login-secret
 ghcrCheck: true
-# Pre-install/pre-upgrade Job that logs in with customer-provided Postgres
-# credentials. Default on for any external HOST/DB_HOST. Skipped when the chart
-# manages the database (CloudNativePG, RDS, Azure SQL, Cloud SQL) or HOST is a
-# localhost placeholder. Set false to disable.
+# Pre-install check of an existing Postgres HOST/DB_HOST (including RDS you
+# created in Terraform). Skipped when the chart provisions the database
+# (cloudnativePG.enabled or rds.enabled).
 postgresCheck: true
 service:
   #clusterIP: None
@@ -258,10 +257,17 @@ conversion_manager_service:
     COPIA_USER_KEY: testCopiaUserKey
     COPIA_TEAM_KEY: testCopiaTeamKey
 
-# Optional in-cluster Postgres via a CloudNativePG Cluster CR. The operator and
-# CRDs must already be installed in the cluster; this chart does not deploy them.
-# When enabled, omit HOST / DB_HOST (or leave the localhost chart default);
-# the apps use <clusterName>-rw:5432. See docs/distr/cloudnativepg.md.
+# Database: pick one path.
+#
+# 1) Existing Postgres (default), including RDS/Cloud SQL/Azure you created
+#    yourself (Terraform, console, etc.): set copia.config.database.HOST and
+#    conversion-manager DB_HOST. Do not set cloudnativePG.enabled or rds.*.
+#
+# 2) Chart-managed CloudNativePG: cloudnativePG.enabled=true. Omit HOST/DB_HOST.
+#
+# 3) Chart-managed AWS RDS (this chart emits Crossplane Instance CRs):
+#    rds.enabled=true. Omit HOST/DB_HOST. Not for an RDS instance you already
+#    created outside the chart.
 cloudnativePG:
   enabled: false
   # Fail helm install/upgrade unless postgresql.cnpg.io/v1 is registered.
@@ -282,23 +288,10 @@ cloudnativePG:
   # Merged into the Cluster spec (postgresql.parameters, backup, monitoring, ...).
   extraSpec: {}
 
-# Optional database provider switch. Empty means an external DB (HOST/PASSWD);
-# the pre-install postgres check runs against that host by default.
-# In-chart providers manage their own database and skip that check:
-#   "rds" / "crossplane" — AWS RDS via Crossplane Instance
-#   "azure" / "azure-sql" — Azure SQL (upcoming)
-#   "cloudsql" / "gcp" — GCP Cloud SQL (upcoming)
-# Mutually exclusive with cloudnativePG.enabled.
-database:
-  provider: ""
-
-# AWS RDS via Crossplane Instance (Windsor provisioning add-on).
-# Platform installs Crossplane + provider-aws-rds when
-# database.postgres.driver=rds. This chart emits Instance CR(s) and opts into
-# Windsor-equivalent app-role (CronJob in system-provisioning) so helm install
-# publishes credentials without a separate Flux facet:
-#   - <instance>-app-credentials  (username/password from chart app-role)
-#   - <instance>-connection       (host/port from Instance writeConnectionSecretToRef)
+# Chart-provisioned AWS RDS via Crossplane Instance CRs. Leave this block
+# disabled if the database already exists (Terraform RDS, shared Postgres).
+# Enable only when this chart should create the RDS instance. Platform must
+# install Crossplane + provider-aws-rds (Windsor database.postgres.driver=rds).
 # Omit HOST and PASSWD when enabled. See docs/distr/crossplane.md.
 rds:
   enabled: false
@@ -343,8 +336,4 @@ rds:
     appCredentialsSecretName: ""
     connectionSecretName: ""
     grantSql: ""
-
-# Deprecated: use rds.* instead. crossplane.enabled still enables the RDS path.
-crossplane:
-  enabled: false
 

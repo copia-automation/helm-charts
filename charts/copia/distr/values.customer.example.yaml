@@ -18,40 +18,32 @@ ingress:
     - secretName: copia-tls
       hosts:
         - copia.example.com
-# In-cluster Postgres via CloudNativePG. Requires the operator and CRDs already
-# on the cluster (this chart does not install them). When enabled, remove HOST
-# and DB_HOST below; the chart uses <clusterName>-rw:5432 and fails if those
-# fields still point at an external server. See the "CloudNativePG Config" guide.
+# Existing Postgres (default), including RDS/Cloud SQL/Azure you created
+# yourself. Set HOST / DB_HOST below. Do not enable cloudnativePG or rds.
+#
+# Chart-managed CloudNativePG: set cloudnativePG.enabled true and remove HOST
+# and DB_HOST. See the "CloudNativePG Config" guide.
 cloudnativePG:
   enabled: false
   instances: 1
   storage:
     size: 50Gi
     storageClass: single
-# AWS RDS via Crossplane Instance (mutually exclusive with cloudnativePG).
-# Requires Windsor database.postgres.driver=rds (chart opts into app-role).
-# Omit HOST/PASSWD when enabled. See docs/distr/crossplane.md.
-# database:
-#   provider: rds
+# Chart-managed AWS RDS (this chart creates the instance). Skip this entire
+# block if you already have RDS. Set HOST below instead.
 # rds:
 #   enabled: true
 #   region: us-east-2
 #   dbSubnetGroupName: mycluster-crossplane-rds
-#   vpcSecurityGroupIds:
-#     - sg-aaa
-#   instanceClass: db.t4g.small
-#   allocatedStorage: 100
-#   conversionManager:
-#     instanceClass: db.t4g.micro
-#     allocatedStorage: 20
+#   vpcSecurityGroupIds: ["sg-aaa"]
 copia:
   config:
     server:
       DOMAIN: copia.example.com
       ROOT_URL: https://copia.example.com/
     database:
-      # Required for an existing Postgres. Remove HOST and PASSWD when using
-      # CloudNativePG or Crossplane.
+      # Required for an existing Postgres, including RDS you created yourself.
+      # Remove HOST and PASSWD only when cloudnativePG.enabled or rds.enabled.
       HOST: postgres.example.com:5432
       NAME: copia
       USER: copia
@@ -68,7 +60,8 @@ copia:
       # PASSWD: "{{ .Secrets.SmtpPassword }}"
 conversion_manager_service:
   configmap:
-    # Required for an existing Postgres. Remove this key when using CloudNativePG.
+    # Required for an existing Postgres, including RDS you created yourself.
+    # Remove this key only when cloudnativePG.enabled or rds.enabled.
     DB_HOST: postgres.example.com:5432
     DB_NAME: conversion_manager
     DB_USER: conversion_manager
