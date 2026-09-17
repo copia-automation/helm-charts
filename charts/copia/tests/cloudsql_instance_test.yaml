@@ -1,4 +1,4 @@
-suite: Test Cloud SQL DatabaseInstance (Windsor Crossplane path)
+suite: Test Cloud SQL DatabaseInstance
 templates:
   - cloudsql-instance.yaml
 tests:
@@ -97,6 +97,12 @@ tests:
         equal:
           path: metadata.name
           value: copia-poc-pg
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.writeConnectionSecretToRef.name
+          value: copia-poc-pg-connection
       - documentSelector:
           path: kind
           value: DatabaseInstance

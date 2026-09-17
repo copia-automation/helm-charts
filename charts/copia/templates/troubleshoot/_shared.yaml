@@ -58,7 +58,7 @@
     customResourceDefinitionName: databaseinstances.sql.gcp.upbound.io
     outcomes:
       - fail:
-          message: Cloud SQL CRDs are not installed. Set database.postgres.driver=cloudsql first.
+          message: Cloud SQL CRDs are not installed. Install provider-gcp-sql first.
       - pass:
           message: Crossplane GCP Cloud SQL DatabaseInstance CRD is installed
 {{- else if and .Values.copia .Values.copia.config .Values.copia.config.database }}

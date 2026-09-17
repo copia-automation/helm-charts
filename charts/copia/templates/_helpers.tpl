@@ -491,11 +491,10 @@ true
 {{- end -}}
 
 {{/*
-Return "true" when the chart should emit GCP Cloud SQL DatabaseInstance CRs
-(Windsor database.postgres.driver=cloudsql). Platform installs Crossplane +
-provider-gcp-sql; the chart creates DatabaseInstance + Database + User and opts
-into app-role so <instance>-app-credentials and <instance>-connection appear in
-the release namespace, the same split as RDS.
+Return "true" when the chart should emit GCP Cloud SQL DatabaseInstance CRs.
+Platform installs Crossplane + provider-gcp-sql; the chart creates
+DatabaseInstance, Database, and User. Apps wait on <instance>-app-credentials
+and <instance>-connection in the release namespace.
 
 Enable with cloudsql.enabled=true. Aliases: database.provider=cloudsql,
 gcpCloudSQL.enabled, or cloudSQL.enabled.
@@ -540,8 +539,7 @@ true
 {{- end -}}
 
 {{/*
-Host/port are published by chart-owned app-role (provider-gcp-sql does not
-write endpoint the way provider-aws-rds Instance does).
+Host/port come from DatabaseInstance writeConnectionSecretToRef.
 */}}
 {{- define "copia.cloudsql.connectionSecretName" -}}
 {{- if and .Values.cloudsql .Values.cloudsql.connectionSecretName }}
@@ -614,7 +612,7 @@ true
 {{- $host = .Values.copia.config.database.HOST | toString -}}
 {{- end -}}
 {{- if and $host (ne (include "copia.cnpg.isPlaceholderHost" $host) "true") -}}
-{{- fail "cloudsql database provider is enabled; omit copia.config.database.HOST (and PASSWD). Credentials come from Windsor app-role + connection Secrets." -}}
+{{- fail "cloudsql database provider is enabled; omit copia.config.database.HOST (and PASSWD). Credentials come from app-credentials + connection Secrets." -}}
 {{- end -}}
 {{- $cmHost := "" -}}
 {{- $cm := .Values.conversion_manager_service -}}

@@ -1,11 +1,8 @@
-# GCP Cloud SQL via Crossplane (Windsor)
+# GCP Cloud SQL via Crossplane
 
-This guide covers provisioning Copia's Postgres on **GCP Cloud SQL** using the
-Windsor Core provisioning add-on (`database.postgres.driver=cloudsql`). The chart
-emits `sql.gcp.upbound.io` **DatabaseInstance**, **Database**, and **User** CRs
-(same posture as AWS RDS Instance CRs) and **opts into app-role** so credentials
-are published on helm install. It does **not** install Crossplane or the GCP
-provider.
+This guide covers provisioning Copia's Postgres on **GCP Cloud SQL**. The chart
+emits `sql.gcp.upbound.io` **DatabaseInstance**, **Database**, and **User** CRs.
+It does **not** install Crossplane or the GCP provider.
 
 If you already created Cloud SQL (Terraform, console, another chart), do not
 follow this guide. Leave `cloudsql.enabled` false and set
@@ -13,35 +10,13 @@ follow this guide. Leave `cloudsql.enabled` false and set
 
 For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
 
-## Prerequisites (platform / infrastructure agent)
+## Prerequisites
 
-On the infrastructure application, enable Windsor's Cloud SQL driver:
-
-```bash
-CORE_DATABASE__POSTGRES__ENABLED=true
-CORE_DATABASE__POSTGRES__DRIVER=cloudsql
-```
-
-That installs Crossplane, `provider-gcp-sql`, a `default` `ProviderConfig`
-(Workload Identity), private service connection, Kyverno policies, and the
-shared `cloudsql-bootstrap` ServiceAccount in `system-provisioning`. See
-[Windsor Core provisioning](https://github.com/windsorcli/core/blob/main/kustomize/provisioning/README.md).
-
-Terraform `database/gcp-cloudsql` must also create admin credential Secrets
-keyed by the DatabaseInstance names this chart will use (default
-`<release-fullname>-pg`, plus `<release-fullname>-cm-pg` when conversion-manager
-is enabled):
-
-```hcl
-admin_credentials = {
-  "copia-pg"    = { username = "copia" }
-  "copia-cm-pg" = { username = "conversion_manager" }
-}
-```
-
-Each key writes `<key>-admin-credentials` in `system-provisioning`. Cloud SQL's
-User CR cannot auto-generate a password the way RDS `manageMasterUserPassword`
-does, so the chart User CR reads that Secret.
+Crossplane and `provider-gcp-sql` must already be installed, with a usable
+`ProviderConfig`. The User CR reads `<instance>-admin-credentials` from
+`system-provisioning` (username + password). App login uses
+`<instance>-app-credentials` in the release namespace; the chart does not
+create that Secret.
 
 ## Customer values
 
@@ -83,21 +58,15 @@ Do **not** enable `cloudnativePG` or `rds` at the same time.
 
 1. Helm applies one `DatabaseInstance` + `User` + `Database` for Copia (and a
    second set for conversion-manager when CM is enabled). Resources are
-   cluster-scoped; no Claim. Kyverno force-sets `project`.
-2. The User CR reads `<instance>-admin-credentials` from `system-provisioning`
-   (Terraform-generated). Apps do not use the admin user.
-3. Chart-owned **app-role** CronJob(s) in `system-provisioning` (same mechanics
-   as Windsor `crossplane/gcp-cloudsql/app-role`) create `<dbname>_app` and write
-   `<instance>-app-credentials` (`username`, `password`) plus
-   `<instance>-connection` (`host` from `privateIpAddress`) into the release
-   namespace. Uses platform SA `cloudsql-bootstrap`.
-4. Deployment init waits until both Secrets exist, then `pg_isready` with the
-   **app** user. `render-app-ini` / CM entrypoint fill HOST/USER/PASSWD from
-   those Secrets.
+   cluster-scoped.
+2. The User CR reads `<instance>-admin-credentials` from
+   `system-provisioning`. Apps do not use the admin user.
+3. `writeConnectionSecretToRef` publishes host/port into
+   `<instance>-connection` in the release namespace.
+4. Deployment init waits until that Secret and `<instance>-app-credentials`
+   exist, then `pg_isready` with the app user. `render-app-ini` / CM entrypoint
+   fill HOST/USER/PASSWD from those Secrets.
 5. Admin bootstrap Job uses the same Secrets (60m deadline for Cloud SQL).
-
-Set `cloudsql.appRole.enabled=false` only if you wire Windsor's app-role
-component yourself (duplicate CronJobs would race).
 
 ## Smoke test
 
@@ -123,7 +92,6 @@ Verify:
 
 ```bash
 kubectl get databaseinstance.sql.gcp.upbound.io
-kubectl get cronjob -n system-provisioning | grep provision-app-role
 kubectl get secret -n crossplane-poc | grep -E 'connection|app-credentials'
 kubectl logs -n crossplane-poc -l app.kubernetes.io/name=copia -c copia-wait-db
 ```

@@ -5,7 +5,7 @@
 {{- $requireCRD = .Values.cloudsql.requireCRD }}
 {{- end }}
 {{- if and $requireCRD (not (.Capabilities.APIVersions.Has "sql.gcp.upbound.io/v1beta2")) }}
-{{- fail "cloudsql requires DatabaseInstance CRD sql.gcp.upbound.io/v1beta2. Enable database.postgres.driver=cloudsql on the infrastructure agent first." }}
+{{- fail "cloudsql requires DatabaseInstance CRD sql.gcp.upbound.io/v1beta2. Install provider-gcp-sql first." }}
 {{- end }}
 {{- include "copia.cloudsql.instanceResources" (dict
   "root" .
@@ -13,6 +13,7 @@
   "databaseName" (include "copia.database.name" .)
   "adminUsername" (include "copia.cloudsql.adminUsername" .)
   "adminSecretName" (include "copia.cloudsql.adminCredentialsSecretName" .)
+  "connectionSecretName" (include "copia.cloudsql.connectionSecretName" .)
   "tier" (.Values.cloudsql.tier | default "db-f1-micro")
   "diskSize" (.Values.cloudsql.diskSize | default 20)
   "labels" (include "app.labels" .)
@@ -32,6 +33,7 @@
   "databaseName" (include "copia.cnpg.conversionManager.database" .)
   "adminUsername" (include "copia.cloudsql.conversionManager.adminUsername" .)
   "adminSecretName" (include "copia.cloudsql.conversionManager.adminCredentialsSecretName" .)
+  "connectionSecretName" (include "copia.cloudsql.conversionManager.connectionSecretName" .)
   "tier" $cmTier
   "diskSize" $cmDisk
   "labels" (include "app.conversion-manager.labels" .)

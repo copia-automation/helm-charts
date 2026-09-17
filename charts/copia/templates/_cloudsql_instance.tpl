@@ -2,14 +2,15 @@
 Emit DatabaseInstance + User + Database for one Cloud SQL instance.
 
 Expects dict:
-  root              - chart context
-  instanceName      - DatabaseInstance CR name (also GCP instance id)
-  databaseName      - Postgres database (Database CR forProvider.name)
-  adminUsername     - Cloud SQL User name; must match Terraform admin secret
-  adminSecretName   - <instance>-admin-credentials in system-provisioning
-  tier              - Cloud SQL machine tier
-  diskSize          - disk size in GB
-  labels            - optional label helper output string
+  root                  - chart context
+  instanceName          - DatabaseInstance CR name (also GCP instance id)
+  databaseName          - Postgres database (Database CR forProvider.name)
+  adminUsername         - Cloud SQL User name; must match admin secret
+  adminSecretName       - <instance>-admin-credentials
+  connectionSecretName  - writeConnectionSecretToRef target
+  tier                  - Cloud SQL machine tier
+  diskSize              - disk size in GB
+  labels                - optional label helper output string
 */}}
 {{- define "copia.cloudsql.instanceResources" -}}
 {{- $root := .root -}}
@@ -17,6 +18,7 @@ Expects dict:
 {{- $db := .databaseName -}}
 {{- $adminUser := .adminUsername -}}
 {{- $adminSecret := .adminSecretName -}}
+{{- $connSecret := .connectionSecretName -}}
 {{- $tier := .tier -}}
 {{- $diskSize := .diskSize -}}
 {{- $cs := $root.Values.cloudsql | default dict -}}
@@ -35,16 +37,14 @@ Expects dict:
 {{- end -}}
 {{- $kms := $cs.encryptionKeyName | default "" -}}
 {{- $adminNs := "system-provisioning" -}}
-{{- if and $cs.appRole $cs.appRole.namespace -}}
-{{- $adminNs = $cs.appRole.namespace -}}
+{{- if $cs.adminCredentialsNamespace -}}
+{{- $adminNs = $cs.adminCredentialsNamespace -}}
 {{- end }}
 ---
-# Cluster-scoped managed resource (Windsor provisioning contract). Platform
-# installs Crossplane + provider-gcp-sql; this chart defines the instance.
-# App login: chart-owned app-role CronJob publishes <instance>-app-credentials
-# and <instance>-connection. Admin password is Terraform-written
-# <instance>-admin-credentials in system-provisioning (Cloud SQL User has no
-# auto-generate, unlike RDS manageMasterUserPassword).
+# Platform installs Crossplane + provider-gcp-sql; this chart defines the
+# instance. Host/port come from writeConnectionSecretToRef. App login uses
+# <instance>-app-credentials in the release namespace. The User CR reads
+# <instance>-admin-credentials (Cloud SQL User has no auto-generate password).
 apiVersion: sql.gcp.upbound.io/v1beta2
 kind: DatabaseInstance
 metadata:
@@ -61,6 +61,9 @@ metadata:
   {{- end }}
 spec:
   deletionPolicy: {{ $deletionPolicy }}
+  writeConnectionSecretToRef:
+    name: {{ $connSecret }}
+    namespace: {{ $root.Release.Namespace }}
   forProvider:
     region: {{ $region | quote }}
     databaseVersion: {{ $version | quote }}

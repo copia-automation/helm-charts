@@ -345,9 +345,8 @@ rds:
 # Chart-provisioned GCP Cloud SQL via Crossplane DatabaseInstance CRs. Leave
 # this block disabled if the database already exists (Terraform Cloud SQL,
 # shared Postgres). Enable only when this chart should create the instance.
-# Platform must install Crossplane + provider-gcp-sql (Windsor
-# database.postgres.driver=cloudsql). Omit HOST and PASSWD when enabled.
-# See docs/distr/cloudsql.md.
+# Platform must install Crossplane + provider-gcp-sql. Omit HOST and PASSWD
+# when enabled. See docs/distr/cloudsql.md.
 cloudsql:
   enabled: false
   requireCRD: true
@@ -369,22 +368,9 @@ cloudsql:
   deletionPolicy: Delete
   deletionProtection: false
   ipv4Enabled: false
-  # Must match Terraform admin_credentials[<instanceName>].username
+  # Must match the username in <instanceName>-admin-credentials
   adminUsername: ""
-  # Chart-owned app-role (Windsor crossplane/gcp-cloudsql/app-role mechanics).
-  # Uses platform SA cloudsql-bootstrap; set enabled=false only if you wire
-  # that component yourself.
-  appRole:
-    enabled: true
-    namespace: system-provisioning
-    serviceAccountName: cloudsql-bootstrap
-    schedule: "*/5 * * * *"
-    # Optional override (one line, semicolon-separated). Default grants
-    # CONNECT/USAGE/CREATE + ALL on tables/sequences for <dbname>_app.
-    grantSql: ""
-    conversionManagerGrantSql: ""
-    kubectlImage: ""
-    postgresImage: ""
+  adminCredentialsNamespace: system-provisioning
   # Second DatabaseInstance when conversion_manager_service.enabled (own tier).
   conversionManager:
     instanceName: ""
@@ -393,5 +379,4 @@ cloudsql:
     appCredentialsSecretName: ""
     connectionSecretName: ""
     adminUsername: ""
-    grantSql: ""
 

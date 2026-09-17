@@ -602,21 +602,7 @@
         "deletionProtection": { "type": "boolean" },
         "ipv4Enabled": { "type": "boolean" },
         "adminUsername": { "type": "string" },
-        "appRole": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Chart-owned Windsor app-role CronJob + RBAC (default on when cloudsql is enabled).",
-          "properties": {
-            "enabled": { "type": "boolean" },
-            "namespace": { "type": "string" },
-            "serviceAccountName": { "type": "string" },
-            "schedule": { "type": "string" },
-            "grantSql": { "type": "string" },
-            "conversionManagerGrantSql": { "type": "string" },
-            "kubectlImage": { "type": "string" },
-            "postgresImage": { "type": "string" }
-          }
-        },
+        "adminCredentialsNamespace": { "type": "string" },
         "conversionManager": {
           "type": "object",
           "additionalProperties": false,
@@ -627,8 +613,7 @@
             "diskSize": { "type": "integer", "minimum": 10 },
             "appCredentialsSecretName": { "type": "string" },
             "connectionSecretName": { "type": "string" },
-            "adminUsername": { "type": "string" },
-            "grantSql": { "type": "string" }
+            "adminUsername": { "type": "string" }
           }
         }
       }

@@ -102,7 +102,7 @@ tests:
       - matchRegex:
           path: spec.template.spec.initContainers[0].args[0]
           pattern: waiting for postgres
-  - it: waits on Windsor app-credentials for Cloud SQL before starting
+  - it: waits on app-credentials for Cloud SQL before starting
     capabilities:
       apiVersions:
         - sql.gcp.upbound.io/v1beta2
