@@ -102,3 +102,25 @@ tests:
       - matchRegex:
           path: spec.template.spec.initContainers[0].args[0]
           pattern: waiting for postgres
+  - it: waits on Windsor app-credentials for Cloud SQL before starting
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+    set:
+      database.provider: cloudsql
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+      copia.config.database.SSL_MODE: require
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: copia-wait-db
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: app-credentials
+      - equal:
+          path: spec.template.spec.volumes[2].secret.secretName
+          value: RELEASE-NAME-copia-pg-connection
+      - equal:
+          path: spec.template.spec.volumes[3].secret.secretName
+          value: RELEASE-NAME-copia-pg-app-credentials

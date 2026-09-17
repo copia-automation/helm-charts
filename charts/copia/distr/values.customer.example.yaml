@@ -19,7 +19,8 @@ ingress:
       hosts:
         - copia.example.com
 # Existing Postgres (default), including RDS/Cloud SQL/Azure you created
-# yourself. Set HOST / DB_HOST below. Do not enable cloudnativePG or rds.
+# yourself. Set HOST / DB_HOST below. Do not enable cloudnativePG, rds, or
+# cloudsql.
 #
 # Chart-managed CloudNativePG: set cloudnativePG.enabled true and remove HOST
 # and DB_HOST. See the "CloudNativePG Config" guide.
@@ -36,14 +37,22 @@ cloudnativePG:
 #   region: us-east-2
 #   dbSubnetGroupName: mycluster-crossplane-rds
 #   vpcSecurityGroupIds: ["sg-aaa"]
+# Chart-managed GCP Cloud SQL (this chart creates the instance). Skip this
+# entire block if you already have Cloud SQL. Set HOST below instead.
+# cloudsql:
+#   enabled: true
+#   region: us-central1
+#   privateNetwork: projects/my-project/global/networks/my-vpc
+#   encryptionKeyName: projects/my-project/locations/us-central1/keyRings/cloudsql/cryptoKeys/cloudsql
 copia:
   config:
     server:
       DOMAIN: copia.example.com
       ROOT_URL: https://copia.example.com/
     database:
-      # Required for an existing Postgres, including RDS you created yourself.
-      # Remove HOST and PASSWD only when cloudnativePG.enabled or rds.enabled.
+      # Required for an existing Postgres, including RDS/Cloud SQL you created
+      # yourself. Remove HOST and PASSWD only when cloudnativePG.enabled,
+      # rds.enabled, or cloudsql.enabled.
       HOST: postgres.example.com:5432
       NAME: copia
       USER: copia
@@ -60,8 +69,9 @@ copia:
       # PASSWD: "{{ .Secrets.SmtpPassword }}"
 conversion_manager_service:
   configmap:
-    # Required for an existing Postgres, including RDS you created yourself.
-    # Remove this key only when cloudnativePG.enabled or rds.enabled.
+    # Required for an existing Postgres, including RDS/Cloud SQL you created
+    # yourself. Remove this key only when cloudnativePG.enabled, rds.enabled,
+    # or cloudsql.enabled.
     DB_HOST: postgres.example.com:5432
     DB_NAME: conversion_manager
     DB_USER: conversion_manager

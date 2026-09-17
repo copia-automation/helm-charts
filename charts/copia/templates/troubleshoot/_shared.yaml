@@ -2,8 +2,8 @@
 - clusterInfo: {}
 - clusterResources: {}
 
-{{- $cnpg := eq "true" (include "copia.cnpg.enabled" .) }}
-{{- if and .Values.copia .Values.copia.config .Values.copia.config.database (not $cnpg) }}
+{{- $managed := eq "true" (include "copia.database.managed" .) }}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database (not $managed) }}
 {{- $user := .Values.copia.config.database.USER }}
 {{- $passwd := .Values.copia.config.database.PASSWD }}
 {{- $host := include "copia.database.host" . }}
@@ -32,6 +32,8 @@
 {{- end -}}
 
 {{- $cnpg := eq "true" (include "copia.cnpg.enabled" .) }}
+{{- $rds := eq "true" (include "copia.rds.enabled" .) }}
+{{- $cloudsql := eq "true" (include "copia.cloudsql.enabled" .) }}
 {{- if $cnpg }}
 - customResourceDefinition:
     checkName: CloudNativePG Cluster CRD
@@ -41,6 +43,24 @@
           message: CloudNativePG CRDs are not installed. Install the operator before enabling cloudnativePG.
       - pass:
           message: CloudNativePG Cluster CRD is installed
+{{- else if $rds }}
+- customResourceDefinition:
+    checkName: Crossplane AWS RDS Instance CRD
+    customResourceDefinitionName: instances.rds.aws.upbound.io
+    outcomes:
+      - fail:
+          message: RDS Instance CRDs are not installed. Set database.postgres.driver=rds first.
+      - pass:
+          message: Crossplane AWS RDS Instance CRD is installed
+{{- else if $cloudsql }}
+- customResourceDefinition:
+    checkName: Crossplane GCP Cloud SQL DatabaseInstance CRD
+    customResourceDefinitionName: databaseinstances.sql.gcp.upbound.io
+    outcomes:
+      - fail:
+          message: Cloud SQL CRDs are not installed. Set database.postgres.driver=cloudsql first.
+      - pass:
+          message: Crossplane GCP Cloud SQL DatabaseInstance CRD is installed
 {{- else if and .Values.copia .Values.copia.config .Values.copia.config.database }}
 - postgres:
     checkName: Test Database Connection

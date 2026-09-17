@@ -243,11 +243,9 @@ Return "true" when an in-chart database is enabled. External HOST is the default
 true
 {{- else if eq "true" (include "copia.rds.enabled" .) -}}
 true
+{{- else if eq "true" (include "copia.cloudsql.enabled" .) -}}
+true
 {{- else if and .Values.azureSQL .Values.azureSQL.enabled -}}
-true
-{{- else if and .Values.cloudSQL .Values.cloudSQL.enabled -}}
-true
-{{- else if and .Values.gcpCloudSQL .Values.gcpCloudSQL.enabled -}}
 true
 {{- end -}}
 {{- end -}}
@@ -347,15 +345,24 @@ the chart creates Instance(s) and opts into app-role (CronJob + RBAC) so
 
 Enable with rds.enabled=true. Legacy aliases still work: database.provider=rds,
 database.provider=crossplane, or crossplane.enabled.
-Mutually exclusive with cloudnativePG.enabled.
+Mutually exclusive with cloudnativePG.enabled and cloudsql.enabled.
 */}}
-{{- define "copia.rds.enabled" -}}
+{{- define "copia.rds.requested" -}}
 {{- $fromBlock := and .Values.rds .Values.rds.enabled -}}
 {{- $fromProvider := and .Values.database (or (eq (.Values.database.provider | default "") "rds") (eq (.Values.database.provider | default "") "crossplane")) -}}
 {{- $legacyCrossplane := and .Values.crossplane .Values.crossplane.enabled -}}
 {{- if or $fromBlock $fromProvider $legacyCrossplane -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.rds.enabled" -}}
+{{- if eq "true" (include "copia.rds.requested" .) -}}
 {{- if eq "true" (include "copia.cnpg.enabled" .) -}}
 {{- fail "rds (Crossplane AWS RDS) and cloudnativePG cannot both be enabled; pick one database path." -}}
+{{- end -}}
+{{- if eq "true" (include "copia.cloudsql.requested" .) -}}
+{{- fail "rds (Crossplane AWS RDS) and cloudsql cannot both be enabled; pick one database path." -}}
 {{- end -}}
 true
 {{- end -}}
@@ -481,4 +488,213 @@ true
 {{- end -}}
 {{- define "copia.crossplane.claimName" -}}
 {{- include "copia.rds.instanceName" . -}}
+{{- end -}}
+
+{{/*
+Return "true" when the chart should emit GCP Cloud SQL DatabaseInstance CRs
+(Windsor database.postgres.driver=cloudsql). Platform installs Crossplane +
+provider-gcp-sql; the chart creates DatabaseInstance + Database + User and opts
+into app-role so <instance>-app-credentials and <instance>-connection appear in
+the release namespace, the same split as RDS.
+
+Enable with cloudsql.enabled=true. Aliases: database.provider=cloudsql,
+gcpCloudSQL.enabled, or cloudSQL.enabled.
+Mutually exclusive with cloudnativePG.enabled and rds.enabled.
+*/}}
+{{- define "copia.cloudsql.requested" -}}
+{{- $fromBlock := and .Values.cloudsql .Values.cloudsql.enabled -}}
+{{- $fromProvider := and .Values.database (eq (.Values.database.provider | default "") "cloudsql") -}}
+{{- $fromGcp := and .Values.gcpCloudSQL .Values.gcpCloudSQL.enabled -}}
+{{- $fromCamel := and .Values.cloudSQL .Values.cloudSQL.enabled -}}
+{{- if or $fromBlock $fromProvider $fromGcp $fromCamel -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.cloudsql.enabled" -}}
+{{- if eq "true" (include "copia.cloudsql.requested" .) -}}
+{{- if eq "true" (include "copia.cnpg.enabled" .) -}}
+{{- fail "cloudsql (Crossplane GCP Cloud SQL) and cloudnativePG cannot both be enabled; pick one database path." -}}
+{{- end -}}
+{{- if eq "true" (include "copia.rds.requested" .) -}}
+{{- fail "rds (Crossplane AWS RDS) and cloudsql cannot both be enabled; pick one database path." -}}
+{{- end -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.cloudsql.instanceName" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.instanceName }}
+{{- .Values.cloudsql.instanceName | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-pg" (include "app.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.cloudsql.appCredentialsSecretName" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.appCredentialsSecretName }}
+{{- .Values.cloudsql.appCredentialsSecretName }}
+{{- else }}
+{{- printf "%s-app-credentials" (include "copia.cloudsql.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Host/port are published by chart-owned app-role (provider-gcp-sql does not
+write endpoint the way provider-aws-rds Instance does).
+*/}}
+{{- define "copia.cloudsql.connectionSecretName" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.connectionSecretName }}
+{{- .Values.cloudsql.connectionSecretName }}
+{{- else }}
+{{- printf "%s-connection" (include "copia.cloudsql.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.cloudsql.adminCredentialsSecretName" -}}
+{{- printf "%s-admin-credentials" (include "copia.cloudsql.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end -}}
+
+{{- define "copia.cloudsql.adminUsername" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.adminUsername }}
+{{- .Values.cloudsql.adminUsername }}
+{{- else }}
+{{- include "copia.database.user" . }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.cloudsql.conversionManager.enabled" -}}
+{{- if eq "true" (include "copia.cloudsql.enabled" .) -}}
+{{- if and .Values.conversion_manager_service .Values.conversion_manager_service.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.cloudsql.conversionManager.instanceName" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.conversionManager .Values.cloudsql.conversionManager.instanceName }}
+{{- .Values.cloudsql.conversionManager.instanceName | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-cm-pg" (include "app.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.cloudsql.conversionManager.appCredentialsSecretName" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.conversionManager .Values.cloudsql.conversionManager.appCredentialsSecretName }}
+{{- .Values.cloudsql.conversionManager.appCredentialsSecretName }}
+{{- else }}
+{{- printf "%s-app-credentials" (include "copia.cloudsql.conversionManager.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.cloudsql.conversionManager.connectionSecretName" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.conversionManager .Values.cloudsql.conversionManager.connectionSecretName }}
+{{- .Values.cloudsql.conversionManager.connectionSecretName }}
+{{- else }}
+{{- printf "%s-connection" (include "copia.cloudsql.conversionManager.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.cloudsql.conversionManager.adminCredentialsSecretName" -}}
+{{- printf "%s-admin-credentials" (include "copia.cloudsql.conversionManager.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end -}}
+
+{{- define "copia.cloudsql.conversionManager.adminUsername" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.conversionManager .Values.cloudsql.conversionManager.adminUsername }}
+{{- .Values.cloudsql.conversionManager.adminUsername }}
+{{- else }}
+{{- include "copia.cnpg.conversionManager.user" . }}
+{{- end }}
+{{- end -}}
+
+{{- define "copia.cloudsql.validate" -}}
+{{- if eq "true" (include "copia.cloudsql.enabled" .) -}}
+{{- $host := "" -}}
+{{- if and .Values.copia .Values.copia.config .Values.copia.config.database .Values.copia.config.database.HOST -}}
+{{- $host = .Values.copia.config.database.HOST | toString -}}
+{{- end -}}
+{{- if and $host (ne (include "copia.cnpg.isPlaceholderHost" $host) "true") -}}
+{{- fail "cloudsql database provider is enabled; omit copia.config.database.HOST (and PASSWD). Credentials come from Windsor app-role + connection Secrets." -}}
+{{- end -}}
+{{- $cmHost := "" -}}
+{{- $cm := .Values.conversion_manager_service -}}
+{{- if and $cm $cm.configmap $cm.configmap.DB_HOST -}}
+{{- $cmHost = $cm.configmap.DB_HOST | toString -}}
+{{- end -}}
+{{- if and $cmHost (ne (include "copia.cnpg.isPlaceholderHost" $cmHost) "true") -}}
+{{- fail "cloudsql database provider is enabled; omit conversion_manager_service.configmap.DB_HOST." -}}
+{{- end -}}
+{{- $region := "" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.region -}}
+{{- $region = .Values.cloudsql.region | toString -}}
+{{- end -}}
+{{- if empty $region -}}
+{{- fail "cloudsql.region is required." -}}
+{{- end -}}
+{{- $network := "" -}}
+{{- if and .Values.cloudsql .Values.cloudsql.privateNetwork -}}
+{{- $network = .Values.cloudsql.privateNetwork | toString -}}
+{{- end -}}
+{{- if empty $network -}}
+{{- fail "cloudsql.privateNetwork is required (platform Terraform network_id)." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+True when apps should wait on Windsor app-credentials + connection Secrets
+(RDS Instance or Cloud SQL DatabaseInstance).
+*/}}
+{{- define "copia.windsorDb.enabled" -}}
+{{- if or (eq "true" (include "copia.rds.enabled" .)) (eq "true" (include "copia.cloudsql.enabled" .)) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.windsorDb.conversionManager.enabled" -}}
+{{- $rdsCm := eq "true" (include "copia.rds.conversionManager.enabled" .) -}}
+{{- $sqlCm := eq "true" (include "copia.cloudsql.conversionManager.enabled" .) -}}
+{{- if or $rdsCm $sqlCm -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.windsorDb.validate" -}}
+{{- if eq "true" (include "copia.rds.enabled" .) -}}
+{{- include "copia.rds.validate" . -}}
+{{- else if eq "true" (include "copia.cloudsql.enabled" .) -}}
+{{- include "copia.cloudsql.validate" . -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.windsorDb.connectionSecretName" -}}
+{{- if eq "true" (include "copia.rds.enabled" .) -}}
+{{- include "copia.rds.connectionSecretName" . -}}
+{{- else -}}
+{{- include "copia.cloudsql.connectionSecretName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.windsorDb.appCredentialsSecretName" -}}
+{{- if eq "true" (include "copia.rds.enabled" .) -}}
+{{- include "copia.rds.appCredentialsSecretName" . -}}
+{{- else -}}
+{{- include "copia.cloudsql.appCredentialsSecretName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.windsorDb.conversionManager.connectionSecretName" -}}
+{{- if eq "true" (include "copia.rds.enabled" .) -}}
+{{- include "copia.rds.conversionManager.connectionSecretName" . -}}
+{{- else -}}
+{{- include "copia.cloudsql.conversionManager.connectionSecretName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "copia.windsorDb.conversionManager.appCredentialsSecretName" -}}
+{{- if eq "true" (include "copia.rds.enabled" .) -}}
+{{- include "copia.rds.conversionManager.appCredentialsSecretName" . -}}
+{{- else -}}
+{{- include "copia.cloudsql.conversionManager.appCredentialsSecretName" . -}}
+{{- end -}}
 {{- end -}}

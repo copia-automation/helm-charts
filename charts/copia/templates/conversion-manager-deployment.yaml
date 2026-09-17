@@ -1,7 +1,7 @@
 # Conversion Manager deployment template
 {{- if and .Values.conversion_manager_service.enabled (eq .Values.conversion_manager_service.enabled true)}}
-{{- if eq "true" (include "copia.rds.conversionManager.enabled" .) }}
-{{- $_ := include "copia.rds.validate" . }}
+{{- if eq "true" (include "copia.windsorDb.conversionManager.enabled" .) }}
+{{- $_ := include "copia.windsorDb.validate" . }}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
@@ -50,20 +50,20 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.conversion_manager_service.deployment.terminationGracePeriodSeconds }}
       {{- end }}
       {{- $cnpgCmOn := eq "true" (include "copia.cnpg.conversionManager.enabled" .) }}
-      {{- $rdsCmOn := eq "true" (include "copia.rds.conversionManager.enabled" .) }}
-      {{- if or $cnpgCmOn $rdsCmOn }}
+      {{- $windsorCmOn := eq "true" (include "copia.windsorDb.conversionManager.enabled" .) }}
+      {{- if or $cnpgCmOn $windsorCmOn }}
       {{- $sslMode := "prefer" }}
       {{- if and .Values.copia.config .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
       {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
       {{- end }}
-      {{- if $rdsCmOn }}
+      {{- if $windsorCmOn }}
       {{- $sslMode = "require" }}
       {{- if and .Values.copia.config .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
       {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
       {{- end }}
       {{- end }}
       initContainers:
-        {{- if $rdsCmOn }}
+        {{- if $windsorCmOn }}
         {{- include "copia.waitPostgres.windsor.initContainer" (dict
           "name" "wait-postgres"
           "appDatabase" (include "copia.cnpg.conversionManager.database" .)
@@ -87,7 +87,7 @@ spec:
         - name: "conversion-manager"
           image: "{{ include "cm.image" . }}"
           imagePullPolicy: {{ .Values.conversion_manager_service.deployment.image.imagePullPolicy }}
-          {{- if $rdsCmOn }}
+          {{- if $windsorCmOn }}
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -131,12 +131,12 @@ spec:
           startupProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.startupProbe | nindent 12 }}
           {{- end }}
-          {{- if or .Values.conversion_manager_service.deployment.volumeMounts $rdsCmOn }}
+          {{- if or .Values.conversion_manager_service.deployment.volumeMounts $windsorCmOn }}
           volumeMounts:
             {{- if .Values.conversion_manager_service.deployment.volumeMounts }}
             {{- toYaml .Values.conversion_manager_service.deployment.volumeMounts | nindent 12 }}
             {{- end }}
-            {{- if $rdsCmOn }}
+            {{- if $windsorCmOn }}
             - name: cm-db
               mountPath: /cm-db
               readOnly: true
@@ -163,15 +163,15 @@ spec:
       tolerations:
         {{- toYaml .Values.conversion_manager_service.deployment.tolerations | nindent 8 }}
       {{- end }}
-      {{- if or $rdsCmOn .Values.conversion_manager_service.deployment.volumes }}
+      {{- if or $windsorCmOn .Values.conversion_manager_service.deployment.volumes }}
       volumes:
-        {{- if $rdsCmOn }}
+        {{- if $windsorCmOn }}
         - name: db-connection
           secret:
-            secretName: {{ include "copia.rds.conversionManager.connectionSecretName" . }}
+            secretName: {{ include "copia.windsorDb.conversionManager.connectionSecretName" . }}
         - name: app-credentials
           secret:
-            secretName: {{ include "copia.rds.conversionManager.appCredentialsSecretName" . }}
+            secretName: {{ include "copia.windsorDb.conversionManager.appCredentialsSecretName" . }}
         - name: cm-db
           emptyDir: {}
         {{- end }}

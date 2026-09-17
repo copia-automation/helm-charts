@@ -1,0 +1,40 @@
+{{- if eq "true" (include "copia.cloudsql.enabled" .) }}
+{{- $_ := include "copia.cloudsql.validate" . }}
+{{- $requireCRD := true }}
+{{- if and .Values.cloudsql (hasKey .Values.cloudsql "requireCRD") }}
+{{- $requireCRD = .Values.cloudsql.requireCRD }}
+{{- end }}
+{{- if and $requireCRD (not (.Capabilities.APIVersions.Has "sql.gcp.upbound.io/v1beta2")) }}
+{{- fail "cloudsql requires DatabaseInstance CRD sql.gcp.upbound.io/v1beta2. Enable database.postgres.driver=cloudsql on the infrastructure agent first." }}
+{{- end }}
+{{- include "copia.cloudsql.instanceResources" (dict
+  "root" .
+  "instanceName" (include "copia.cloudsql.instanceName" .)
+  "databaseName" (include "copia.database.name" .)
+  "adminUsername" (include "copia.cloudsql.adminUsername" .)
+  "adminSecretName" (include "copia.cloudsql.adminCredentialsSecretName" .)
+  "tier" (.Values.cloudsql.tier | default "db-f1-micro")
+  "diskSize" (.Values.cloudsql.diskSize | default 20)
+  "labels" (include "app.labels" .)
+) }}
+{{- if eq "true" (include "copia.cloudsql.conversionManager.enabled" .) }}
+{{- $cmTier := .Values.cloudsql.tier | default "db-f1-micro" }}
+{{- $cmDisk := .Values.cloudsql.diskSize | default 20 }}
+{{- if and .Values.cloudsql.conversionManager .Values.cloudsql.conversionManager.tier }}
+{{- $cmTier = .Values.cloudsql.conversionManager.tier }}
+{{- end }}
+{{- if and .Values.cloudsql.conversionManager .Values.cloudsql.conversionManager.diskSize }}
+{{- $cmDisk = .Values.cloudsql.conversionManager.diskSize }}
+{{- end }}
+{{- include "copia.cloudsql.instanceResources" (dict
+  "root" .
+  "instanceName" (include "copia.cloudsql.conversionManager.instanceName" .)
+  "databaseName" (include "copia.cnpg.conversionManager.database" .)
+  "adminUsername" (include "copia.cloudsql.conversionManager.adminUsername" .)
+  "adminSecretName" (include "copia.cloudsql.conversionManager.adminCredentialsSecretName" .)
+  "tier" $cmTier
+  "diskSize" $cmDisk
+  "labels" (include "app.conversion-manager.labels" .)
+) }}
+{{- end }}
+{{- end }}

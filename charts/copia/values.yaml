@@ -26,7 +26,7 @@ imagePullSecrets:
 ghcrCheck: true
 # Pre-install check of an existing Postgres HOST/DB_HOST (including RDS you
 # created in Terraform). Skipped when the chart provisions the database
-# (cloudnativePG.enabled or rds.enabled).
+# (cloudnativePG.enabled, rds.enabled, or cloudsql.enabled).
 postgresCheck: true
 service:
   #clusterIP: None
@@ -261,13 +261,18 @@ conversion_manager_service:
 #
 # 1) Existing Postgres (default), including RDS/Cloud SQL/Azure you created
 #    yourself (Terraform, console, etc.): set copia.config.database.HOST and
-#    conversion-manager DB_HOST. Do not set cloudnativePG.enabled or rds.*.
+#    conversion-manager DB_HOST. Do not set cloudnativePG.enabled, rds.*, or
+#    cloudsql.*.
 #
 # 2) Chart-managed CloudNativePG: cloudnativePG.enabled=true. Omit HOST/DB_HOST.
 #
 # 3) Chart-managed AWS RDS (this chart emits Crossplane Instance CRs):
 #    rds.enabled=true. Omit HOST/DB_HOST. Not for an RDS instance you already
 #    created outside the chart.
+#
+# 4) Chart-managed GCP Cloud SQL (this chart emits Crossplane DatabaseInstance
+#    CRs): cloudsql.enabled=true. Omit HOST/DB_HOST. Not for a Cloud SQL
+#    instance you already created outside the chart.
 cloudnativePG:
   enabled: false
   # Fail helm install/upgrade unless postgresql.cnpg.io/v1 is registered.
@@ -335,5 +340,58 @@ rds:
     allocatedStorage: 20
     appCredentialsSecretName: ""
     connectionSecretName: ""
+    grantSql: ""
+
+# Chart-provisioned GCP Cloud SQL via Crossplane DatabaseInstance CRs. Leave
+# this block disabled if the database already exists (Terraform Cloud SQL,
+# shared Postgres). Enable only when this chart should create the instance.
+# Platform must install Crossplane + provider-gcp-sql (Windsor
+# database.postgres.driver=cloudsql). Omit HOST and PASSWD when enabled.
+# See docs/distr/cloudsql.md.
+cloudsql:
+  enabled: false
+  requireCRD: true
+  keepOnDelete: false
+  # Default: <release-fullname>-pg (cluster-scoped DatabaseInstance name)
+  instanceName: ""
+  # Defaults: <instanceName>-app-credentials / <instanceName>-connection
+  appCredentialsSecretName: ""
+  connectionSecretName: ""
+  region: ""
+  # Platform Terraform network_id, e.g. projects/<project>/global/networks/<vpc>
+  privateNetwork: ""
+  encryptionKeyName: ""
+  tier: db-f1-micro
+  # ENTERPRISE is required for db-f1-micro; Enterprise Plus rejects it.
+  edition: ENTERPRISE
+  diskSize: 20
+  databaseVersion: POSTGRES_16
+  deletionPolicy: Delete
+  deletionProtection: false
+  ipv4Enabled: false
+  # Must match Terraform admin_credentials[<instanceName>].username
+  adminUsername: ""
+  # Chart-owned app-role (Windsor crossplane/gcp-cloudsql/app-role mechanics).
+  # Uses platform SA cloudsql-bootstrap; set enabled=false only if you wire
+  # that component yourself.
+  appRole:
+    enabled: true
+    namespace: system-provisioning
+    serviceAccountName: cloudsql-bootstrap
+    schedule: "*/5 * * * *"
+    # Optional override (one line, semicolon-separated). Default grants
+    # CONNECT/USAGE/CREATE + ALL on tables/sequences for <dbname>_app.
+    grantSql: ""
+    conversionManagerGrantSql: ""
+    kubectlImage: ""
+    postgresImage: ""
+  # Second DatabaseInstance when conversion_manager_service.enabled (own tier).
+  conversionManager:
+    instanceName: ""
+    tier: db-f1-micro
+    diskSize: 20
+    appCredentialsSecretName: ""
+    connectionSecretName: ""
+    adminUsername: ""
     grantSql: ""
 

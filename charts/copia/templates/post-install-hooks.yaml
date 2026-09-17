@@ -1,5 +1,5 @@
 {{- if and .Values.adminUser .Values.adminUser.create }}
-{{- $rdsOn := eq "true" (include "copia.rds.enabled" .) }}
+{{- $windsorOn := eq "true" (include "copia.windsorDb.enabled" .) }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -16,7 +16,7 @@ data:
     set -eu
     apk add --no-cache argon2 >/dev/null
 
-    {{- if $rdsOn }}
+    {{- if $windsorOn }}
     CONN=/etc/db-connection
     APP=/etc/app-credentials
     read_file() {
@@ -43,7 +43,7 @@ data:
     export PGSSLMODE={{ $sslMode | quote }}
     {{- end }}
 
-    {{- if $rdsOn }}
+    {{- if $windsorOn }}
     max_attempts=450
     {{- else }}
     max_attempts=180
@@ -105,9 +105,10 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 5
-  # RDS path: kubelet blocks on Secret mounts until Instance + app-role are ready
-  # (5–15m+), then readiness + schema waits. Non-RDS path stays at 20m.
-  activeDeadlineSeconds: {{ if $rdsOn }}3600{{ else }}1200{{ end }}
+  # Windsor RDS/Cloud SQL path: kubelet blocks on Secret mounts until the
+  # instance + app-role are ready (5-15m+), then readiness + schema waits.
+  # Non-Windsor path stays at 20m.
+  activeDeadlineSeconds: {{ if $windsorOn }}3600{{ else }}1200{{ end }}
   ttlSecondsAfterFinished: 600
   template:
     spec:
@@ -117,7 +118,7 @@ spec:
           image: postgres:15-alpine
           command: ["/bin/sh", "/scripts/bootstrap.sh"]
           env:
-            {{- if not $rdsOn }}
+            {{- if not $windsorOn }}
             - name: PGHOST
               value: {{ include "copia.database.host" . | quote }}
             - name: PGPORT
@@ -138,7 +139,7 @@ spec:
           volumeMounts:
             - name: script
               mountPath: /scripts
-            {{- if $rdsOn }}
+            {{- if $windsorOn }}
             - name: db-connection
               mountPath: /etc/db-connection
               readOnly: true
@@ -151,12 +152,12 @@ spec:
           configMap:
             name: {{ include "app.fullname" . }}-admin-bootstrap-script
             defaultMode: 0755
-        {{- if $rdsOn }}
+        {{- if $windsorOn }}
         - name: db-connection
           secret:
-            secretName: {{ include "copia.rds.connectionSecretName" . }}
+            secretName: {{ include "copia.windsorDb.connectionSecretName" . }}
         - name: app-credentials
           secret:
-            secretName: {{ include "copia.rds.appCredentialsSecretName" . }}
+            secretName: {{ include "copia.windsorDb.appCredentialsSecretName" . }}
         {{- end }}
 {{- end }}

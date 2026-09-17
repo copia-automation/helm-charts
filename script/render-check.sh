@@ -50,6 +50,31 @@ main() {
     --set-json 'rds.vpcSecurityGroupIds=["sg-a"]' \
     >/dev/null
   log::success "Chart with rds + conversion-manager renders cleanly"
+
+  log::exec_command helm template copia charts/copia \
+    --api-versions sql.gcp.upbound.io/v1beta2 \
+    --values charts/copia/distr/values.base.yaml \
+    --set database.provider=cloudsql \
+    --set chartGeneratedSecrets.enabled=true \
+    --set conversion_manager_service.enabled=false \
+    --set copia.config.database.HOST= \
+    --set cloudsql.region=us-central1 \
+    --set cloudsql.privateNetwork=projects/p/global/networks/n \
+    >/dev/null
+  log::success "Chart with database.provider=cloudsql renders cleanly"
+
+  log::exec_command helm template copia charts/copia \
+    --api-versions sql.gcp.upbound.io/v1beta2 \
+    --values charts/copia/distr/values.base.yaml \
+    --set cloudsql.enabled=true \
+    --set chartGeneratedSecrets.enabled=true \
+    --set conversion_manager_service.enabled=true \
+    --set conversion_manager_service.configmap.DB_HOST= \
+    --set copia.config.database.HOST= \
+    --set cloudsql.region=us-central1 \
+    --set cloudsql.privateNetwork=projects/p/global/networks/n \
+    >/dev/null
+  log::success "Chart with cloudsql + conversion-manager renders cleanly"
 }
 
 main "$@"
