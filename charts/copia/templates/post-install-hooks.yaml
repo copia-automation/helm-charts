@@ -1,5 +1,6 @@
 {{- if and .Values.adminUser .Values.adminUser.create }}
-{{- $windsorOn := eq "true" (include "copia.windsorDb.enabled" .) }}
+{{- $rdsOn := eq "true" (include "copia.rds.enabled" .) }}
+{{- $cloudsqlOn := eq "true" (include "copia.cloudsql.enabled" .) }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -16,7 +17,7 @@ data:
     set -eu
     apk add --no-cache argon2 >/dev/null
 
-    {{- if $windsorOn }}
+    {{- if or $rdsOn $cloudsqlOn }}
     CONN=/etc/db-connection
     APP=/etc/app-credentials
     read_file() {
@@ -43,7 +44,7 @@ data:
     export PGSSLMODE={{ $sslMode | quote }}
     {{- end }}
 
-    {{- if $windsorOn }}
+    {{- if or $rdsOn $cloudsqlOn }}
     max_attempts=450
     {{- else }}
     max_attempts=180
@@ -105,10 +106,10 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 5
-  # Windsor RDS/Cloud SQL path: kubelet blocks on Secret mounts until the
-  # instance + app-role are ready (5-15m+), then readiness + schema waits.
-  # Non-Windsor path stays at 20m.
-  activeDeadlineSeconds: {{ if $windsorOn }}3600{{ else }}1200{{ end }}
+  # RDS/Cloud SQL path: kubelet blocks on Secret mounts until the instance +
+  # app-role are ready (5-15m+), then readiness + schema waits.
+  # Other paths stay at 20m.
+  activeDeadlineSeconds: {{ if or $rdsOn $cloudsqlOn }}3600{{ else }}1200{{ end }}
   ttlSecondsAfterFinished: 600
   template:
     spec:
@@ -118,7 +119,7 @@ spec:
           image: postgres:15-alpine
           command: ["/bin/sh", "/scripts/bootstrap.sh"]
           env:
-            {{- if not $windsorOn }}
+            {{- if not (or $rdsOn $cloudsqlOn) }}
             - name: PGHOST
               value: {{ include "copia.database.host" . | quote }}
             - name: PGPORT
@@ -139,7 +140,7 @@ spec:
           volumeMounts:
             - name: script
               mountPath: /scripts
-            {{- if $windsorOn }}
+            {{- if or $rdsOn $cloudsqlOn }}
             - name: db-connection
               mountPath: /etc/db-connection
               readOnly: true
@@ -152,12 +153,19 @@ spec:
           configMap:
             name: {{ include "app.fullname" . }}-admin-bootstrap-script
             defaultMode: 0755
-        {{- if $windsorOn }}
+        {{- if $rdsOn }}
         - name: db-connection
           secret:
-            secretName: {{ include "copia.windsorDb.connectionSecretName" . }}
+            secretName: {{ include "copia.rds.connectionSecretName" . }}
         - name: app-credentials
           secret:
-            secretName: {{ include "copia.windsorDb.appCredentialsSecretName" . }}
+            secretName: {{ include "copia.rds.appCredentialsSecretName" . }}
+        {{- else if $cloudsqlOn }}
+        - name: db-connection
+          secret:
+            secretName: {{ include "copia.cloudsql.connectionSecretName" . }}
+        - name: app-credentials
+          secret:
+            secretName: {{ include "copia.cloudsql.appCredentialsSecretName" . }}
         {{- end }}
 {{- end }}

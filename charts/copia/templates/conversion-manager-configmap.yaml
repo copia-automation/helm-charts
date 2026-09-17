@@ -1,14 +1,18 @@
 {{- if and .Values.conversion_manager_service.configmap (eq .Values.conversion_manager_service.enabled true)}}
-{{- if eq "true" (include "copia.windsorDb.conversionManager.enabled" .) }}
-{{- $_ := include "copia.windsorDb.validate" . }}
+{{- $rdsCmOn := eq "true" (include "copia.rds.conversionManager.enabled" .) }}
+{{- $cloudsqlCmOn := eq "true" (include "copia.cloudsql.conversionManager.enabled" .) }}
+{{- if $rdsCmOn }}
+{{- $_ := include "copia.rds.validate" . }}
+{{- else if $cloudsqlCmOn }}
+{{- $_ := include "copia.cloudsql.validate" . }}
 {{- end }}
 {{- $cm := deepCopy .Values.conversion_manager_service.configmap }}
 {{- if eq "true" (include "copia.cnpg.enabled" .) }}
   {{- $_ := set $cm "DB_HOST" (include "copia.database.hostPort" .) }}
   {{- $_ := set $cm "DB_USER" (include "copia.cnpg.conversionManager.user" .) }}
   {{- $_ := set $cm "DB_NAME" (include "copia.cnpg.conversionManager.database" .) }}
-{{- else if eq "true" (include "copia.windsorDb.conversionManager.enabled" .) }}
-  {{- /* DB_HOST / DB_USER / DB_PASSWORD come from connection + Windsor app-credentials at runtime. */ -}}
+{{- else if or $rdsCmOn $cloudsqlCmOn }}
+  {{- /* DB_HOST / DB_USER / DB_PASSWORD come from connection + app-credentials at runtime. */ -}}
   {{- $_ := unset $cm "DB_HOST" }}
   {{- $_ := unset $cm "DB_USER" }}
   {{- $_ := set $cm "DB_NAME" (include "copia.cnpg.conversionManager.database" .) }}
