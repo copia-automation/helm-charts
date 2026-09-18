@@ -509,12 +509,12 @@
     "database": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Deprecated alias. Prefer rds.enabled for AWS RDS. Empty means a customer-provided HOST.",
+      "description": "Deprecated alias. Prefer rds.enabled for AWS RDS or cloudsql.enabled for GCP Cloud SQL. Empty means a customer-provided HOST.",
       "properties": {
         "provider": {
           "type": "string",
-          "enum": ["", "rds", "crossplane"],
-          "description": "Deprecated. \"rds\" or \"crossplane\" is the same as rds.enabled=true."
+          "enum": ["", "rds", "crossplane", "cloudsql"],
+          "description": "Deprecated. \"rds\" or \"crossplane\" is the same as rds.enabled=true. \"cloudsql\" is the same as cloudsql.enabled=true."
         }
       }
     },
@@ -578,6 +578,45 @@
       "type": "object",
       "additionalProperties": true,
       "description": "Deprecated. Use rds.*. crossplane.enabled still enables the RDS path."
+    },
+    "cloudsql": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Chart-provisioned Cloud SQL only. Leave disabled if the database already exists.",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "requireCRD": { "type": "boolean" },
+        "keepOnDelete": { "type": "boolean" },
+        "instanceName": { "type": "string" },
+        "appCredentialsSecretName": { "type": "string" },
+        "connectionSecretName": { "type": "string" },
+        "region": { "type": "string" },
+        "privateNetwork": { "type": "string" },
+        "encryptionKeyName": { "type": "string" },
+        "tier": { "type": "string" },
+        "edition": { "type": "string" },
+        "diskSize": { "type": "integer", "minimum": 10 },
+        "databaseVersion": { "type": "string" },
+        "deletionPolicy": { "type": "string" },
+        "deletionProtection": { "type": "boolean" },
+        "ipv4Enabled": { "type": "boolean" },
+        "adminUsername": { "type": "string" },
+        "adminCredentialsNamespace": { "type": "string" },
+        "conversionManager": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Second Cloud SQL DatabaseInstance for conversion-manager (own tier/size).",
+          "properties": {
+            "instanceName": { "type": "string" },
+            "tier": { "type": "string" },
+            "diskSize": { "type": "integer", "minimum": 10 },
+            "appCredentialsSecretName": { "type": "string" },
+            "connectionSecretName": { "type": "string" },
+            "adminUsername": { "type": "string" }
+          }
+        }
+      }
     },
 
     "resources": {

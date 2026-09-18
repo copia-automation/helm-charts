@@ -1,0 +1,189 @@
+suite: Test Cloud SQL DatabaseInstance
+templates:
+  - cloudsql-instance.yaml
+tests:
+  - it: renders nothing when disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: fails when enabled without the CRD
+    set:
+      database.provider: cloudsql
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - failedTemplate:
+          errorPattern: "sql.gcp.upbound.io/v1beta2"
+  - it: fails when enabled with an external database HOST
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+    set:
+      cloudsql.enabled: true
+      copia.config.database.HOST: postgres.example.com:5432
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - failedTemplate:
+          errorPattern: "omit copia.config.database.HOST"
+  - it: fails when region missing
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+    set:
+      database.provider: cloudsql
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - failedTemplate:
+          errorPattern: "region is required"
+  - it: fails when privateNetwork missing
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+    set:
+      database.provider: cloudsql
+      cloudsql.region: us-central1
+    asserts:
+      - failedTemplate:
+          errorPattern: "privateNetwork"
+  - it: fails when both cloudsql and cloudnativePG are enabled
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - postgresql.cnpg.io/v1
+    set:
+      cloudsql.enabled: true
+      cloudnativePG.enabled: true
+      copia.config.database.PASSWD: s3cret
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - failedTemplate:
+          errorPattern: "cannot both be enabled"
+  - it: fails when both cloudsql and rds are enabled
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - rds.aws.upbound.io/v1beta3
+    set:
+      cloudsql.enabled: true
+      rds.enabled: true
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: cluster-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "cannot both be enabled"
+  - it: renders Copia DatabaseInstance User and Database with private IP
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+    set:
+      database.provider: cloudsql
+      cloudsql.instanceName: copia-poc-pg
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/staging/global/networks/vpc
+      cloudsql.tier: db-custom-2-7680
+      cloudsql.diskSize: 100
+      cloudsql.encryptionKeyName: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
+    asserts:
+      - hasDocuments:
+          count: 3
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: metadata.name
+          value: copia-poc-pg
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.writeConnectionSecretToRef.name
+          value: copia-poc-pg-connection
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.settings.tier
+          value: db-custom-2-7680
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.settings.diskSize
+          value: 100
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.settings.ipConfiguration.ipv4Enabled
+          value: false
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.settings.ipConfiguration.privateNetwork
+          value: projects/staging/global/networks/vpc
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.encryptionKeyName
+          value: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
+      - documentSelector:
+          path: kind
+          value: User
+        equal:
+          path: spec.forProvider.passwordSecretRef.name
+          value: copia-poc-pg-admin-credentials
+      - documentSelector:
+          path: kind
+          value: User
+        equal:
+          path: spec.forProvider.passwordSecretRef.namespace
+          value: system-provisioning
+      - documentSelector:
+          path: kind
+          value: Database
+        equal:
+          path: spec.forProvider.name
+          value: copia
+      - documentSelector:
+          path: kind
+          value: Database
+        equal:
+          path: spec.forProvider.instanceRef.name
+          value: copia-poc-pg
+  - it: renders a second instance set for conversion-manager with own sizing
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+    set:
+      database.provider: cloudsql
+      conversion_manager_service.enabled: true
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/staging/global/networks/vpc
+      cloudsql.tier: db-custom-2-7680
+      cloudsql.diskSize: 100
+      cloudsql.conversionManager.tier: db-f1-micro
+      cloudsql.conversionManager.diskSize: 20
+    asserts:
+      - hasDocuments:
+          count: 6
+  - it: accepts gcpCloudSQL.enabled alias
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+    set:
+      gcpCloudSQL.enabled: true
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        isKind:
+          of: DatabaseInstance

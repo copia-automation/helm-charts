@@ -52,11 +52,12 @@ spec:
       {{- $autoGen := and (hasKey .Values.copia "config") $secretsOn }}
       {{- $cnpgOn := eq "true" (include "copia.cnpg.enabled" .) }}
       {{- $rdsOn := eq "true" (include "copia.rds.enabled" .) }}
-      {{- $renderIni := or $autoGen $rdsOn }}
-      {{- $waitPg := and .Values.copia.config (or .Values.deployment.preflight $cnpgOn $rdsOn) }}
+      {{- $cloudsqlOn := eq "true" (include "copia.cloudsql.enabled" .) }}
+      {{- $renderIni := or $autoGen $rdsOn $cloudsqlOn }}
+      {{- $waitPg := and .Values.copia.config (or .Values.deployment.preflight $cnpgOn $rdsOn $cloudsqlOn) }}
       {{- if or $waitPg $renderIni }}
       initContainers:
-        {{- if and $waitPg (not $rdsOn) }}
+        {{- if and $waitPg (not $rdsOn) (not $cloudsqlOn) }}
         {{- $sslMode := "prefer" }}
         {{- if and .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
         {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
@@ -71,7 +72,7 @@ spec:
           "sslMode" $sslMode
         ) | nindent 8 }}
         {{- end }}
-        {{- if $rdsOn }}
+        {{- if or $rdsOn $cloudsqlOn }}
         {{- $sslMode := "require" }}
         {{- if and .Values.copia.config .Values.copia.config.database .Values.copia.config.database.SSL_MODE }}
         {{- $sslMode = .Values.copia.config.database.SSL_MODE }}
@@ -160,7 +161,7 @@ spec:
             - name: conversion-manager-secrets
               mountPath: /tmp/cm-secrets
             {{- end }}
-            {{- if $rdsOn }}
+            {{- if or $rdsOn $cloudsqlOn }}
             - name: db-connection
               mountPath: /tmp/db-connection
               readOnly: true
@@ -280,13 +281,13 @@ spec:
       volumes:
         {{- if (hasKey .Values.copia "config") }}
         - name: config
-          {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) (eq "true" (include "copia.rds.enabled" .)) }}
+          {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) $rdsOn $cloudsqlOn }}
           emptyDir: {}
           {{- else }}
           secret:
             secretName: {{ include "app.fullname" . }}-ini
           {{- end }}
-        {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) (eq "true" (include "copia.rds.enabled" .)) }}
+        {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) $rdsOn $cloudsqlOn }}
         - name: app-ini-template
           secret:
             secretName: {{ include "app.fullname" . }}-ini
@@ -299,13 +300,20 @@ spec:
           secret:
             secretName: conversion-manager-secrets
         {{- end }}
-        {{- if eq "true" (include "copia.rds.enabled" .) }}
+        {{- if $rdsOn }}
         - name: db-connection
           secret:
             secretName: {{ include "copia.rds.connectionSecretName" . }}
         - name: app-credentials
           secret:
             secretName: {{ include "copia.rds.appCredentialsSecretName" . }}
+        {{- else if $cloudsqlOn }}
+        - name: db-connection
+          secret:
+            secretName: {{ include "copia.cloudsql.connectionSecretName" . }}
+        - name: app-credentials
+          secret:
+            secretName: {{ include "copia.cloudsql.appCredentialsSecretName" . }}
         {{- end }}
         {{- end }}
         {{- if .Values.extraVolumes }}

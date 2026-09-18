@@ -46,6 +46,11 @@ Copia needs PostgreSQL. Supported layouts:
   chart emits `Instance` CRs. Omit `HOST` / `PASSWD` and set `rds.enabled: true`.
   If RDS already exists, use **Existing Postgres** instead. See
   [Crossplane Config](./crossplane.md).
+- **Chart-provisioned GCP Cloud SQL**: only when this chart should create
+  the Cloud SQL instance. Platform installs Crossplane; the chart emits
+  `DatabaseInstance` CRs. Omit `HOST` / `PASSWD` and set `cloudsql.enabled: true`.
+  If Cloud SQL already exists, use **Existing Postgres** instead. See
+  [Cloud SQL Config](./cloudsql.md).
 
 Do not use `CORE_ADDONS__DATABASE__*` with Core `v0.7.0`.
 
