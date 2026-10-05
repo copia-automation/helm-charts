@@ -314,6 +314,11 @@ rds:
   instanceClass: db.t4g.micro
   allocatedStorage: 20
   engineVersion: "16"
+  # KMS key ARN. Two sources:
+  # - Windsor: leave empty. When database.postgres.cloud.encryption.managed or
+  #   key_id is set, admission injects kmsKeyId on every Instance.
+  # - BYO: set the ARN of a key created outside Windsor. Written on every
+  #   Instance this chart creates, and kept if Windsor would also inject one.
   kmsKeyId: ""
   deletionPolicy: Delete
   skipFinalSnapshot: true
@@ -357,8 +362,14 @@ cloudsql:
   appCredentialsSecretName: ""
   connectionSecretName: ""
   region: ""
-  # Platform Terraform network_id, e.g. projects/<project>/global/networks/<vpc>
+  # Leave empty for Windsor admission to inject the context network. Set this
+  # only to use a different private network.
   privateNetwork: ""
+  # Cloud KMS CryptoKey resource name. Two sources:
+  # - Windsor: leave empty. When database.postgres.cloud.encryption.managed or
+  #   key_id is set, admission injects the key on every DatabaseInstance.
+  # - BYO: set a key created outside Windsor. Written on every DatabaseInstance
+  #   this chart creates, and kept if Windsor would also inject one.
   encryptionKeyName: ""
   tier: db-f1-micro
   # ENTERPRISE is required for db-f1-micro; Enterprise Plus rejects it.
@@ -368,9 +379,6 @@ cloudsql:
   deletionPolicy: Delete
   deletionProtection: false
   ipv4Enabled: false
-  # Must match the username in <instanceName>-admin-credentials
-  adminUsername: ""
-  adminCredentialsNamespace: system-provisioning
   # Second DatabaseInstance when conversion_manager_service.enabled (own tier).
   conversionManager:
     instanceName: ""
@@ -378,5 +386,4 @@ cloudsql:
     diskSize: 20
     appCredentialsSecretName: ""
     connectionSecretName: ""
-    adminUsername: ""
 

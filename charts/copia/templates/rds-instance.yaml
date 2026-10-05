@@ -24,6 +24,7 @@
 {{- if hasKey .Values.rds "publiclyAccessible" }}
 {{- $public = .Values.rds.publiclyAccessible }}
 {{- end }}
+{{- /* Omit when empty so Windsor can inject. A set value is a BYO key and is kept. */ -}}
 {{- $kms := .Values.rds.kmsKeyId | default "" }}
 ---
 # Cluster-scoped managed resource (Windsor provisioning contract). Platform

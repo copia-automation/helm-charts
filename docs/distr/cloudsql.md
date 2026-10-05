@@ -1,8 +1,9 @@
 # GCP Cloud SQL via Crossplane
 
 This guide covers provisioning Copia's Postgres on **GCP Cloud SQL**. The chart
-emits `sql.gcp.upbound.io` **DatabaseInstance**, **Database**, and **User** CRs.
-It does **not** install Crossplane or the GCP provider.
+emits a `sql.gcp.upbound.io` **DatabaseInstance** and **Database**, plus a
+`database.windsorcli.dev` **AppRole**. It does **not** install Crossplane,
+the GCP provider, or the Windsor database components.
 
 If you already created Cloud SQL (Terraform, console, another chart), do not
 follow this guide. Leave `cloudsql.enabled` false and set
@@ -12,23 +13,22 @@ For local/docker, keep using CloudNativePG (`cloudnativePG.enabled`).
 
 ## Prerequisites
 
-Crossplane and `provider-gcp-sql` must already be installed, with a usable
-`ProviderConfig`. The User CR reads `<instance>-admin-credentials` from
-`system-provisioning` (username + password). App login uses
-`<instance>-app-credentials` in the release namespace; the chart does not
-create that Secret.
+Enable Windsor cloud Postgres with the Cloud SQL driver first. It installs
+Crossplane, `provider-gcp-sql`, the `AppRole` API, admission policies, and the
+database credential controllers. Windsor creates the Cloud SQL admin user.
+The chart's `AppRole` creates a scoped application user and writes
+`<instance>-app-credentials` in the release namespace.
 
 ## Customer values
 
 Enable Cloud SQL and **omit** `HOST` / `PASSWD` (and CM `DB_HOST` / `DB_PASSWORD`).
-Supply region and private network from platform outputs:
+Supply the region and instance sizing. Windsor injects the context project and
+private network:
 
 ```yaml
 cloudsql:
   enabled: true
   region: us-central1
-  privateNetwork: projects/my-project/global/networks/my-vpc
-  encryptionKeyName: projects/my-project/locations/us-central1/keyRings/cloudsql/cryptoKeys/cloudsql
   tier: db-custom-2-7680
   diskSize: 100
   # Optional second DatabaseInstance sizing when conversion-manager is enabled:
@@ -39,7 +39,7 @@ conversion_manager_service:
   enabled: true
   configmap:
     DB_NAME: conversion_manager
-    # omit DB_HOST / DB_USER. Filled at runtime from Secrets
+    # omit DB_HOST / DB_USER. Filled at runtime from Secrets.
 adminUser:
   create: true
   username: admin
@@ -54,13 +54,43 @@ copia:
 
 Do **not** enable `cloudnativePG` or `rds` at the same time.
 
+## Encryption at rest
+
+Each `DatabaseInstance` this chart creates (Copia and conversion-manager) uses
+one key. Pick one source.
+
+Windsor context. Leave `cloudsql.encryptionKeyName` empty. Set `managed: true`
+to let Windsor create a key, or set `key_id` to a CryptoKey created outside
+Windsor. Admission injects the resulting `encryptionKeyName` onto every
+`DatabaseInstance` that omits it.
+
+```yaml
+database:
+  postgres:
+    cloud:
+      encryption:
+        managed: true
+        # A key created outside Windsor overrides managed:
+        # key_id: projects/my-project/locations/us-central1/keyRings/my-ring/cryptoKeys/my-key
+```
+
+Chart override. If the customer cannot put its key in the Windsor context,
+set the externally created CryptoKey on the chart. The same value is written
+on every `DatabaseInstance`. Admission keeps a chart-set key.
+
+```yaml
+cloudsql:
+  encryptionKeyName: projects/my-project/locations/us-central1/keyRings/cloudsql/cryptoKeys/cloudsql
+```
+
+See [Windsor Cloud SQL encryption](https://github.com/windsorcli/core/blob/main/docs/guides/database/cloudsql.md).
+
 ## How the chart behaves
 
-1. Helm applies one `DatabaseInstance` + `User` + `Database` for Copia (and a
-   second set for conversion-manager when CM is enabled). Resources are
-   cluster-scoped.
-2. The User CR reads `<instance>-admin-credentials` from
-   `system-provisioning`. Apps do not use the admin user.
+1. Helm applies one `DatabaseInstance`, `Database`, and namespaced `AppRole`
+   for Copia, plus a second set when conversion-manager is enabled.
+2. Windsor creates the admin user. Each `AppRole` creates a scoped login and
+   `<instance>-app-credentials` in the release namespace.
 3. `writeConnectionSecretToRef` publishes host/port into
    `<instance>-connection` in the release namespace.
 4. Deployment init waits until that Secret and `<instance>-app-credentials`
@@ -76,7 +106,6 @@ helm upgrade --install copia-poc ./charts/copia -n crossplane-poc --create-names
   --values charts/copia/distr/values.base.yaml \
   --set cloudsql.enabled=true \
   --set cloudsql.region=us-central1 \
-  --set cloudsql.privateNetwork=projects/PROJECT/global/networks/NETWORK \
   --set cloudsql.tier=db-f1-micro \
   --set cloudsql.diskSize=20 \
   --set conversion_manager_service.enabled=true \
@@ -100,5 +129,6 @@ kubectl logs -n crossplane-poc -l app.kubernetes.io/name=copia -c copia-wait-db
 
 ```bash
 helm uninstall copia-poc -n crossplane-poc
-kubectl delete databaseinstance.sql.gcp.upbound.io --all
+kubectl delete databaseinstance.sql.gcp.upbound.io \
+  -l copia.io/helm-release=copia-poc
 ```

@@ -37,13 +37,17 @@ cloudnativePG:
 #   region: us-east-2
 #   dbSubnetGroupName: mycluster-crossplane-rds
 #   vpcSecurityGroupIds: ["sg-aaa"]
+#   # BYO key created outside Windsor. Omit when the Windsor context supplies one.
+#   # kmsKeyId: arn:aws:kms:us-east-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
 # Chart-managed GCP Cloud SQL (this chart creates the instance). Skip this
 # entire block if you already have Cloud SQL. Set HOST below instead.
 # cloudsql:
 #   enabled: true
 #   region: us-central1
-#   privateNetwork: projects/my-project/global/networks/my-vpc
-#   encryptionKeyName: projects/my-project/locations/us-central1/keyRings/cloudsql/cryptoKeys/cloudsql
+#   # Optional override. Omit to use the network Windsor injects.
+#   # privateNetwork: projects/my-project/global/networks/my-vpc
+#   # BYO key created outside Windsor. Omit when the Windsor context supplies one.
+#   # encryptionKeyName: projects/my-project/locations/us-central1/keyRings/cloudsql/cryptoKeys/cloudsql
 copia:
   config:
     server:

@@ -539,7 +539,10 @@
         "instanceClass": { "type": "string" },
         "allocatedStorage": { "type": "integer", "minimum": 20 },
         "engineVersion": { "type": "string" },
-        "kmsKeyId": { "type": "string" },
+        "kmsKeyId": {
+          "type": "string",
+          "description": "KMS key ARN. Empty uses the Windsor context key. Set to bring a key created outside Windsor."
+        },
         "deletionPolicy": { "type": "string" },
         "skipFinalSnapshot": { "type": "boolean" },
         "deletionProtection": { "type": "boolean" },
@@ -593,7 +596,10 @@
         "connectionSecretName": { "type": "string" },
         "region": { "type": "string" },
         "privateNetwork": { "type": "string" },
-        "encryptionKeyName": { "type": "string" },
+        "encryptionKeyName": {
+          "type": "string",
+          "description": "CryptoKey name. Empty uses the Windsor key. Set for a key created outside Windsor."
+        },
         "tier": { "type": "string" },
         "edition": { "type": "string" },
         "diskSize": { "type": "integer", "minimum": 10 },
@@ -601,8 +607,6 @@
         "deletionPolicy": { "type": "string" },
         "deletionProtection": { "type": "boolean" },
         "ipv4Enabled": { "type": "boolean" },
-        "adminUsername": { "type": "string" },
-        "adminCredentialsNamespace": { "type": "string" },
         "conversionManager": {
           "type": "object",
           "additionalProperties": false,
@@ -612,8 +616,7 @@
             "tier": { "type": "string" },
             "diskSize": { "type": "integer", "minimum": 10 },
             "appCredentialsSecretName": { "type": "string" },
-            "connectionSecretName": { "type": "string" },
-            "adminUsername": { "type": "string" }
+            "connectionSecretName": { "type": "string" }
           }
         }
       }

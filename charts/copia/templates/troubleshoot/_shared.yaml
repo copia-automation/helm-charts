@@ -49,7 +49,7 @@
     customResourceDefinitionName: instances.rds.aws.upbound.io
     outcomes:
       - fail:
-          message: RDS Instance CRDs are not installed. Set database.postgres.driver=rds first.
+          message: RDS CRDs are not installed. Install provider-aws-rds before enabling rds.enabled.
       - pass:
           message: Crossplane AWS RDS Instance CRD is installed
 {{- else if $cloudsql }}
@@ -61,6 +61,14 @@
           message: Cloud SQL CRDs are not installed. Install provider-gcp-sql first.
       - pass:
           message: Crossplane GCP Cloud SQL DatabaseInstance CRD is installed
+- customResourceDefinition:
+    checkName: Windsor PostgreSQL AppRole CRD
+    customResourceDefinitionName: approles.database.windsorcli.dev
+    outcomes:
+      - fail:
+          message: AppRole CRD is not installed. Enable Windsor cloud Postgres first.
+      - pass:
+          message: Windsor PostgreSQL AppRole CRD is installed
 {{- else if and .Values.copia .Values.copia.config .Values.copia.config.database }}
 - postgres:
     checkName: Test Database Connection

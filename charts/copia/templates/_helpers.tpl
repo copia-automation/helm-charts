@@ -493,8 +493,8 @@ true
 {{/*
 Return "true" when the chart should emit GCP Cloud SQL DatabaseInstance CRs.
 Platform installs Crossplane + provider-gcp-sql; the chart creates
-DatabaseInstance, Database, and User. Apps wait on <instance>-app-credentials
-and <instance>-connection in the release namespace.
+DatabaseInstance, Database, and AppRole. Apps wait on
+<instance>-app-credentials and <instance>-connection in the release namespace.
 
 Enable with cloudsql.enabled=true. Aliases: database.provider=cloudsql,
 gcpCloudSQL.enabled, or cloudSQL.enabled.
@@ -530,6 +530,10 @@ true
 {{- end }}
 {{- end -}}
 
+{{- define "copia.cloudsql.appRoleName" -}}
+{{- printf "%s-app" (include "copia.cloudsql.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end -}}
+
 {{- define "copia.cloudsql.appCredentialsSecretName" -}}
 {{- if and .Values.cloudsql .Values.cloudsql.appCredentialsSecretName }}
 {{- .Values.cloudsql.appCredentialsSecretName }}
@@ -549,18 +553,6 @@ Host/port come from DatabaseInstance writeConnectionSecretToRef.
 {{- end }}
 {{- end -}}
 
-{{- define "copia.cloudsql.adminCredentialsSecretName" -}}
-{{- printf "%s-admin-credentials" (include "copia.cloudsql.instanceName" .) | trunc 63 | trimSuffix "-" }}
-{{- end -}}
-
-{{- define "copia.cloudsql.adminUsername" -}}
-{{- if and .Values.cloudsql .Values.cloudsql.adminUsername }}
-{{- .Values.cloudsql.adminUsername }}
-{{- else }}
-{{- include "copia.database.user" . }}
-{{- end }}
-{{- end -}}
-
 {{- define "copia.cloudsql.conversionManager.enabled" -}}
 {{- if eq "true" (include "copia.cloudsql.enabled" .) -}}
 {{- if and .Values.conversion_manager_service .Values.conversion_manager_service.enabled -}}
@@ -577,6 +569,10 @@ true
 {{- end }}
 {{- end -}}
 
+{{- define "copia.cloudsql.conversionManager.appRoleName" -}}
+{{- printf "%s-app" (include "copia.cloudsql.conversionManager.instanceName" .) | trunc 63 | trimSuffix "-" }}
+{{- end -}}
+
 {{- define "copia.cloudsql.conversionManager.appCredentialsSecretName" -}}
 {{- if and .Values.cloudsql .Values.cloudsql.conversionManager .Values.cloudsql.conversionManager.appCredentialsSecretName }}
 {{- .Values.cloudsql.conversionManager.appCredentialsSecretName }}
@@ -590,18 +586,6 @@ true
 {{- .Values.cloudsql.conversionManager.connectionSecretName }}
 {{- else }}
 {{- printf "%s-connection" (include "copia.cloudsql.conversionManager.instanceName" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end -}}
-
-{{- define "copia.cloudsql.conversionManager.adminCredentialsSecretName" -}}
-{{- printf "%s-admin-credentials" (include "copia.cloudsql.conversionManager.instanceName" .) | trunc 63 | trimSuffix "-" }}
-{{- end -}}
-
-{{- define "copia.cloudsql.conversionManager.adminUsername" -}}
-{{- if and .Values.cloudsql .Values.cloudsql.conversionManager .Values.cloudsql.conversionManager.adminUsername }}
-{{- .Values.cloudsql.conversionManager.adminUsername }}
-{{- else }}
-{{- include "copia.cnpg.conversionManager.user" . }}
 {{- end }}
 {{- end -}}
 
@@ -628,13 +612,6 @@ true
 {{- end -}}
 {{- if empty $region -}}
 {{- fail "cloudsql.region is required." -}}
-{{- end -}}
-{{- $network := "" -}}
-{{- if and .Values.cloudsql .Values.cloudsql.privateNetwork -}}
-{{- $network = .Values.cloudsql.privateNetwork | toString -}}
-{{- end -}}
-{{- if empty $network -}}
-{{- fail "cloudsql.privateNetwork is required (platform Terraform network_id)." -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
