@@ -1,0 +1,246 @@
+suite: Test Cloud SQL DatabaseInstance
+templates:
+  - cloudsql-instance.yaml
+tests:
+  - it: renders nothing when disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: fails when enabled without the CRD
+    set:
+      database.provider: cloudsql
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - failedTemplate:
+          errorPattern: "sql.gcp.upbound.io/v1beta2"
+  - it: fails when the Windsor AppRole CRD is missing
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+    set:
+      database.provider: cloudsql
+      cloudsql.region: us-central1
+    asserts:
+      - failedTemplate:
+          errorPattern: "database.windsorcli.dev/v1alpha1"
+  - it: fails when enabled with an external database HOST
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - database.windsorcli.dev/v1alpha1
+    set:
+      cloudsql.enabled: true
+      copia.config.database.HOST: postgres.example.com:5432
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - failedTemplate:
+          errorPattern: "omit copia.config.database.HOST"
+  - it: fails when region missing
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - database.windsorcli.dev/v1alpha1
+    set:
+      database.provider: cloudsql
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - failedTemplate:
+          errorPattern: "region is required"
+  - it: omits platform-injected network and encryption fields
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - database.windsorcli.dev/v1alpha1
+    set:
+      database.provider: cloudsql
+      cloudsql.region: us-central1
+    asserts:
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        notExists:
+          path: spec.forProvider.settings.ipConfiguration.privateNetwork
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        notExists:
+          path: spec.forProvider.encryptionKeyName
+  - it: fails when both cloudsql and cloudnativePG are enabled
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - database.windsorcli.dev/v1alpha1
+        - postgresql.cnpg.io/v1
+    set:
+      cloudsql.enabled: true
+      cloudnativePG.enabled: true
+      copia.config.database.PASSWD: s3cret
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - failedTemplate:
+          errorPattern: "cannot both be enabled"
+  - it: fails when both cloudsql and rds are enabled
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - database.windsorcli.dev/v1alpha1
+        - rds.aws.upbound.io/v1beta3
+    set:
+      cloudsql.enabled: true
+      rds.enabled: true
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+      rds.region: us-east-2
+      rds.dbSubnetGroupName: cluster-crossplane-rds
+      rds.vpcSecurityGroupIds: ["sg-a"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "cannot both be enabled"
+  - it: renders Copia DatabaseInstance Database and AppRole with overrides
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - database.windsorcli.dev/v1alpha1
+    set:
+      database.provider: cloudsql
+      cloudsql.instanceName: copia-poc-pg
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/staging/global/networks/vpc
+      cloudsql.tier: db-custom-2-7680
+      cloudsql.diskSize: 100
+      cloudsql.encryptionKeyName: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
+    asserts:
+      - hasDocuments:
+          count: 3
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: metadata.name
+          value: copia-poc-pg
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.writeConnectionSecretToRef.name
+          value: copia-poc-pg-connection
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.settings.tier
+          value: db-custom-2-7680
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.settings.diskSize
+          value: 100
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.settings.ipConfiguration.ipv4Enabled
+          value: false
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.settings.ipConfiguration.privateNetwork
+          value: projects/staging/global/networks/vpc
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        equal:
+          path: spec.forProvider.encryptionKeyName
+          value: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
+      - documentSelector:
+          path: kind
+          value: AppRole
+        equal:
+          path: metadata.name
+          value: copia-poc-pg-app
+      - documentSelector:
+          path: kind
+          value: AppRole
+        equal:
+          path: spec.instanceName
+          value: copia-poc-pg
+      - documentSelector:
+          path: kind
+          value: AppRole
+        equal:
+          path: spec.databaseName
+          value: copia
+      - documentSelector:
+          path: kind
+          value: AppRole
+        equal:
+          path: spec.secretName
+          value: copia-poc-pg-app-credentials
+      - documentSelector:
+          path: kind
+          value: Database
+        equal:
+          path: spec.forProvider.name
+          value: copia
+      - documentSelector:
+          path: kind
+          value: Database
+        equal:
+          path: spec.forProvider.instanceRef.name
+          value: copia-poc-pg
+  - it: renders a second instance set for conversion-manager with own sizing
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - database.windsorcli.dev/v1alpha1
+    set:
+      database.provider: cloudsql
+      conversion_manager_service.enabled: true
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/staging/global/networks/vpc
+      cloudsql.tier: db-custom-2-7680
+      cloudsql.diskSize: 100
+      cloudsql.encryptionKeyName: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
+      cloudsql.conversionManager.tier: db-f1-micro
+      cloudsql.conversionManager.diskSize: 20
+    asserts:
+      - hasDocuments:
+          count: 6
+      - documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-copia-pg
+        equal:
+          path: spec.forProvider.encryptionKeyName
+          value: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
+      - documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-copia-cm-pg
+        equal:
+          path: spec.forProvider.encryptionKeyName
+          value: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
+      - documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-copia-cm-pg
+        equal:
+          path: metadata.labels["copia.io/helm-release"]
+          value: RELEASE-NAME
+  - it: accepts gcpCloudSQL.enabled alias
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+        - database.windsorcli.dev/v1alpha1
+    set:
+      gcpCloudSQL.enabled: true
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+    asserts:
+      - documentSelector:
+          path: kind
+          value: DatabaseInstance
+        isKind:
+          of: DatabaseInstance
