@@ -172,17 +172,4 @@ jobs:
           chart-version: ${{ inputs.chart-version }}
           base-values-file: ${{ github.workspace }}/charts/copia/distr/values.base.yaml
           template-file: ${{ github.workspace }}/charts/copia/distr/values.customer.example.yaml
-          resources: |
-            [
-              {
-                "name": "Install Guide",
-                "path": "${{ github.workspace }}/docs/distr/install.md",
-                "visibleToCustomers": true
-              },
-              {
-                "name": "CloudNativePG Config",
-                "path": "${{ github.workspace }}/docs/distr/cloudnativepg.md",
-                "visibleToCustomers": true
-              }
-            ]
           update-deployments: false

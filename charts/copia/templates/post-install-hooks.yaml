@@ -1,5 +1,26 @@
 {{- if and .Values.adminUser .Values.adminUser.create }}
+{{- $generate := false }}
+{{- if .Values.adminUser.generatePassword }}
+{{- $generate = true }}
+{{- end }}
+{{- $password := .Values.adminUser.password | default "" | toString }}
+{{- $secretCfg := .Values.adminUser.passwordSecret | default dict }}
+{{- $writeSecret := false }}
+{{- if $secretCfg.enabled }}
+{{- $writeSecret = true }}
+{{- end }}
+{{- if and $generate (ne $password "") }}
+{{- fail "adminUser.generatePassword cannot be combined with adminUser.password" }}
+{{- end }}
+{{- if and (not $generate) (eq $password "") }}
+{{- fail "adminUser.create requires adminUser.password or adminUser.generatePassword" }}
+{{- end }}
+{{- if and $generate (not $writeSecret) }}
+{{- fail "adminUser.generatePassword requires adminUser.passwordSecret.enabled" }}
+{{- end }}
 {{- $rdsOn := eq "true" (include "copia.rds.enabled" .) }}
+{{- $hookPolicy := "before-hook-creation,hook-succeeded,hook-failed" }}
+{{- $secretName := include "copia.admin.passwordSecretName" . }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -9,12 +30,15 @@ metadata:
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "0"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-delete-policy": {{ $hookPolicy | quote }}
 data:
   bootstrap.sh: |
     #!/bin/sh
     set -eu
     apk add --no-cache argon2 >/dev/null
+    {{- if $writeSecret }}
+    apk add --no-cache ca-certificates kubectl >/dev/null
+    {{- end }}
 
     {{- if $rdsOn }}
     CONN=/etc/db-connection
@@ -67,6 +91,32 @@ data:
       echo "admin already exists, skipping"; exit 0
     fi
 
+    if [ "${GENERATE_PASSWORD:-false}" = "true" ]; then
+      ADMIN_PASSWORD=$(head -c 24 /dev/urandom | base64 | tr -d '/+=\n')
+    elif [ -z "${ADMIN_PASSWORD:-}" ]; then
+      echo "adminUser.password is empty" >&2
+      exit 1
+    fi
+
+    {{- if $writeSecret }}
+    write_admin_password_secret() {
+      umask 077
+      dir=$(mktemp -d)
+      printf '%s' "$ADMIN_USERNAME" > "$dir/username"
+      printf '%s' "$ADMIN_EMAIL" > "$dir/email"
+      printf '%s' "$ADMIN_PASSWORD" > "$dir/password"
+      kubectl create secret generic "$PASSWORD_SECRET_NAME" \
+        -n "$PASSWORD_SECRET_NAMESPACE" \
+        --from-file=username="$dir/username" \
+        --from-file=email="$dir/email" \
+        --from-file=password="$dir/password" \
+        --dry-run=client -o yaml | kubectl apply -f -
+      rm -rf "$dir"
+      echo "stored initial admin password in secret ${PASSWORD_SECRET_NAME}"
+    }
+    write_admin_password_secret
+    {{- end }}
+
     SALT=$(head -c 10 /dev/urandom | base64 | tr -d '/+=' | head -c 10)
     HASH=$(printf '%s' "$ADMIN_PASSWORD" | argon2 "$SALT" -id -t 2 -m 16 -p 8 -l 50 | awk '/Hash:/ {print $2}')
     AVATAR=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 64)
@@ -93,6 +143,50 @@ data:
     SQL
 
     echo "admin user $ADMIN_USERNAME created"
+{{- if $writeSecret }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "app.fullname" . }}-admin-bootstrap
+  labels: {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": {{ $hookPolicy | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "app.fullname" . }}-admin-bootstrap
+  labels: {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": {{ $hookPolicy | quote }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "app.fullname" . }}-admin-bootstrap
+  labels: {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": {{ $hookPolicy | quote }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "app.fullname" . }}-admin-bootstrap
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "app.fullname" . }}-admin-bootstrap
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -102,16 +196,19 @@ metadata:
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "10"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-delete-policy": {{ $hookPolicy | quote }}
 spec:
   backoffLimit: 5
   # RDS path: kubelet blocks on Secret mounts until Instance + app-role are ready
-  # (5–15m+), then readiness + schema waits. Non-RDS path stays at 20m.
+  # (5-15m+), then readiness + schema waits. Non-RDS path stays at 20m.
   activeDeadlineSeconds: {{ if $rdsOn }}3600{{ else }}1200{{ end }}
   ttlSecondsAfterFinished: 600
   template:
     spec:
       restartPolicy: OnFailure
+      {{- if $writeSecret }}
+      serviceAccountName: {{ include "app.fullname" . }}-admin-bootstrap
+      {{- end }}
       containers:
         - name: bootstrap
           image: postgres:15-alpine
@@ -133,8 +230,20 @@ spec:
               value: {{ .Values.adminUser.username | quote }}
             - name: ADMIN_EMAIL
               value: {{ .Values.adminUser.email | quote }}
+            - name: GENERATE_PASSWORD
+              value: {{ $generate | quote }}
+            {{- if not $generate }}
             - name: ADMIN_PASSWORD
-              value: {{ .Values.adminUser.password | quote }}
+              value: {{ $password | quote }}
+            {{- end }}
+            {{- if $writeSecret }}
+            - name: PASSWORD_SECRET_ENABLED
+              value: "true"
+            - name: PASSWORD_SECRET_NAME
+              value: {{ $secretName | quote }}
+            - name: PASSWORD_SECRET_NAMESPACE
+              value: {{ .Release.Namespace | quote }}
+            {{- end }}
           volumeMounts:
             - name: script
               mountPath: /scripts

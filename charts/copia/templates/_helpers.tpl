@@ -482,3 +482,19 @@ true
 {{- define "copia.crossplane.claimName" -}}
 {{- include "copia.rds.instanceName" . -}}
 {{- end -}}
+
+{{/*
+Secret written by the admin bootstrap Job when adminUser.passwordSecret.enabled.
+Keys: username, email, password.
+*/}}
+{{- define "copia.admin.passwordSecretName" -}}
+{{- $configured := "" -}}
+{{- if and .Values.adminUser .Values.adminUser.passwordSecret -}}
+{{- $configured = .Values.adminUser.passwordSecret.name | default "" -}}
+{{- end -}}
+{{- if $configured -}}
+{{- $configured | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-admin-password" (include "app.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}

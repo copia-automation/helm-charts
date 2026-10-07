@@ -1,0 +1,150 @@
+suite: Test admin bootstrap post-install hook
+templates:
+  - post-install-hooks.yaml
+tests:
+  - it: renders nothing when admin creation is disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders the script and job for a supplied password
+    set:
+      adminUser.create: true
+      adminUser.username: admin
+      adminUser.email: admin@example.com
+      adminUser.password: "Test-admin-password1"
+      copia.config.database.HOST: postgres.example.com:5432
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: hook can be re-run after a failure
+    set:
+      adminUser.create: true
+      adminUser.password: "Test-admin-password1"
+      copia.config.database.PASSWD: password
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: post-install,post-upgrade
+      - equal:
+          path: metadata.annotations["helm.sh/hook-delete-policy"]
+          value: before-hook-creation,hook-succeeded,hook-failed
+      - equal:
+          path: spec.template.spec.containers[0].env[7].name
+          value: GENERATE_PASSWORD
+      - equal:
+          path: spec.template.spec.containers[0].env[7].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[8].name
+          value: ADMIN_PASSWORD
+      - equal:
+          path: spec.template.spec.containers[0].env[8].value
+          value: "Test-admin-password1"
+      - notExists:
+          path: spec.template.spec.serviceAccountName
+
+  - it: skips an existing admin and does not check password complexity
+    set:
+      adminUser.create: true
+      adminUser.password: "Test-admin-password1"
+      copia.config.database.PASSWD: password
+    documentSelector:
+      path: kind
+      value: ConfigMap
+    asserts:
+      - matchRegex:
+          path: data["bootstrap.sh"]
+          pattern: "(?s)admin already exists, skipping.*INSERT INTO"
+      - notMatchRegex:
+          path: data["bootstrap.sh"]
+          pattern: "PASSWORD_COMPLEXITY|password_meets_policy|MIN_PASSWORD_LENGTH"
+      - notMatchRegex:
+          path: data["bootstrap.sh"]
+          pattern: "kubectl"
+
+  - it: generates a password and stores it in a Secret
+    set:
+      adminUser.create: true
+      adminUser.password: ""
+      adminUser.username: admin
+      adminUser.email: admin@example.com
+      adminUser.generatePassword: true
+      adminUser.passwordSecret.enabled: true
+      copia.config.database.PASSWD: password
+    asserts:
+      - hasDocuments:
+          count: 5
+
+  - it: password Secret job does not take a user password
+    set:
+      adminUser.create: true
+      adminUser.password: ""
+      adminUser.generatePassword: true
+      adminUser.passwordSecret.enabled: true
+      adminUser.passwordSecret.name: copia-initial-admin
+      copia.config.database.PASSWD: password
+    documentSelector:
+      path: kind
+      value: Job
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: RELEASE-NAME-copia-admin-bootstrap
+      - equal:
+          path: spec.template.spec.containers[0].env[7].value
+          value: "true"
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ADMIN_PASSWORD
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PASSWORD_SECRET_NAME
+            value: copia-initial-admin
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PASSWORD_COMPLEXITY
+
+  - it: password Secret role can write secrets
+    set:
+      adminUser.create: true
+      adminUser.password: ""
+      adminUser.generatePassword: true
+      adminUser.passwordSecret.enabled: true
+      copia.config.database.PASSWD: password
+    documentSelector:
+      path: kind
+      value: Role
+    asserts:
+      - equal:
+          path: rules[0].resources
+          value: ["secrets"]
+      - equal:
+          path: rules[0].verbs
+          value: ["get", "create", "update", "patch"]
+
+  - it: bootstrap script writes the secret before inserting the admin
+    set:
+      adminUser.create: true
+      adminUser.password: ""
+      adminUser.generatePassword: true
+      adminUser.passwordSecret.enabled: true
+      copia.config.database.PASSWD: password
+    documentSelector:
+      path: kind
+      value: ConfigMap
+    asserts:
+      - matchRegex:
+          path: data["bootstrap.sh"]
+          pattern: "(?s)head -c 24 /dev/urandom.*kubectl apply.*INSERT INTO"
+      - matchRegex:
+          path: data["bootstrap.sh"]
+          pattern: "stored initial admin password"
