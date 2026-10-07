@@ -20,8 +20,10 @@ chartGeneratedSecrets:
 #
 # Set password, or set generatePassword together with passwordSecret.enabled
 # and let the Job create one. Read it back with:
-#   kubectl get secret <fullname>-admin-password \
+#   kubectl get secret -n <namespace> <adminUser.passwordSecret.name> \
 #     -o jsonpath='{.data.password}' | base64 -d
+# Substitute the release namespace and adminUser.passwordSecret.name
+# (default <fullname>-admin-password).
 # Secret keys: username, email, password.
 adminUser:
   create: false

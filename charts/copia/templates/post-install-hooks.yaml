@@ -105,12 +105,24 @@ data:
       printf '%s' "$ADMIN_USERNAME" > "$dir/username"
       printf '%s' "$ADMIN_EMAIL" > "$dir/email"
       printf '%s' "$ADMIN_PASSWORD" > "$dir/password"
+      marker=copia-admin-bootstrap
+      label_key="app.kubernetes.io/managed-by"
+      if kubectl get secret "$PASSWORD_SECRET_NAME" -n "$PASSWORD_SECRET_NAMESPACE" >/dev/null 2>&1; then
+        managed=$(kubectl get secret "$PASSWORD_SECRET_NAME" -n "$PASSWORD_SECRET_NAMESPACE" \
+          -o "jsonpath={.metadata.labels['${label_key}']}")
+        if [ "$managed" != "$marker" ]; then
+          echo "secret ${PASSWORD_SECRET_NAME} exists and is not from admin bootstrap" >&2
+          exit 1
+        fi
+      fi
       kubectl create secret generic "$PASSWORD_SECRET_NAME" \
         -n "$PASSWORD_SECRET_NAMESPACE" \
         --from-file=username="$dir/username" \
         --from-file=email="$dir/email" \
         --from-file=password="$dir/password" \
-        --dry-run=client -o yaml | kubectl apply -f -
+        --dry-run=client -o yaml \
+        | kubectl label --local -f - "${label_key}=${marker}" -o yaml \
+        | kubectl apply -f -
       rm -rf "$dir"
       echo "stored initial admin password in secret ${PASSWORD_SECRET_NAME}"
     }
@@ -167,7 +179,12 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "create", "update", "patch"]
+    resourceNames:
+      - {{ $secretName | quote }}
+    verbs: ["get", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

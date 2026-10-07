@@ -119,6 +119,7 @@ tests:
       adminUser.password: ""
       adminUser.generatePassword: true
       adminUser.passwordSecret.enabled: true
+      adminUser.passwordSecret.name: copia-initial-admin
       copia.config.database.PASSWD: password
     documentSelector:
       path: kind
@@ -128,8 +129,19 @@ tests:
           path: rules[0].resources
           value: ["secrets"]
       - equal:
+          path: rules[0].resourceNames
+          value: ["copia-initial-admin"]
+      - equal:
           path: rules[0].verbs
-          value: ["get", "create", "update", "patch"]
+          value: ["get", "update", "patch"]
+      - equal:
+          path: rules[1].resources
+          value: ["secrets"]
+      - equal:
+          path: rules[1].verbs
+          value: ["create"]
+      - notExists:
+          path: rules[1].resourceNames
 
   - it: bootstrap script writes the secret before inserting the admin
     set:
@@ -145,6 +157,12 @@ tests:
       - matchRegex:
           path: data["bootstrap.sh"]
           pattern: "(?s)head -c 24 /dev/urandom.*kubectl apply.*INSERT INTO"
+      - matchRegex:
+          path: data["bootstrap.sh"]
+          pattern: "exists and is not from admin bootstrap"
+      - matchRegex:
+          path: data["bootstrap.sh"]
+          pattern: "app.kubernetes.io/managed-by"
       - matchRegex:
           path: data["bootstrap.sh"]
           pattern: "stored initial admin password"
