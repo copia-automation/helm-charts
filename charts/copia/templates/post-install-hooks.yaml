@@ -109,7 +109,7 @@ data:
       label_key="app.kubernetes.io/managed-by"
       if kubectl get secret "$PASSWORD_SECRET_NAME" -n "$PASSWORD_SECRET_NAMESPACE" >/dev/null 2>&1; then
         managed=$(kubectl get secret "$PASSWORD_SECRET_NAME" -n "$PASSWORD_SECRET_NAMESPACE" \
-          -o "jsonpath={.metadata.labels['${label_key}']}")
+          -o "jsonpath={.metadata.labels['app\\.kubernetes\\.io/managed-by']}")
         if [ "$managed" != "$marker" ]; then
           echo "secret ${PASSWORD_SECRET_NAME} exists and is not from admin bootstrap" >&2
           exit 1

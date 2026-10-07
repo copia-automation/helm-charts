@@ -165,4 +165,7 @@ tests:
           pattern: "app.kubernetes.io/managed-by"
       - matchRegex:
           path: data["bootstrap.sh"]
+          pattern: 'app\\\\\.kubernetes\\\\\.io/managed-by'
+      - matchRegex:
+          path: data["bootstrap.sh"]
           pattern: "stored initial admin password"
