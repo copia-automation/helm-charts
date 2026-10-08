@@ -1046,12 +1046,12 @@
     "adminUser": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Bootstrap an initial admin user via a post-install Helm hook.",
+      "description": "Bootstrap the first admin. helm upgrade re-runs a failed hook.",
       "required": ["create"],
       "properties": {
         "create": {
           "type": "boolean",
-          "description": "When true, run the post-install Job that creates an admin user in the database."
+          "description": "When true, run the Job that creates an admin user after the Gitea schema exists."
         },
         "username": {
           "type": "string",
@@ -1063,11 +1063,73 @@
         },
         "password": {
           "type": "string",
-          "minLength": 1
+          "description": "Initial password. Omit when generatePassword is true."
+        },
+        "generatePassword": {
+          "type": "boolean",
+          "description": "Generate the initial password instead of taking adminUser.password."
+        },
+        "passwordSecret": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Store the initial admin password in a Secret (keys: username, email, password).",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "name": {
+              "type": "string",
+              "description": "Secret name. Default is <fullname>-admin-password."
+            }
+          }
         }
       },
-      "if":   { "properties": { "create": { "const": true } } },
-      "then": { "required": ["username", "email", "password"] }
+      "allOf": [
+        {
+          "if": {
+            "properties": { "create": { "const": true } },
+            "required": ["create"]
+          },
+          "then": { "required": ["username", "email"] }
+        },
+        {
+          "if": {
+            "properties": {
+              "create": { "const": true },
+              "generatePassword": { "const": true }
+            },
+            "required": ["create", "generatePassword"]
+          },
+          "then": {
+            "required": ["passwordSecret"],
+            "properties": {
+              "password": { "maxLength": 0 },
+              "passwordSecret": {
+                "required": ["enabled"],
+                "properties": {
+                  "enabled": { "const": true }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["create"],
+            "properties": { "create": { "const": true } },
+            "not": {
+              "required": ["generatePassword"],
+              "properties": { "generatePassword": { "const": true } }
+            }
+          },
+          "then": {
+            "required": ["password"],
+            "properties": {
+              "password": { "minLength": 1 }
+            }
+          }
+        }
+      ]
     }
   }
 }
