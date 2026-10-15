@@ -30,7 +30,7 @@ data:
       done
       return 1
     }
-    host="$(read_file "$CONN" host endpoint address || true)"
+    host="$(read_file "$CONN" host endpoint address privateIP || true)"
     host="${host%%:*}"
     port="$(read_file "$CONN" port || echo 5432)"
     user="$(read_file "$APP" username user || true)"

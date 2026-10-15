@@ -103,7 +103,7 @@ spec:
                 return 1
               }
               if [ -d /tmp/db-connection ] && [ -d /tmp/app-credentials ]; then
-                host="$(read_secret /tmp/db-connection host endpoint address || true)"
+                host="$(read_secret /tmp/db-connection host endpoint address privateIP || true)"
                 host="${host%%:*}"
                 port="$(read_secret /tmp/db-connection port || echo 5432)"
                 user="$(read_secret /tmp/app-credentials username user || true)"
@@ -114,7 +114,7 @@ spec:
                 printf '%s' "$pass" > /tmp/db-mapped/XP_DB_PASSWD
                 printf '%s' "$dbname" > /tmp/db-mapped/XP_DB_NAME
               elif [ -d /tmp/db-secret ]; then
-                host="$(read_secret /tmp/db-secret host endpoint address || true)"
+                host="$(read_secret /tmp/db-secret host endpoint address privateIP || true)"
                 host="${host%%:*}"
                 port="$(read_secret /tmp/db-secret port || echo 5432)"
                 user="$(read_secret /tmp/db-secret user username || true)"
