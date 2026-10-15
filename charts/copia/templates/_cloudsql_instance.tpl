@@ -4,7 +4,7 @@ Emit DatabaseInstance + Database + AppRole for one Cloud SQL instance.
 Expects dict:
   root                  - chart context
   instanceName          - DatabaseInstance CR name (also GCP instance id)
-  databaseName          - Postgres database (Database CR forProvider.name)
+  databaseName          - Postgres database name (crossplane.io/external-name)
   appRoleName           - scoped Postgres application role
   appCredentialsSecretName - AppRole connection Secret
   connectionSecretName  - writeConnectionSecretToRef target
@@ -90,14 +90,16 @@ metadata:
     {{- else }}
     {{- include "app.labels" $root | nindent 4 }}
     {{- end }}
-  {{- if $cs.keepOnDelete }}
   annotations:
+    # provider-gcp-sql v3.1.0 has no spec.forProvider.name. The Postgres
+    # name is the external name; metadata.name stays a DNS-1123 label.
+    crossplane.io/external-name: {{ $db | quote }}
+    {{- if $cs.keepOnDelete }}
     helm.sh/resource-policy: keep
-  {{- end }}
+    {{- end }}
 spec:
   deletionPolicy: {{ $deletionPolicy }}
   forProvider:
-    name: {{ $db | quote }}
     instanceRef:
       name: {{ $instance }}
 ---

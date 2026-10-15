@@ -185,8 +185,13 @@ tests:
           path: kind
           value: Database
         equal:
-          path: spec.forProvider.name
+          path: metadata.annotations["crossplane.io/external-name"]
           value: copia
+      - documentSelector:
+          path: kind
+          value: Database
+        notExists:
+          path: spec.forProvider.name
       - documentSelector:
           path: kind
           value: Database
@@ -223,6 +228,12 @@ tests:
         equal:
           path: spec.forProvider.encryptionKeyName
           value: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
+      - documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-copia-cm-pg-db
+        equal:
+          path: metadata.annotations["crossplane.io/external-name"]
+          value: conversion_manager
       - documentSelector:
           path: metadata.name
           value: RELEASE-NAME-copia-cm-pg
