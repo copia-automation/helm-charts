@@ -67,6 +67,12 @@ jobs:
           fi
           git --no-pager diff --stat HEAD -- charts/copia | tail -1
 
+      # Install Helm before routing through the exit node, whose DNS has failed
+      # to resolve get.helm.sh.
+      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: v3.21.2
+
       - name: Connect to tailnet
         if: ${{ inputs.exit-node != '' }}
         uses: tailscale/github-action@780049a30b6ff5c378a9e7b389d15ece7a204888 # v4.1.3
@@ -82,10 +88,6 @@ jobs:
         run: |
           set -euo pipefail
           .github/scripts/route-via-exit-node.sh
-
-      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
-        with:
-          version: v3.21.2
 
       - name: Log in to registries
         env:
@@ -117,7 +119,11 @@ jobs:
           fi
           echo "application-id=${APP_ID}" >> "${GITHUB_OUTPUT}"
 
-      - name: Abort if the version already exists
+      # A release backfill can target a version one instance already has. The
+      # ApplicationVersion is created last, so its presence means the publish
+      # completed and the remaining steps are skipped.
+      - name: Check whether the version already exists
+        id: exists
         env:
           API_BASE: ${{ inputs.api-base }}
           APP_ID: ${{ steps.app.outputs.application-id }}
@@ -130,25 +136,46 @@ jobs:
             "${API_BASE}/applications/${APP_ID}")
           if printf '%s' "$app" \
               | jq -e --arg v "${CHART_VERSION}" '[.versions[]? | select(.name == $v)] | length > 0' >/dev/null; then
-            echo "::error::ApplicationVersion ${CHART_VERSION} already exists; nothing to publish" >&2
-            exit 1
+            echo "::notice::ApplicationVersion ${CHART_VERSION} already exists on ${API_BASE}; skipping publish"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # skopeo copies blobs registry to registry and its --debug output shows
+      # the registry's response. docker push against the Distr registries can
+      # fail with a bare BLOB_UNKNOWN and nothing else to go on.
       - name: Mirror images to Distr
+        if: ${{ steps.exists.outputs.exists != 'true' }}
         run: |
           set -euo pipefail
+          if ! command -v skopeo >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+          fi
           helm template mirror charts/copia --set conversion_manager_service.enabled=true > /tmp/rendered.yaml
           grep -oE 'ghcr\.io/copia-automation/[A-Za-z0-9._/-]+:[A-Za-z0-9._+-]+' /tmp/rendered.yaml | sort -u > /tmp/srcs.txt
           test -s /tmp/srcs.txt
           while IFS= read -r src; do
             dst="${DST}/${src#ghcr.io/copia-automation/}"
-            if docker manifest inspect "$dst" >/dev/null 2>&1; then continue; fi
-            docker pull "$src"
-            docker tag "$src" "$dst"
-            docker push "$dst"
+            if skopeo inspect --raw "docker://${dst}" >/dev/null 2>&1; then
+              echo "Already mirrored: ${dst}"
+              continue
+            fi
+            echo "::group::Mirror ${src} -> ${dst}"
+            if ! skopeo copy --retry-times 3 "docker://${src}" "docker://${dst}"; then
+              echo "::endgroup::"
+              echo "::group::Retry with --debug: ${dst}"
+              if ! skopeo --debug copy "docker://${src}" "docker://${dst}"; then
+                echo "::endgroup::"
+                echo "::error::Failed to mirror ${src} to ${dst}" >&2
+                exit 1
+              fi
+            fi
+            echo "::endgroup::"
           done < /tmp/srcs.txt
 
       - name: Publish chart to Distr
+        if: ${{ steps.exists.outputs.exists != 'true' }}
         env:
           CHART_VERSION: ${{ inputs.chart-version }}
         run: |
@@ -158,9 +185,11 @@ jobs:
           helm push copia-*.tgz "oci://${DST}"
 
       - name: Point base values at the target registry
+        if: ${{ steps.exists.outputs.exists != 'true' }}
         run: sed -i "s#__DISTR_REGISTRY__#${DST}#g" charts/copia/distr/values.base.yaml
 
       - name: Create ApplicationVersion
+        if: ${{ steps.exists.outputs.exists != 'true' }}
         uses: distr-sh/distr-create-version-action@f14d2ee8b9750e305b29c6047cc68afbf028e8e7 # v1.6.0
         with:
           api-token: ${{ secrets.DISTR_API_TOKEN }}
