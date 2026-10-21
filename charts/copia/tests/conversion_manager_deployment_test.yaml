@@ -207,4 +207,30 @@ tests:
       - equal:
           path: spec.template.spec.volumes[1].secret.secretName
           value: RELEASE-NAME-copia-cm-pg-app-credentials
+  - it: waits on app-credentials for Cloud SQL before starting
+    capabilities:
+      apiVersions:
+        - sql.gcp.upbound.io/v1beta2
+    set:
+      conversion_manager_service.enabled: true
+      database.provider: cloudsql
+      cloudsql.region: us-central1
+      cloudsql.privateNetwork: projects/p/global/networks/n
+      conversion_manager_service.configmap.DB_NAME: conversion_manager
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-postgres
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: app-credentials
+      - equal:
+          path: spec.template.spec.containers[0].command[0]
+          value: /bin/sh
+      - equal:
+          path: spec.template.spec.volumes[0].secret.secretName
+          value: RELEASE-NAME-copia-cm-pg-connection
+      - equal:
+          path: spec.template.spec.volumes[1].secret.secretName
+          value: RELEASE-NAME-copia-cm-pg-app-credentials
 

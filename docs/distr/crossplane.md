@@ -65,6 +65,35 @@ copia:
 
 Do **not** enable `cloudnativePG` at the same time.
 
+## Encryption at rest
+
+Each `Instance` this chart creates (Copia and conversion-manager) uses one
+key. Pick one source.
+
+Windsor context. Leave `rds.kmsKeyId` empty. When
+`database.postgres.cloud.encryption.managed` is true, or `key_id` is a KMS key
+ARN, admission injects `kmsKeyId` onto every `Instance` that omits it.
+
+```yaml
+database:
+  postgres:
+    cloud:
+      encryption:
+        managed: true
+        # key_id: arn:aws:kms:us-east-1:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+```
+
+Bring your own key. For a KMS key created outside Windsor, set its ARN on the
+chart. The same value is written on every `Instance`. Admission keeps a
+chart-set key when Windsor would also inject one.
+
+```yaml
+rds:
+  kmsKeyId: arn:aws:kms:us-east-1:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+```
+
+See [Windsor RDS encryption](https://github.com/windsorcli/core/blob/main/docs/guides/database/rds.md).
+
 ## How the chart behaves
 
 1. Helm applies one `Instance` for Copia (and a second for conversion-manager
