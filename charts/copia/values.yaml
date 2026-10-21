@@ -15,6 +15,24 @@ clusterDomain: cluster.local
 # plain `helm install` to skip the manual secret-generation step.
 chartGeneratedSecrets:
   enabled: false
+# First admin user. A post-install,post-upgrade Job creates it after the Gitea
+# schema exists. The first login prompts for a new password.
+#
+# Set password, or set generatePassword together with passwordSecret.enabled
+# and let the Job create one. Read it back with:
+#   kubectl get secret -n <namespace> <adminUser.passwordSecret.name> \
+#     -o jsonpath='{.data.password}' | base64 -d
+# Substitute the release namespace and adminUser.passwordSecret.name
+# (default <fullname>-admin-password).
+# Secret keys: username, email, password.
+adminUser:
+  create: false
+  username: admin
+  email: admin@example.com
+  generatePassword: false
+  passwordSecret:
+    enabled: false
+    # name: defaults to <fullname>-admin-password
 #Use this value "*copia_port" to reference the value of the copia_server_http_port when setting HTTP_PORT on the copia config.
 copia_server_http_port: &copia_port 4001
 conversion_manager_http_port: &cm_port 8888

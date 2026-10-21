@@ -3,6 +3,11 @@ adminUser:
   username: admin
   email: admin@example.com
   password: "{{ .Secrets.CopiaAdminPassword }}"
+  # Or omit password and let the chart generate one. Read it from the Secret
+  # (keys: username, email, password):
+  # generatePassword: true
+  # passwordSecret:
+  #   enabled: true
 persistence:
   size: 100Gi
 ingress:
