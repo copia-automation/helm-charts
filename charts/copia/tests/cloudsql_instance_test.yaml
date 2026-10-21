@@ -111,7 +111,6 @@ tests:
       cloudsql.privateNetwork: projects/staging/global/networks/vpc
       cloudsql.tier: db-custom-2-7680
       cloudsql.diskSize: 100
-      cloudsql.encryptionKeyName: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
     asserts:
       - hasDocuments:
           count: 3
@@ -151,12 +150,6 @@ tests:
         equal:
           path: spec.forProvider.settings.ipConfiguration.privateNetwork
           value: projects/staging/global/networks/vpc
-      - documentSelector:
-          path: kind
-          value: DatabaseInstance
-        equal:
-          path: spec.forProvider.encryptionKeyName
-          value: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
       - documentSelector:
           path: kind
           value: AppRole
@@ -210,24 +203,11 @@ tests:
       cloudsql.privateNetwork: projects/staging/global/networks/vpc
       cloudsql.tier: db-custom-2-7680
       cloudsql.diskSize: 100
-      cloudsql.encryptionKeyName: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
       cloudsql.conversionManager.tier: db-f1-micro
       cloudsql.conversionManager.diskSize: 20
     asserts:
       - hasDocuments:
           count: 6
-      - documentSelector:
-          path: metadata.name
-          value: RELEASE-NAME-copia-pg
-        equal:
-          path: spec.forProvider.encryptionKeyName
-          value: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
-      - documentSelector:
-          path: metadata.name
-          value: RELEASE-NAME-copia-cm-pg
-        equal:
-          path: spec.forProvider.encryptionKeyName
-          value: projects/staging/locations/us-central1/keyRings/k/cryptoKeys/k
       - documentSelector:
           path: metadata.name
           value: RELEASE-NAME-copia-cm-pg-db

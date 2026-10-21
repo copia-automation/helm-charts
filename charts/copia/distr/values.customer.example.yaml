@@ -51,8 +51,6 @@ cloudnativePG:
 #   region: us-central1
 #   # Optional override. Omit to use the network Windsor injects.
 #   # privateNetwork: projects/my-project/global/networks/my-vpc
-#   # BYO key created outside Windsor. Omit when the Windsor context supplies one.
-#   # encryptionKeyName: projects/my-project/locations/us-central1/keyRings/cloudsql/cryptoKeys/cloudsql
 copia:
   config:
     server:

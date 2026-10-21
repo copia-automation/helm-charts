@@ -35,8 +35,6 @@ Expects dict:
 {{- if hasKey $cs "ipv4Enabled" -}}
 {{- $ipv4 = $cs.ipv4Enabled -}}
 {{- end -}}
-{{- /* Omit when empty so Windsor can inject. A set value is a BYO key and is kept. */ -}}
-{{- $kms := $cs.encryptionKeyName | default "" -}}
 ---
 # Platform installs Crossplane + provider-gcp-sql; this chart defines the
 # instance. Windsor creates the admin user and the AppRole creates the scoped
@@ -65,9 +63,8 @@ spec:
     region: {{ $region | quote }}
     databaseVersion: {{ $version | quote }}
     deletionProtection: {{ $delProtect }}
-    {{- if $kms }}
-    encryptionKeyName: {{ $kms | quote }}
-    {{- end }}
+    # encryptionKeyName is injected by Windsor admission from
+    # database.postgres.cloud.encryption in the context.
     settings:
       # Enterprise unlocks db-f1-micro; Enterprise Plus rejects it.
       edition: {{ $edition | quote }}

@@ -383,12 +383,8 @@ cloudsql:
   # Leave empty for Windsor admission to inject the context network. Set this
   # only to use a different private network.
   privateNetwork: ""
-  # Cloud KMS CryptoKey resource name. Two sources:
-  # - Windsor: leave empty. When database.postgres.cloud.encryption.managed or
-  #   key_id is set, admission injects the key on every DatabaseInstance.
-  # - BYO: set a key created outside Windsor. Written on every DatabaseInstance
-  #   this chart creates, and kept if Windsor would also inject one.
-  encryptionKeyName: ""
+  # Encryption key: set database.postgres.cloud.encryption in the Windsor
+  # context. Admission injects encryptionKeyName on every DatabaseInstance.
   tier: db-f1-micro
   # ENTERPRISE is required for db-f1-micro; Enterprise Plus rejects it.
   edition: ENTERPRISE

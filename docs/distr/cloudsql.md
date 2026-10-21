@@ -56,13 +56,13 @@ Do **not** enable `cloudnativePG` or `rds` at the same time.
 
 ## Encryption at rest
 
-Each `DatabaseInstance` this chart creates (Copia and conversion-manager) uses
-one key. Pick one source.
+The chart never sets an encryption key. Configure it in the Windsor context.
+Admission injects the resulting `encryptionKeyName` onto every
+`DatabaseInstance` the chart creates, so Copia and conversion-manager share
+one key.
 
-Windsor context. Leave `cloudsql.encryptionKeyName` empty. Set `managed: true`
-to let Windsor create a key, or set `key_id` to a CryptoKey created outside
-Windsor. Admission injects the resulting `encryptionKeyName` onto every
-`DatabaseInstance` that omits it.
+Set `managed: true` to have Windsor create a key. Set `key_id` to use a
+CryptoKey created outside Windsor; it overrides `managed`.
 
 ```yaml
 database:
@@ -70,17 +70,7 @@ database:
     cloud:
       encryption:
         managed: true
-        # A key created outside Windsor overrides managed:
         # key_id: projects/my-project/locations/us-central1/keyRings/my-ring/cryptoKeys/my-key
-```
-
-Chart override. If the customer cannot put its key in the Windsor context,
-set the externally created CryptoKey on the chart. The same value is written
-on every `DatabaseInstance`. Admission keeps a chart-set key.
-
-```yaml
-cloudsql:
-  encryptionKeyName: projects/my-project/locations/us-central1/keyRings/cloudsql/cryptoKeys/cloudsql
 ```
 
 See [Windsor Cloud SQL encryption](https://github.com/windsorcli/core/blob/main/docs/guides/database/cloudsql.md).

@@ -596,10 +596,6 @@
         "connectionSecretName": { "type": "string" },
         "region": { "type": "string" },
         "privateNetwork": { "type": "string" },
-        "encryptionKeyName": {
-          "type": "string",
-          "description": "CryptoKey name. Empty uses the Windsor key. Set for a key created outside Windsor."
-        },
         "tier": { "type": "string" },
         "edition": { "type": "string" },
         "diskSize": { "type": "integer", "minimum": 10 },
