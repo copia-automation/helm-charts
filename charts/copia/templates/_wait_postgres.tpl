@@ -61,6 +61,7 @@ Init container that waits on Postgres using credentials from a connection Secret
 
 Secret keys (preferred): host, port, user, password, dbname
 Also accepts Crossplane defaults: endpoint/username (and optional attribute.*).
+Cloud SQL writeConnectionSecretToRef publishes the address as privateIP.
 Kubelet blocks start until required keys exist (optional: false).
 */}}
 {{- define "copia.waitPostgres.fromSecret.initContainer" -}}
@@ -81,9 +82,9 @@ Kubelet blocks start until required keys exist (optional: false).
         done
         return 1
       }
-      host="$(read_secret host endpoint address || true)"
+      host="$(read_secret host endpoint address privateIP || true)"
       if [ -z "${host}" ]; then
-        echo "missing host/endpoint in ${SECRET}; keys:" >&2
+        echo "missing host/endpoint/privateIP in ${SECRET}; keys:" >&2
         ls -1 "${SECRET}" >&2 || true
         exit 1
       fi
@@ -152,7 +153,7 @@ Kubelet blocks start until required keys exist (optional: false).
 Wait for RDS using Windsor app-role credentials + Instance connection Secret.
 
   app-credentials (Windsor CronJob): username, password
-  connection Secret (Instance writeConnectionSecretToRef): host/endpoint, port
+  connection Secret (Instance writeConnectionSecretToRef): host/endpoint, or privateIP on Cloud SQL. Port defaults to 5432.
 
 Database name comes from chart values (appDatabase), not the Secrets.
 */}}
@@ -176,9 +177,9 @@ Database name comes from chart values (appDatabase), not the Secrets.
         done
         return 1
       }
-      host="$(read_file "$CONN" host endpoint address || true)"
+      host="$(read_file "$CONN" host endpoint address privateIP || true)"
       if [ -z "${host}" ]; then
-        echo "missing host/endpoint in ${CONN}; keys:" >&2
+        echo "missing host/endpoint/privateIP in ${CONN}; keys:" >&2
         ls -1 "${CONN}" >&2 || true
         exit 1
       fi
