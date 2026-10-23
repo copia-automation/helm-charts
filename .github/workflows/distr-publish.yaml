@@ -67,8 +67,7 @@ jobs:
           fi
           git --no-pager diff --stat HEAD -- charts/copia | tail -1
 
-      # Install Helm before routing through the exit node, whose DNS has failed
-      # to resolve get.helm.sh.
+      # Install Helm before the exit-node route; get.helm.sh has failed to resolve through it.
       - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
           version: v3.21.2
@@ -119,9 +118,7 @@ jobs:
           fi
           echo "application-id=${APP_ID}" >> "${GITHUB_OUTPUT}"
 
-      # A release backfill can target a version one instance already has. The
-      # ApplicationVersion is created last, so its presence means the publish
-      # completed and the remaining steps are skipped.
+      # ApplicationVersion is created last, so if it exists the publish already finished and we skip.
       - name: Check whether the version already exists
         id: exists
         env:
@@ -142,9 +139,7 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # skopeo copies blobs registry to registry and its --debug output shows
-      # the registry's response. docker push against the Distr registries can
-      # fail with a bare BLOB_UNKNOWN and nothing else to go on.
+      # skopeo copies registry to registry; docker push to Distr fails with a bare BLOB_UNKNOWN.
       - name: Mirror images to Distr
         if: ${{ steps.exists.outputs.exists != 'true' }}
         run: |
