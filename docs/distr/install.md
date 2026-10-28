@@ -20,6 +20,8 @@ Configure these in the Distr customer portal:
 | **`CopiaDbPassword`** | Secrets (customer-scoped, not vendor-level) |
 | **`CopiaAdminPassword`** | Secrets |
 | **`ConversionManagerDbPassword`** | Secrets (if using conversion manager) |
+| **`ConversionManagerManagementToken`** | Secrets. Same value in Copia and conversion manager |
+| **`ConversionManagerWorkerToken`** | Secrets. Conversion-manager workers |
 | **Environment variables** | Deployments → your target → Environment tab |
 
 Required environment fields include hostname, database connection settings, and admin user

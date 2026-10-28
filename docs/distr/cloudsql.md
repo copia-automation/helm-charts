@@ -101,6 +101,7 @@ helm upgrade --install copia-poc ./charts/copia -n crossplane-poc --create-names
   --set conversion_manager_service.enabled=true \
   --set conversion_manager_service.configmap.DB_HOST= \
   --set chartGeneratedSecrets.enabled=true \
+  --set chartGeneratedSecrets.conversionManager.enabled=true \
   --set adminUser.create=true \
   --set adminUser.password='test-admin-password' \
   --set copia.config.database.HOST= \
