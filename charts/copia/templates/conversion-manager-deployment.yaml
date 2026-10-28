@@ -111,7 +111,7 @@ spec:
                 name: {{ include "app.conversion-manager.fullname" . }}-configmap
             - secretRef:
                 name: {{ include "app.conversion-manager.fullname" . }}-secret
-            {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+            {{- if eq "true" (include "copia.chartGeneratedSecrets.conversionManager" .) }}
             - secretRef:
                 name: conversion-manager-secrets
             {{- end }}

@@ -3,6 +3,9 @@ image:
   repository: __DISTR_REGISTRY__/copia-web-app-selfhosted-releases
 imagePullSecrets: []
 chartGeneratedSecrets:
+  # Gitea secrets. conversionManager.enabled is unset, so MANAGEMENT_TOKEN and
+  # WORKER_TOKEN are generated too. Set conversionManager.enabled false in
+  # customer values to supply those tokens yourself.
   enabled: true
 persistence:
   enabled: true

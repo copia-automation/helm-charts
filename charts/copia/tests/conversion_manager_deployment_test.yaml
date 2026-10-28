@@ -155,6 +155,28 @@ tests:
           content:
             secretRef:
               name: conversion-manager-secrets
+  - it: Test no extra envFrom when Gitea generation is on and conversion-manager tokens are off
+    set:
+      conversion_manager_service.enabled: true
+      chartGeneratedSecrets.enabled: true
+      chartGeneratedSecrets.conversionManager.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: conversion-manager-secrets
+  - it: Test extra envFrom when only conversion-manager token generation is on
+    set:
+      conversion_manager_service.enabled: true
+      chartGeneratedSecrets.enabled: false
+      chartGeneratedSecrets.conversionManager.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: conversion-manager-secrets
   - it: waits for CloudNativePG before starting
     set:
       conversion_manager_service.enabled: true

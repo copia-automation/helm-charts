@@ -48,7 +48,9 @@ spec:
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
-      {{- $secretsOn := and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+      {{- $giteaGen := eq "true" (include "copia.chartGeneratedSecrets.gitea" .) }}
+      {{- $cmGen := eq "true" (include "copia.chartGeneratedSecrets.conversionManager" .) }}
+      {{- $secretsOn := or $giteaGen $cmGen }}
       {{- $autoGen := and (hasKey .Values.copia "config") $secretsOn }}
       {{- $cnpgOn := eq "true" (include "copia.cnpg.enabled" .) }}
       {{- $rdsOn := eq "true" (include "copia.rds.enabled" .) }}
@@ -155,9 +157,11 @@ spec:
           volumeMounts:
             - name: app-ini-template
               mountPath: /tmp/template
-            {{- if $autoGen }}
+            {{- if $giteaGen }}
             - name: gitea-secrets
               mountPath: /tmp/secrets
+            {{- end }}
+            {{- if $cmGen }}
             - name: conversion-manager-secrets
               mountPath: /tmp/cm-secrets
             {{- end }}
@@ -281,21 +285,23 @@ spec:
       volumes:
         {{- if (hasKey .Values.copia "config") }}
         - name: config
-          {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) $rdsOn $cloudsqlOn }}
+          {{- if or $secretsOn $rdsOn $cloudsqlOn }}
           emptyDir: {}
           {{- else }}
           secret:
             secretName: {{ include "app.fullname" . }}-ini
           {{- end }}
-        {{- if or (and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled) $rdsOn $cloudsqlOn }}
+        {{- if or $secretsOn $rdsOn $cloudsqlOn }}
         - name: app-ini-template
           secret:
             secretName: {{ include "app.fullname" . }}-ini
         {{- end }}
-        {{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled }}
+        {{- if $giteaGen }}
         - name: gitea-secrets
           secret:
             secretName: {{ include "app.fullname" . }}-gitea-secrets
+        {{- end }}
+        {{- if $cmGen }}
         - name: conversion-manager-secrets
           secret:
             secretName: conversion-manager-secrets
