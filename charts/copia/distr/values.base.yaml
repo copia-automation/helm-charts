@@ -3,7 +3,11 @@ image:
   repository: __DISTR_REGISTRY__/copia-web-app-selfhosted-releases
 imagePullSecrets: []
 chartGeneratedSecrets:
+  # Gitea internal secrets only. Conversion-manager tokens are the Distr
+  # secrets below, so a customer must set them before deploy.
   enabled: true
+  conversionManager:
+    enabled: false
 persistence:
   enabled: true
 service:
@@ -49,6 +53,8 @@ copia:
       LEVEL: info
     copia:
       COPIA_HOSTED: false
+    conversion_manager:
+      MANAGEMENT_TOKEN: "{{ .Secrets.ConversionManagerManagementToken }}"
 conversion_manager_service:
   enabled: true
   deployment:
@@ -74,3 +80,6 @@ conversion_manager_service:
     HOST: 0.0.0.0
     PORT: 8888
     ENABLE_HTTPS: false
+  secret:
+    MANAGEMENT_TOKEN: "{{ .Secrets.ConversionManagerManagementToken }}"
+    WORKER_TOKEN: "{{ .Secrets.ConversionManagerWorkerToken }}"

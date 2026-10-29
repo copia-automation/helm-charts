@@ -1073,11 +1073,22 @@
     "chartGeneratedSecrets": {
       "type": "object",
       "additionalProperties": false,
-      "description": "When enabled, the chart pre-generates Gitea internal secrets via a pre-install Job and assembles them into app.ini at Pod startup via an init container.",
+      "description": "enabled: Gitea secrets. conversionManager.enabled: CM tokens, or follow enabled.",
       "required": ["enabled"],
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Generate Gitea internal secrets and substitute them into app.ini."
+        },
+        "conversionManager": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Generate MANAGEMENT_TOKEN and WORKER_TOKEN. Omit to follow chartGeneratedSecrets.enabled."
+            }
+          }
         }
       }
     },

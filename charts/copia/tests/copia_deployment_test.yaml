@@ -124,3 +124,61 @@ tests:
       - equal:
           path: spec.template.spec.volumes[3].secret.secretName
           value: RELEASE-NAME-copia-pg-app-credentials
+  - it: mounts both generated secrets when conversion-manager tokens follow Gitea generation
+    set:
+      copia.config.APP_NAME: Copia
+      chartGeneratedSecrets.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gitea-secrets
+            secret:
+              secretName: RELEASE-NAME-copia-gitea-secrets
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: conversion-manager-secrets
+            secret:
+              secretName: conversion-manager-secrets
+  - it: skips the conversion-manager secret mount when those tokens are supplied in values
+    set:
+      copia.config.APP_NAME: Copia
+      chartGeneratedSecrets.enabled: true
+      chartGeneratedSecrets.conversionManager.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gitea-secrets
+            secret:
+              secretName: RELEASE-NAME-copia-gitea-secrets
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: conversion-manager-secrets
+      - notContains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: conversion-manager-secrets
+  - it: mounts only conversion-manager secrets when Gitea generation is off
+    set:
+      copia.config.APP_NAME: Copia
+      chartGeneratedSecrets.enabled: false
+      chartGeneratedSecrets.conversionManager.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: conversion-manager-secrets
+            secret:
+              secretName: conversion-manager-secrets
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: gitea-secrets
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: conversion-manager-secrets
+            mountPath: /tmp/cm-secrets

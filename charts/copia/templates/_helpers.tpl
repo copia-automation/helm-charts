@@ -631,3 +631,30 @@ Keys: username, email, password.
 {{- printf "%s-admin-password" (include "app.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Gitea internal secrets (SECRET_KEY, JWT_SECRET, and the other app.ini keys).
+*/}}
+{{- define "copia.chartGeneratedSecrets.gitea" -}}
+{{- if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Conversion-manager MANAGEMENT_TOKEN and WORKER_TOKEN.
+When conversionManager.enabled is unset, follow chartGeneratedSecrets.enabled.
+*/}}
+{{- define "copia.chartGeneratedSecrets.conversionManager" -}}
+{{- $cm := dict -}}
+{{- if and .Values.chartGeneratedSecrets (kindIs "map" .Values.chartGeneratedSecrets.conversionManager) -}}
+{{- $cm = .Values.chartGeneratedSecrets.conversionManager -}}
+{{- end -}}
+{{- if hasKey $cm "enabled" -}}
+{{- if index $cm "enabled" -}}
+true
+{{- end -}}
+{{- else if and .Values.chartGeneratedSecrets .Values.chartGeneratedSecrets.enabled -}}
+true
+{{- end -}}
+{{- end -}}

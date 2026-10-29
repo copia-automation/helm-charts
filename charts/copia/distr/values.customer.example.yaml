@@ -65,6 +65,8 @@ copia:
       USER: copia
       PASSWD: "{{ .Secrets.CopiaDbPassword }}"
       SSL_MODE: require
+    conversion_manager:
+      MANAGEMENT_TOKEN: "{{ .Secrets.ConversionManagerManagementToken }}"
     mailer:
       ENABLED: false
       # To send mail, set ENABLED: true and uncomment:
@@ -84,3 +86,5 @@ conversion_manager_service:
     DB_USER: conversion_manager
   secret:
     DB_PASSWORD: "{{ .Secrets.ConversionManagerDbPassword }}"
+    MANAGEMENT_TOKEN: "{{ .Secrets.ConversionManagerManagementToken }}"
+    WORKER_TOKEN: "{{ .Secrets.ConversionManagerWorkerToken }}"
