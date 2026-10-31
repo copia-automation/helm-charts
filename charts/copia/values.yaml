@@ -79,8 +79,6 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - git.example.com
-  #    # PEM text. When both are set, the chart creates the kubernetes.io/tls
-  #    # Secret named secretName and the Ingress terminates TLS with it.
   #    certificate: ""
   #    privateKey: ""
 resources: {}
@@ -266,8 +264,6 @@ conversion_manager_service:
     #  - secretName: conversion-manager-tls
     #    hosts:
     #      - conversion.example.com
-    #    # PEM text, same as ingress.tls. A certificate that already covers this
-    #    # hostname can omit these and reuse the Copia secretName.
     #    certificate: ""
     #    privateKey: ""
   configmap:

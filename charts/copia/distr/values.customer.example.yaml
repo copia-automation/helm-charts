@@ -19,9 +19,6 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-  # HTTPS is required. AWS: remove tls and use ACM at the load balancer.
-  # Non-cloud (vSphere, Hyper-V): quoted certificate and privateKey, base64.
-  # https://docs.copia.io/copia-deployment-portal/application/tls-certificates
   tls:
     - secretName: copia-tls
       hosts:
@@ -80,8 +77,6 @@ copia:
       # USER: "{{ .Secrets.SmtpUser }}"
       # PASSWD: "{{ .Secrets.SmtpPassword }}"
 conversion_manager_service:
-  # HTTPS is required here too. Wildcard: secretName copia-tls.
-  # Separate certificate: secretName conversion-manager-tls.
   configmap:
     # Required for an existing Postgres, including RDS/Cloud SQL you created
     # yourself. Remove this key only when cloudnativePG.enabled, rds.enabled,
