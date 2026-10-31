@@ -22,11 +22,19 @@ Configure these in the Distr customer portal:
 | **`ConversionManagerDbPassword`** | Secrets (if using conversion manager) |
 | **`ConversionManagerManagementToken`** | Secrets. Same value in Copia and conversion manager |
 | **`ConversionManagerWorkerToken`** | Secrets. Conversion-manager workers |
+| **`CopiaTlsCertificate`** | Secrets. Base64 of the certificate, one line. Also the wildcard for both Ingresses |
+| **`CopiaTlsPrivateKey`** | Secrets. Base64 of the private key for `CopiaTlsCertificate`, one line |
+| **`ConversionManagerTlsCertificate`** | Secrets. Base64 of the conversion-manager certificate, when it has its own |
+| **`ConversionManagerTlsPrivateKey`** | Secrets. Base64 of that private key, one line |
 | **Environment variables** | Deployments → your target → Environment tab |
 
 Required environment fields include hostname, database connection settings, and admin user
 details. See the environment template on your deployment for the full list. Empty required
 fields keep **Deploy** disabled.
+
+HTTPS is required for the Copia and conversion-manager hostnames. On AWS, terminate TLS at the load balancer
+with ACM and leave the certificate secrets unset. On vSphere, Hyper-V, or other non-cloud platforms, set the
+certificate secrets from your own files.
 
 ### Database
 

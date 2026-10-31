@@ -29,3 +29,29 @@ tests:
       - equal:
           path: spec.rules[0].http.paths[0].pathType
           value: Prefix
+  - it: references the TLS secret and omits certificate material
+    set:
+      ingress.enabled: true
+      ingress.tls:
+        - secretName: copia-tls
+          hosts:
+            - copia.example.com
+          certificate: |
+            -----BEGIN CERTIFICATE-----
+            TESTCERT
+            -----END CERTIFICATE-----
+          privateKey: |
+            -----BEGIN PRIVATE KEY-----
+            TESTKEY
+            -----END PRIVATE KEY-----
+    asserts:
+      - equal:
+          path: spec.tls[0].secretName
+          value: copia-tls
+      - equal:
+          path: spec.tls[0].hosts[0]
+          value: copia.example.com
+      - notExists:
+          path: spec.tls[0].certificate
+      - notExists:
+          path: spec.tls[0].privateKey

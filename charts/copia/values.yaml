@@ -79,6 +79,8 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - git.example.com
+  #    certificate: ""
+  #    privateKey: ""
 resources: {}
   # limits:
   #   cpu: 100m
@@ -259,9 +261,11 @@ conversion_manager_service:
           - path: /
             pathType: Prefix
     tls: []
-    #  - secretName: chart-example-tls
+    #  - secretName: conversion-manager-tls
     #    hosts:
-    #      - git.example.com
+    #      - conversion.example.com
+    #    certificate: ""
+    #    privateKey: ""
   configmap:
     LOGGER_LEVEL: debug
     NODE_ENV: production
