@@ -223,23 +223,51 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: so ingress.tls must be empty
-  - it: fails when Copia serves HTTPS behind an Ingress with tls
+  - it: fails when ingress termination meets Copia serving HTTPS
     template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      copia.config.server.PROTOCOL: https
+    asserts:
+      - failedTemplate:
+          errorPattern: copia.config.server.PROTOCOL must not be https
+  - it: fails when ingress termination meets conversion manager serving HTTPS
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.configmap.ENABLE_HTTPS: true
+    asserts:
+      - failedTemplate:
+          errorPattern: ENABLE_HTTPS must be false
+  - it: leaves an install without the tls block alone when Copia serves HTTPS behind ingress.tls
+    template: copia-ingress.yaml
     set:
       copia.config.server.PROTOCOL: https
       ingress.enabled: true
       ingress.tls:
         - secretName: other-tls
+          hosts:
+            - git.example.com
     asserts:
-      - failedTemplate:
-          errorPattern: copia.config.server.PROTOCOL must not be https
-  - it: fails when conversion manager serves HTTPS behind an Ingress with tls
-    template: copia-tls-secret.yaml
+      - equal:
+          path: spec.tls[0].secretName
+          value: other-tls
+  - it: leaves an install without the tls block alone when conversion manager serves HTTPS behind ingress.tls
+    template: conversion-manager-ingress.yaml
     set:
       conversion_manager_service.configmap.ENABLE_HTTPS: true
       conversion_manager_service.ingress.enabled: true
       conversion_manager_service.ingress.tls:
         - secretName: other-tls
+          hosts:
+            - cm.example.com
     asserts:
-      - failedTemplate:
-          errorPattern: ENABLE_HTTPS must be false
+      - equal:
+          path: spec.tls[0].secretName
+          value: other-tls

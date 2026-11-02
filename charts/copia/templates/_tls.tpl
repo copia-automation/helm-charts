@@ -81,7 +81,8 @@ chart does not create is read from the cluster at deploy time.
 
 {{/*
 Fails the render on settings that would leave TLS broken or terminated in two
-places at once.
+places at once. Only the tls block is checked, so installs without it render
+as they did before it existed.
 */}}
 {{- define "copia.tls.validate" -}}
 {{- $t := .Values.tls | default dict -}}
@@ -142,10 +143,10 @@ places at once.
 {{- end -}}
 {{- end -}}
 {{- end -}}
-{{- if and (or (eq $termination "ingress") (and $ingress.enabled $ingress.tls)) $copiaHttps -}}
+{{- if and (eq $termination "ingress") $copiaHttps -}}
 {{- fail "Copia TLS terminates at the Ingress, so copia.config.server.PROTOCOL must not be https. TLS terminates in one place only." -}}
 {{- end -}}
-{{- if and $cmOn (or (eq $termination "ingress") (and $cmIngress.enabled $cmIngress.tls)) $cmHttps -}}
+{{- if and $cmOn (eq $termination "ingress") $cmHttps -}}
 {{- fail "Conversion manager TLS terminates at the Ingress, so conversion_manager_service.configmap.ENABLE_HTTPS must be false. TLS terminates in one place only." -}}
 {{- end -}}
 {{- end -}}

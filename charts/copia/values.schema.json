@@ -705,7 +705,7 @@
     },
     "tls": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "termination": {
           "type": "string",
