@@ -741,6 +741,20 @@
             }
           }
         }
+      },
+      "if": {
+        "required": ["copia"],
+        "properties": {
+          "copia": {
+            "anyOf": [
+              { "required": ["secretName"], "properties": { "secretName": { "minLength": 1 } } },
+              { "required": ["certificate"], "properties": { "certificate": { "minLength": 1 } } }
+            ]
+          }
+        }
+      },
+      "then": {
+        "propertyNames": { "enum": ["termination", "copia", "conversionManager"] }
       }
     },
     "ingress": {

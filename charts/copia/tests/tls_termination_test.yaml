@@ -312,3 +312,18 @@ tests:
       - equal:
           path: spec.template.metadata.annotations["checksum/tls"]
           value: ad1c94b578c9502f49fdc91dc70b009ef2ad43ec3df673b24ea4d49a9989fe93
+  - it: rejects a misspelled tls key when chart TLS is active
+    template: copia-deployment.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      tls.terminaton: ingress
+    asserts:
+      - failedTemplate:
+          errorPattern: terminaton
+  - it: accepts unrelated tls keys when chart TLS is inactive
+    template: copia-deployment.yaml
+    set:
+      tls.terminaton: ingress
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/tls"]
