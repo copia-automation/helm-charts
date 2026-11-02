@@ -64,6 +64,32 @@ service:
     targetPort: *copia_port
     #nodePort:
     annotations: {}
+# TLS from a certificate you supply. Off until tls.copia names a Secret or
+# carries a certificate. ingress.tls still works on its own for a Secret you
+# manage at the Ingress.
+tls:
+  # Where TLS terminates. One place only; the chart fails if both are set up.
+  #   pod: Copia and conversion manager serve HTTPS from the Secret. The chart
+  #     sets PROTOCOL, CERT_FILE and KEY_FILE in app.ini, ENABLE_HTTPS,
+  #     CERT_FILE and KEY_FILE for conversion manager, and HTTPS probes.
+  #     ingress.tls must be empty.
+  #   ingress: the chart Ingresses present the Secret for every host in
+  #     ingress.hosts and the pods serve HTTP. Requires the Ingresses enabled.
+  termination: pod
+  copia:
+    # Secret the chart creates from certificate and privateKey, default
+    # <fullname>-tls. Without certificate, an existing kubernetes.io/tls
+    # Secret that you manage.
+    secretName: ""
+    # PEM, or PEM encoded as one line of base64.
+    certificate: ""
+    privateKey: ""
+  # Leave empty to share the Copia certificate.
+  conversionManager:
+    # Default <conversion-manager fullname>-tls when certificate is set.
+    secretName: ""
+    certificate: ""
+    privateKey: ""
 ingress:
   enabled: false
   # ingressClassName: nginx

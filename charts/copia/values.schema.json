@@ -703,6 +703,60 @@
         }
       }  
     },
+    "tls": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "termination": {
+          "type": "string",
+          "enum": ["pod", "ingress"]
+        },
+        "copia": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "secretName": {
+              "type": "string"
+            },
+            "certificate": {
+              "type": "string"
+            },
+            "privateKey": {
+              "type": "string"
+            }
+          }
+        },
+        "conversionManager": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "secretName": {
+              "type": "string"
+            },
+            "certificate": {
+              "type": "string"
+            },
+            "privateKey": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "if": {
+        "required": ["copia"],
+        "properties": {
+          "copia": {
+            "anyOf": [
+              { "required": ["secretName"], "properties": { "secretName": { "minLength": 1 } } },
+              { "required": ["certificate"], "properties": { "certificate": { "minLength": 1 } } }
+            ]
+          }
+        }
+      },
+      "then": {
+        "propertyNames": { "enum": ["termination", "copia", "conversionManager"] }
+      }
+    },
     "ingress": {
       "type": "object",
       "additionalProperties": false,

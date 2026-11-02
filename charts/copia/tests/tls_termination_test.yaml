@@ -1,0 +1,406 @@
+suite: Test TLS termination
+templates:
+  - copia-deployment.yaml
+  - copia-secret.yaml
+  - copia-ingress.yaml
+  - conversion-manager-deployment.yaml
+  - conversion-manager-configmap.yaml
+  - conversion-manager-ingress.yaml
+  - copia-tls-secret.yaml
+release:
+  name: r
+set:
+  copia.config.server.HTTP_PORT: 4001
+  conversion_manager_service.enabled: true
+tests:
+  - it: pod termination mounts the Secret into Copia
+    template: copia-deployment.yaml
+    set:
+      tls.copia.secretName: customer-tls
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls
+            secret:
+              secretName: customer-tls
+              defaultMode: 0440
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tls
+            mountPath: /etc/copia/tls
+            readOnly: true
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTPS
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTPS
+      - exists:
+          path: spec.template.metadata.annotations["checksum/tls"]
+  - it: pod termination turns on HTTPS in app.ini
+    template: copia-secret.yaml
+    set:
+      tls.copia.secretName: customer-tls
+    asserts:
+      - matchRegex:
+          path: stringData["app.ini"]
+          pattern: PROTOCOL = https
+      - matchRegex:
+          path: stringData["app.ini"]
+          pattern: CERT_FILE = /etc/copia/tls/tls.crt
+      - matchRegex:
+          path: stringData["app.ini"]
+          pattern: KEY_FILE = /etc/copia/tls/tls.key
+  - it: pod termination turns on HTTPS in conversion manager
+    template: conversion-manager-configmap.yaml
+    set:
+      tls.copia.secretName: customer-tls
+    asserts:
+      - equal:
+          path: data.ENABLE_HTTPS
+          value: "true"
+      - equal:
+          path: data.CERT_FILE
+          value: /etc/conversion-manager/tls/tls.crt
+      - equal:
+          path: data.KEY_FILE
+          value: /etc/conversion-manager/tls/tls.key
+  - it: conversion manager shares the Copia Secret by default and probes HTTPS
+    template: conversion-manager-deployment.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      conversion_manager_service.deployment.startupProbe.httpGet.scheme: HTTP
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls
+            secret:
+              secretName: customer-tls
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tls
+            mountPath: /etc/conversion-manager/tls
+            readOnly: true
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTPS
+  - it: conversion manager uses its own Secret when set
+    template: conversion-manager-deployment.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      tls.conversionManager.secretName: cm-tls
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls
+            secret:
+              secretName: cm-tls
+  - it: chart-created certificate material sets the pod checksum
+    template: copia-deployment.yaml
+    set:
+      tls.copia:
+        certificate: "-----BEGIN CERTIFICATE-----\nB\n-----END CERTIFICATE-----"
+        privateKey: "-----BEGIN PRIVATE KEY-----\nB\n-----END PRIVATE KEY-----"
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/tls"]
+          pattern: ^[0-9a-f]{64}$
+  - it: pod termination leaves the Ingress without tls
+    template: copia-ingress.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+    asserts:
+      - notExists:
+          path: spec.tls
+  - it: ingress termination puts the Secret on the Copia Ingress for each host
+    template: copia-ingress.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.tls
+          value:
+            - hosts:
+                - git.example.com
+              secretName: customer-tls
+  - it: ingress termination puts the Secret on the conversion-manager Ingress
+    template: conversion-manager-ingress.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.tls[0].secretName
+          value: customer-tls
+  - it: ingress termination leaves the pods on HTTP
+    template: copia-deployment.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls
+            secret:
+              secretName: customer-tls
+              defaultMode: 0440
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/tls"]
+  - it: ingress termination probes conversion manager over HTTP
+    template: conversion-manager-deployment.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTP
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTP
+  - it: ingress termination leaves conversion manager on HTTP
+    template: conversion-manager-configmap.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+    asserts:
+      - equal:
+          path: data.ENABLE_HTTPS
+          value: "false"
+  - it: fails when pod termination and ingress.tls are both set
+    template: copia-tls-secret.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      ingress.tls:
+        - secretName: other-tls
+          hosts:
+            - git.example.com
+    asserts:
+      - failedTemplate:
+          errorPattern: tls.termination is pod, so ingress.tls must be empty
+  - it: fails when pod termination and the conversion-manager ingress.tls are both set
+    template: copia-tls-secret.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.ingress.tls:
+        - secretName: other-tls
+          hosts:
+            - cm.example.com
+    asserts:
+      - failedTemplate:
+          errorPattern: tls.termination is pod, so conversion_manager_service.ingress.tls must be empty
+  - it: fails when ingress termination has no Ingress
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+    asserts:
+      - failedTemplate:
+          errorMessage: tls.termination ingress requires ingress.enabled.
+  - it: fails when ingress termination has no conversion-manager Ingress
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: requires conversion_manager_service.ingress.enabled
+  - it: fails when ingress termination also gets ingress.tls
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      ingress.tls:
+        - secretName: other-tls
+    asserts:
+      - failedTemplate:
+          errorPattern: so ingress.tls must be empty
+  - it: fails when ingress termination meets Copia serving HTTPS
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      copia.config.server.PROTOCOL: https
+    asserts:
+      - failedTemplate:
+          errorPattern: copia.config.server.PROTOCOL must not be https
+  - it: fails when ingress termination meets conversion manager serving HTTPS
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.configmap.ENABLE_HTTPS: true
+    asserts:
+      - failedTemplate:
+          errorPattern: ENABLE_HTTPS must be false
+  - it: leaves an install without the tls block alone when Copia serves HTTPS behind ingress.tls
+    template: copia-ingress.yaml
+    set:
+      copia.config.server.PROTOCOL: https
+      ingress.enabled: true
+      ingress.tls:
+        - secretName: other-tls
+          hosts:
+            - git.example.com
+    asserts:
+      - equal:
+          path: spec.tls[0].secretName
+          value: other-tls
+  - it: leaves an install without the tls block alone when conversion manager serves HTTPS behind ingress.tls
+    template: conversion-manager-ingress.yaml
+    set:
+      conversion_manager_service.configmap.ENABLE_HTTPS: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.ingress.tls:
+        - secretName: other-tls
+          hosts:
+            - cm.example.com
+    asserts:
+      - equal:
+          path: spec.tls[0].secretName
+          value: other-tls
+  - it: hashes a Secret the chart creates from values, not cluster data
+    template: copia-deployment.yaml
+    kubernetesProvider:
+      scheme:
+        "v1/Secret":
+          gvr:
+            version: "v1"
+            resource: "secrets"
+          namespaced: true
+      objects:
+        - kind: Secret
+          apiVersion: v1
+          metadata:
+            name: r-copia-tls
+            namespace: NAMESPACE
+            annotations:
+              meta.helm.sh/release-name: r
+          data:
+            tls.crt: b2xk
+    set:
+      tls.copia:
+        certificate: "-----BEGIN CERTIFICATE-----\nB\n-----END CERTIFICATE-----"
+        privateKey: "-----BEGIN PRIVATE KEY-----\nB\n-----END PRIVATE KEY-----"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/tls"]
+          value: ad1c94b578c9502f49fdc91dc70b009ef2ad43ec3df673b24ea4d49a9989fe93
+  - it: rejects a misspelled tls key when chart TLS is active
+    template: copia-deployment.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      tls.terminaton: ingress
+    asserts:
+      - failedTemplate:
+          errorPattern: terminaton
+  - it: accepts unrelated tls keys when chart TLS is inactive
+    template: copia-deployment.yaml
+    set:
+      tls.terminaton: ingress
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/tls"]
+  - it: fails when pod termination meets ENABLE_HTTPS=false in the conversion-manager env
+    template: copia-tls-secret.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          value: "false"
+    asserts:
+      - failedTemplate:
+          errorPattern: tls.termination is pod, so ENABLE_HTTPS in conversion_manager_service.deployment.env must be the literal true
+  - it: fails when ingress termination meets ENABLE_HTTPS=true in the conversion-manager env
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          value: "true"
+    asserts:
+      - failedTemplate:
+          errorPattern: tls.termination is ingress, so ENABLE_HTTPS in conversion_manager_service.deployment.env must be the literal false
+  - it: accepts unrelated conversion-manager env under pod termination
+    template: conversion-manager-deployment.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      conversion_manager_service.deployment.env:
+        - name: OTHER
+          value: "1"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTPS
+  - it: fails when ingress termination meets ENABLE_HTTPS from valueFrom
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          valueFrom:
+            configMapKeyRef:
+              name: other
+              key: ENABLE_HTTPS
+    asserts:
+      - failedTemplate:
+          errorPattern: must be the literal false
+  - it: fails when ingress termination meets ENABLE_HTTPS from variable substitution
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          value: $(OTHER)
+    asserts:
+      - failedTemplate:
+          errorPattern: must be the literal false
+  - it: accepts a literal ENABLE_HTTPS that matches the termination
+    template: conversion-manager-deployment.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          value: "false"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTP

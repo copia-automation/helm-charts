@@ -21,7 +21,14 @@ spec:
 {{- if .Values.conversion_manager_service.ingress.ingressClassName }}
   ingressClassName: {{ .Values.conversion_manager_service.ingress.ingressClassName }}
 {{- end }}
-{{- if .Values.conversion_manager_service.ingress.tls }}
+{{- if eq "true" (include "copia.tls.ingress" .) }}
+  tls:
+    - hosts:
+      {{- range .Values.conversion_manager_service.ingress.hosts }}
+        - {{ .host | quote }}
+      {{- end }}
+      secretName: {{ include "copia.tls.cmSecretName" . }}
+{{- else if .Values.conversion_manager_service.ingress.tls }}
   tls:
   {{- range .Values.conversion_manager_service.ingress.tls }}
     - hosts:

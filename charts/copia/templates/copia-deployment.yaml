@@ -26,6 +26,9 @@ spec:
       annotations:
         checksum/config: {{ toJson .Values.deployment.configmap | sha256sum }}
         checksum/secret: {{ toJson .Values.copia.config | sha256sum }}
+        {{- if eq "true" (include "copia.tls.pod" .) }}
+        checksum/tls: {{ include "copia.tls.copiaChecksum" . }}
+        {{- end }}
         {{- with .Values.copia.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -48,6 +51,7 @@ spec:
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
+      {{- $tlsPod := eq "true" (include "copia.tls.pod" .) }}
       {{- $giteaGen := eq "true" (include "copia.chartGeneratedSecrets.gitea" .) }}
       {{- $cmGen := eq "true" (include "copia.chartGeneratedSecrets.conversionManager" .) }}
       {{- $secretsOn := or $giteaGen $cmGen }}
@@ -219,6 +223,9 @@ spec:
             timeoutSeconds: {{ .Values.copia.livenessProbe.timeoutSeconds }}
             successThreshold: {{ .Values.copia.livenessProbe.successThreshold }}
             failureThreshold: {{ .Values.copia.livenessProbe.failureThreshold }}
+          {{- else if and .Values.copia.customLivenessProbe $tlsPod }}
+          livenessProbe:
+            {{- include "copia.tls.probe" (dict "probe" .Values.copia.customLivenessProbe "scheme" "HTTPS") | nindent 12 }}
           {{- else if .Values.copia.customLivenessProbe }}
           livenessProbe:
             {{- toYaml .Values.copia.customLivenessProbe | nindent 12 }}
@@ -232,6 +239,9 @@ spec:
             timeoutSeconds: {{ .Values.copia.readinessProbe.timeoutSeconds }}
             successThreshold: {{ .Values.copia.readinessProbe.successThreshold }}
             failureThreshold: {{ .Values.copia.readinessProbe.failureThreshold }}
+          {{- else if and .Values.copia.customReadinessProbe $tlsPod }}
+          readinessProbe:
+            {{- include "copia.tls.probe" (dict "probe" .Values.copia.customReadinessProbe "scheme" "HTTPS") | nindent 12 }}
           {{- else if .Values.copia.customReadinessProbe }}
           readinessProbe:
             {{- toYaml .Values.copia.customReadinessProbe | nindent 12 }}
@@ -245,6 +255,9 @@ spec:
             timeoutSeconds: {{ .Values.copia.startupProbe.timeoutSeconds }}
             successThreshold: {{ .Values.copia.startupProbe.successThreshold }}
             failureThreshold: {{ .Values.copia.startupProbe.failureThreshold }}
+          {{- else if and .Values.copia.customStartupProbe $tlsPod }}
+          startupProbe:
+            {{- include "copia.tls.probe" (dict "probe" .Values.copia.customStartupProbe "scheme" "HTTPS") | nindent 12 }}
           {{- else if .Values.copia.customStartupProbe }}
           startupProbe:
             {{- toYaml .Values.copia.customStartupProbe | nindent 12 }}
@@ -262,6 +275,11 @@ spec:
             - name     : config
               mountPath: {{ .Values.deployment.configmap.GITEA_APP_INI }}
               subPath  : app.ini
+            {{- end }}
+            {{- if $tlsPod }}
+            - name     : tls
+              mountPath: {{ include "copia.tls.copiaMountPath" . }}
+              readOnly : true
             {{- end }}
             {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
@@ -324,6 +342,12 @@ spec:
         {{- end }}
         {{- if .Values.extraVolumes }}
         {{- toYaml .Values.extraVolumes | nindent 8 }}
+        {{- end }}
+        {{- if $tlsPod }}
+        - name: tls
+          secret:
+            secretName: {{ include "copia.tls.copiaSecretName" . }}
+            defaultMode: 0440
         {{- end }}
         - name: temp
           emptyDir: {}
