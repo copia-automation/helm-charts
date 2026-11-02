@@ -160,6 +160,20 @@ tests:
               defaultMode: 0440
       - notExists:
           path: spec.template.metadata.annotations["checksum/tls"]
+  - it: ingress termination probes conversion manager over HTTP
+    template: conversion-manager-deployment.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTP
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTP
   - it: ingress termination leaves conversion manager on HTTP
     template: conversion-manager-configmap.yaml
     set:
@@ -271,3 +285,30 @@ tests:
       - equal:
           path: spec.tls[0].secretName
           value: other-tls
+  - it: hashes a Secret the chart creates from values, not cluster data
+    template: copia-deployment.yaml
+    kubernetesProvider:
+      scheme:
+        "v1/Secret":
+          gvr:
+            version: "v1"
+            resource: "secrets"
+          namespaced: true
+      objects:
+        - kind: Secret
+          apiVersion: v1
+          metadata:
+            name: r-copia-tls
+            namespace: NAMESPACE
+            annotations:
+              meta.helm.sh/release-name: r
+          data:
+            tls.crt: b2xk
+    set:
+      tls.copia:
+        certificate: "-----BEGIN CERTIFICATE-----\nB\n-----END CERTIFICATE-----"
+        privateKey: "-----BEGIN PRIVATE KEY-----\nB\n-----END PRIVATE KEY-----"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/tls"]
+          value: ad1c94b578c9502f49fdc91dc70b009ef2ad43ec3df673b24ea4d49a9989fe93

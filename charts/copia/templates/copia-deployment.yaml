@@ -225,7 +225,7 @@ spec:
             failureThreshold: {{ .Values.copia.livenessProbe.failureThreshold }}
           {{- else if and .Values.copia.customLivenessProbe $tlsPod }}
           livenessProbe:
-            {{- include "copia.tls.httpsProbe" .Values.copia.customLivenessProbe | nindent 12 }}
+            {{- include "copia.tls.probe" (dict "probe" .Values.copia.customLivenessProbe "scheme" "HTTPS") | nindent 12 }}
           {{- else if .Values.copia.customLivenessProbe }}
           livenessProbe:
             {{- toYaml .Values.copia.customLivenessProbe | nindent 12 }}
@@ -241,7 +241,7 @@ spec:
             failureThreshold: {{ .Values.copia.readinessProbe.failureThreshold }}
           {{- else if and .Values.copia.customReadinessProbe $tlsPod }}
           readinessProbe:
-            {{- include "copia.tls.httpsProbe" .Values.copia.customReadinessProbe | nindent 12 }}
+            {{- include "copia.tls.probe" (dict "probe" .Values.copia.customReadinessProbe "scheme" "HTTPS") | nindent 12 }}
           {{- else if .Values.copia.customReadinessProbe }}
           readinessProbe:
             {{- toYaml .Values.copia.customReadinessProbe | nindent 12 }}
@@ -257,7 +257,7 @@ spec:
             failureThreshold: {{ .Values.copia.startupProbe.failureThreshold }}
           {{- else if and .Values.copia.customStartupProbe $tlsPod }}
           startupProbe:
-            {{- include "copia.tls.httpsProbe" .Values.copia.customStartupProbe | nindent 12 }}
+            {{- include "copia.tls.probe" (dict "probe" .Values.copia.customStartupProbe "scheme" "HTTPS") | nindent 12 }}
           {{- else if .Values.copia.customStartupProbe }}
           startupProbe:
             {{- toYaml .Values.copia.customStartupProbe | nindent 12 }}

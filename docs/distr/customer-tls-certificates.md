@@ -49,6 +49,9 @@ TLS terminates in one place. The chart stops the deploy if it is set up in two.
 sets `PROTOCOL`, `CERT_FILE` and `KEY_FILE` in `app.ini`, sets `ENABLE_HTTPS`, `CERT_FILE` and `KEY_FILE` for
 conversion manager, and switches the health probes to HTTPS. Reach the pods through their Services, for example
 with `service.http.type: LoadBalancer`. Leave `ingress.tls` and `conversion_manager_service.ingress.tls` empty.
+If an Ingress stays in front of the pods, configure its controller to pass TLS through to them. One example is
+the ingress-nginx `nginx.ingress.kubernetes.io/ssl-passthrough` annotation. A plain Ingress sends HTTP to a pod
+that only accepts HTTPS, and every request fails.
 
 `termination: ingress` puts the Secret on both chart Ingresses, for every host in their `hosts` lists, and the pods
 serve HTTP. Both Ingresses must be enabled, and their `tls` lists must be empty because the chart fills them.

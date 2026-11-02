@@ -44,12 +44,16 @@ TLS for Copia and conversion manager. See the tls block in values.yaml.
 
 {{/*
 Pod annotation value that changes when the certificate changes. A Secret the
-chart does not create is read from the cluster at deploy time.
+chart does not create is read from the cluster at deploy time. A Secret the
+chart creates is hashed from values only, because the cluster still holds the
+previous certificate during the upgrade that replaces it.
 */}}
 {{- define "copia.tls.checksum" -}}
-{{- $root := .root -}}
-{{- $existing := lookup "v1" "Secret" $root.Release.Namespace .secretName -}}
-{{- toJson (dict "name" .secretName "certificate" (.certificate | default "") "privateKey" (.privateKey | default "") "data" (dig "data" dict $existing)) | sha256sum -}}
+{{- $data := dict -}}
+{{- if not .certificate -}}
+{{- $data = dig "data" dict (lookup "v1" "Secret" .root.Release.Namespace .secretName) -}}
+{{- end -}}
+{{- toJson (dict "name" .secretName "certificate" (.certificate | default "") "privateKey" (.privateKey | default "") "data" $data) | sha256sum -}}
 {{- end -}}
 
 {{- define "copia.tls.copiaChecksum" -}}
@@ -66,11 +70,11 @@ chart does not create is read from the cluster at deploy time.
 {{- include "copia.tls.checksum" (dict "root" . "secretName" (include "copia.tls.cmSecretName" .) "certificate" $m.certificate "privateKey" $m.privateKey) -}}
 {{- end -}}
 
-{{/* An httpGet probe with its scheme set to HTTPS. Other probes pass through. */}}
-{{- define "copia.tls.httpsProbe" -}}
-{{- $p := deepCopy . -}}
+{{/* An httpGet probe with its scheme set to .scheme. Other probes pass through. */}}
+{{- define "copia.tls.probe" -}}
+{{- $p := deepCopy .probe -}}
 {{- if $p.httpGet -}}
-{{- $_ := set $p.httpGet "scheme" "HTTPS" -}}
+{{- $_ := set $p.httpGet "scheme" .scheme -}}
 {{- end -}}
 {{- toYaml $p -}}
 {{- end -}}
@@ -122,10 +126,10 @@ as they did before it existed.
 {{- fail "tls.termination pod requires copia.config, because the chart writes PROTOCOL, CERT_FILE and KEY_FILE into app.ini." -}}
 {{- end -}}
 {{- if $ingress.tls -}}
-{{- fail "tls.termination is pod, so ingress.tls must be empty. TLS terminates in one place only: remove ingress.tls, or set tls.termination to ingress." -}}
+{{- fail "tls.termination is pod, so ingress.tls must be empty. TLS terminates in one place only: remove ingress.tls, or set tls.termination to ingress. An Ingress in front of pod termination must pass TLS through to the pods." -}}
 {{- end -}}
 {{- if and $cmOn $cmIngress.tls -}}
-{{- fail "tls.termination is pod, so conversion_manager_service.ingress.tls must be empty. TLS terminates in one place only: remove it, or set tls.termination to ingress." -}}
+{{- fail "tls.termination is pod, so conversion_manager_service.ingress.tls must be empty. TLS terminates in one place only: remove it, or set tls.termination to ingress. An Ingress in front of pod termination must pass TLS through to the pods." -}}
 {{- end -}}
 {{- else if eq $termination "ingress" -}}
 {{- if not $ingress.enabled -}}

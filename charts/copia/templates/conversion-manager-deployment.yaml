@@ -3,6 +3,12 @@
 {{- $rdsCmOn := eq "true" (include "copia.rds.conversionManager.enabled" .) }}
 {{- $cloudsqlCmOn := eq "true" (include "copia.cloudsql.conversionManager.enabled" .) }}
 {{- $tlsPod := eq "true" (include "copia.tls.pod" .) }}
+{{- $probeScheme := "" }}
+{{- if $tlsPod }}
+{{- $probeScheme = "HTTPS" }}
+{{- else if eq "true" (include "copia.tls.ingress" .) }}
+{{- $probeScheme = "HTTP" }}
+{{- end }}
 {{- if $rdsCmOn }}
 {{- $_ := include "copia.rds.validate" . }}
 {{- else if $cloudsqlCmOn }}
@@ -126,23 +132,23 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.conversion_manager_service.deployment.port }}
-          {{- if and .Values.conversion_manager_service.deployment.livenessProbe $tlsPod }}
+          {{- if and .Values.conversion_manager_service.deployment.livenessProbe $probeScheme }}
           livenessProbe:
-            {{- include "copia.tls.httpsProbe" .Values.conversion_manager_service.deployment.livenessProbe | nindent 12 }}
+            {{- include "copia.tls.probe" (dict "probe" .Values.conversion_manager_service.deployment.livenessProbe "scheme" $probeScheme) | nindent 12 }}
           {{- else if .Values.conversion_manager_service.deployment.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.livenessProbe | nindent 12 }}
           {{- end }}
-          {{- if and .Values.conversion_manager_service.deployment.readinessProbe $tlsPod }}
+          {{- if and .Values.conversion_manager_service.deployment.readinessProbe $probeScheme }}
           readinessProbe:
-            {{- include "copia.tls.httpsProbe" .Values.conversion_manager_service.deployment.readinessProbe | nindent 12 }}
+            {{- include "copia.tls.probe" (dict "probe" .Values.conversion_manager_service.deployment.readinessProbe "scheme" $probeScheme) | nindent 12 }}
           {{- else if .Values.conversion_manager_service.deployment.readinessProbe }}
           readinessProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.readinessProbe | nindent 12 }}
           {{- end }}
-          {{- if and .Values.conversion_manager_service.deployment.startupProbe $tlsPod }}
+          {{- if and .Values.conversion_manager_service.deployment.startupProbe $probeScheme }}
           startupProbe:
-            {{- include "copia.tls.httpsProbe" .Values.conversion_manager_service.deployment.startupProbe | nindent 12 }}
+            {{- include "copia.tls.probe" (dict "probe" .Values.conversion_manager_service.deployment.startupProbe "scheme" $probeScheme) | nindent 12 }}
           {{- else if .Values.conversion_manager_service.deployment.startupProbe }}
           startupProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.startupProbe | nindent 12 }}
