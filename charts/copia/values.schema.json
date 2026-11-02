@@ -703,6 +703,46 @@
         }
       }  
     },
+    "tls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "termination": {
+          "type": "string",
+          "enum": ["pod", "ingress"]
+        },
+        "copia": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "secretName": {
+              "type": "string"
+            },
+            "certificate": {
+              "type": "string"
+            },
+            "privateKey": {
+              "type": "string"
+            }
+          }
+        },
+        "conversionManager": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "secretName": {
+              "type": "string"
+            },
+            "certificate": {
+              "type": "string"
+            },
+            "privateKey": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "ingress": {
       "type": "object",
       "additionalProperties": false,

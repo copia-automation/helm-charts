@@ -1,0 +1,10 @@
+suite: Test TLS without copia.config
+templates:
+  - copia-tls-secret.yaml
+tests:
+  - it: fails when pod termination has no copia.config
+    set:
+      tls.copia.secretName: customer-tls
+    asserts:
+      - failedTemplate:
+          errorPattern: tls.termination pod requires copia.config

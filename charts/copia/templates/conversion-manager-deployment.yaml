@@ -2,6 +2,7 @@
 {{- if and .Values.conversion_manager_service.enabled (eq .Values.conversion_manager_service.enabled true)}}
 {{- $rdsCmOn := eq "true" (include "copia.rds.conversionManager.enabled" .) }}
 {{- $cloudsqlCmOn := eq "true" (include "copia.cloudsql.conversionManager.enabled" .) }}
+{{- $tlsPod := eq "true" (include "copia.tls.pod" .) }}
 {{- if $rdsCmOn }}
 {{- $_ := include "copia.rds.validate" . }}
 {{- else if $cloudsqlCmOn }}
@@ -34,6 +35,9 @@ spec:
       annotations:
         checksum/config: {{ toJson .Values.conversion_manager_service.configmap | sha256sum }}
         checksum/secret: {{ toJson .Values.conversion_manager_service.secret | sha256sum }}
+        {{- if eq "true" (include "copia.tls.pod" .) }}
+        checksum/tls: {{ include "copia.tls.cmChecksum" . }}
+        {{- end }}
         {{- with .Values.conversion_manager_service.deployment.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -122,19 +126,28 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.conversion_manager_service.deployment.port }}
-          {{- if .Values.conversion_manager_service.deployment.livenessProbe }}
+          {{- if and .Values.conversion_manager_service.deployment.livenessProbe $tlsPod }}
+          livenessProbe:
+            {{- include "copia.tls.httpsProbe" .Values.conversion_manager_service.deployment.livenessProbe | nindent 12 }}
+          {{- else if .Values.conversion_manager_service.deployment.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.livenessProbe | nindent 12 }}
           {{- end }}
-          {{- if .Values.conversion_manager_service.deployment.readinessProbe }}
+          {{- if and .Values.conversion_manager_service.deployment.readinessProbe $tlsPod }}
+          readinessProbe:
+            {{- include "copia.tls.httpsProbe" .Values.conversion_manager_service.deployment.readinessProbe | nindent 12 }}
+          {{- else if .Values.conversion_manager_service.deployment.readinessProbe }}
           readinessProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.readinessProbe | nindent 12 }}
           {{- end }}
-          {{- if .Values.conversion_manager_service.deployment.startupProbe }}
+          {{- if and .Values.conversion_manager_service.deployment.startupProbe $tlsPod }}
+          startupProbe:
+            {{- include "copia.tls.httpsProbe" .Values.conversion_manager_service.deployment.startupProbe | nindent 12 }}
+          {{- else if .Values.conversion_manager_service.deployment.startupProbe }}
           startupProbe:
             {{- toYaml .Values.conversion_manager_service.deployment.startupProbe | nindent 12 }}
           {{- end }}
-          {{- if or .Values.conversion_manager_service.deployment.volumeMounts $rdsCmOn $cloudsqlCmOn }}
+          {{- if or .Values.conversion_manager_service.deployment.volumeMounts $rdsCmOn $cloudsqlCmOn $tlsPod }}
           volumeMounts:
             {{- if .Values.conversion_manager_service.deployment.volumeMounts }}
             {{- toYaml .Values.conversion_manager_service.deployment.volumeMounts | nindent 12 }}
@@ -145,6 +158,11 @@ spec:
               readOnly: true
             - name: app-credentials
               mountPath: /etc/app-credentials
+              readOnly: true
+            {{- end }}
+            {{- if $tlsPod }}
+            - name: tls
+              mountPath: {{ include "copia.tls.cmMountPath" . }}
               readOnly: true
             {{- end }}
           {{- end }}
@@ -166,8 +184,13 @@ spec:
       tolerations:
         {{- toYaml .Values.conversion_manager_service.deployment.tolerations | nindent 8 }}
       {{- end }}
-      {{- if or $rdsCmOn $cloudsqlCmOn .Values.conversion_manager_service.deployment.volumes }}
+      {{- if or $rdsCmOn $cloudsqlCmOn $tlsPod .Values.conversion_manager_service.deployment.volumes }}
       volumes:
+        {{- if $tlsPod }}
+        - name: tls
+          secret:
+            secretName: {{ include "copia.tls.cmSecretName" . }}
+        {{- end }}
         {{- if $rdsCmOn }}
         - name: db-connection
           secret:

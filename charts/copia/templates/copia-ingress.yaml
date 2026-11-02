@@ -21,7 +21,14 @@ spec:
 {{- if .Values.ingress.ingressClassName }}
   ingressClassName: {{ .Values.ingress.ingressClassName }}
 {{- end }}
-{{- if .Values.ingress.tls }}
+{{- if eq "true" (include "copia.tls.ingress" .) }}
+  tls:
+    - hosts:
+      {{- range .Values.ingress.hosts }}
+        - {{ .host | quote }}
+      {{- end }}
+      secretName: {{ include "copia.tls.copiaSecretName" . }}
+{{- else if .Values.ingress.tls }}
   tls:
   {{- range .Values.ingress.tls }}
     - hosts:

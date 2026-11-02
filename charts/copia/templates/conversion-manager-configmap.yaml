@@ -7,6 +7,12 @@
 {{- $_ := include "copia.cloudsql.validate" . }}
 {{- end }}
 {{- $cm := deepCopy .Values.conversion_manager_service.configmap }}
+{{- if eq "true" (include "copia.tls.pod" .) }}
+  {{- $tlsDir := include "copia.tls.cmMountPath" . }}
+  {{- $_ := set $cm "ENABLE_HTTPS" true }}
+  {{- $_ := set $cm "CERT_FILE" (printf "%s/tls.crt" $tlsDir) }}
+  {{- $_ := set $cm "KEY_FILE" (printf "%s/tls.key" $tlsDir) }}
+{{- end }}
 {{- if eq "true" (include "copia.cnpg.enabled" .) }}
   {{- $_ := set $cm "DB_HOST" (include "copia.database.hostPort" .) }}
   {{- $_ := set $cm "DB_USER" (include "copia.cnpg.conversionManager.user" .) }}
