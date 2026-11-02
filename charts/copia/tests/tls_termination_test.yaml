@@ -336,7 +336,7 @@ tests:
           value: "false"
     asserts:
       - failedTemplate:
-          errorPattern: tls.termination is pod, so conversion_manager_service.deployment.env must not set ENABLE_HTTPS
+          errorPattern: tls.termination is pod, so ENABLE_HTTPS in conversion_manager_service.deployment.env must be the literal true
   - it: fails when ingress termination meets ENABLE_HTTPS=true in the conversion-manager env
     template: copia-tls-secret.yaml
     set:
@@ -349,7 +349,7 @@ tests:
           value: "true"
     asserts:
       - failedTemplate:
-          errorPattern: tls.termination is ingress, so conversion_manager_service.deployment.env must not set ENABLE_HTTPS to true
+          errorPattern: tls.termination is ingress, so ENABLE_HTTPS in conversion_manager_service.deployment.env must be the literal false
   - it: accepts unrelated conversion-manager env under pod termination
     template: conversion-manager-deployment.yaml
     set:
@@ -361,3 +361,46 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
           value: HTTPS
+  - it: fails when ingress termination meets ENABLE_HTTPS from valueFrom
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          valueFrom:
+            configMapKeyRef:
+              name: other
+              key: ENABLE_HTTPS
+    asserts:
+      - failedTemplate:
+          errorPattern: must be the literal false
+  - it: fails when ingress termination meets ENABLE_HTTPS from variable substitution
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          value: $(OTHER)
+    asserts:
+      - failedTemplate:
+          errorPattern: must be the literal false
+  - it: accepts a literal ENABLE_HTTPS that matches the termination
+    template: conversion-manager-deployment.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          value: "false"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTP

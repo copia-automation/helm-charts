@@ -156,12 +156,9 @@ as they did before it existed.
 {{- if and $cmOn $termination -}}
 {{- range $e := (dig "deployment" "env" list $cm) -}}
 {{- if and (kindIs "map" $e) (eq (toString $e.name) "ENABLE_HTTPS") -}}
-{{- $envHttps := eq "true" (include "copia.tls.isTrue" $e.value) -}}
-{{- if and (eq $termination "pod") (not $envHttps) -}}
-{{- fail "tls.termination is pod, so conversion_manager_service.deployment.env must not set ENABLE_HTTPS to anything but true. Remove it; the chart sets ENABLE_HTTPS." -}}
-{{- end -}}
-{{- if and (eq $termination "ingress") $envHttps -}}
-{{- fail "tls.termination is ingress, so conversion_manager_service.deployment.env must not set ENABLE_HTTPS to true. TLS terminates in one place only." -}}
+{{- $want := ternary "true" "false" (eq $termination "pod") -}}
+{{- if or (hasKey $e "valueFrom") (ne (toString $e.value) $want) -}}
+{{- fail (printf "tls.termination is %s, so ENABLE_HTTPS in conversion_manager_service.deployment.env must be the literal %s. Remove it; the chart sets ENABLE_HTTPS." $termination $want) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
