@@ -327,3 +327,37 @@ tests:
     asserts:
       - notExists:
           path: spec.template.metadata.annotations["checksum/tls"]
+  - it: fails when pod termination meets ENABLE_HTTPS=false in the conversion-manager env
+    template: copia-tls-secret.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          value: "false"
+    asserts:
+      - failedTemplate:
+          errorPattern: tls.termination is pod, so conversion_manager_service.deployment.env must not set ENABLE_HTTPS
+  - it: fails when ingress termination meets ENABLE_HTTPS=true in the conversion-manager env
+    template: copia-tls-secret.yaml
+    set:
+      tls.termination: ingress
+      tls.copia.secretName: customer-tls
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: ENABLE_HTTPS
+          value: "true"
+    asserts:
+      - failedTemplate:
+          errorPattern: tls.termination is ingress, so conversion_manager_service.deployment.env must not set ENABLE_HTTPS to true
+  - it: accepts unrelated conversion-manager env under pod termination
+    template: conversion-manager-deployment.yaml
+    set:
+      tls.copia.secretName: customer-tls
+      conversion_manager_service.deployment.env:
+        - name: OTHER
+          value: "1"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTPS

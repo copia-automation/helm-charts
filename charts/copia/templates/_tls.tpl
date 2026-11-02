@@ -153,4 +153,17 @@ as they did before it existed.
 {{- if and $cmOn (eq $termination "ingress") $cmHttps -}}
 {{- fail "Conversion manager TLS terminates at the Ingress, so conversion_manager_service.configmap.ENABLE_HTTPS must be false. TLS terminates in one place only." -}}
 {{- end -}}
+{{- if and $cmOn $termination -}}
+{{- range $e := (dig "deployment" "env" list $cm) -}}
+{{- if and (kindIs "map" $e) (eq (toString $e.name) "ENABLE_HTTPS") -}}
+{{- $envHttps := eq "true" (include "copia.tls.isTrue" $e.value) -}}
+{{- if and (eq $termination "pod") (not $envHttps) -}}
+{{- fail "tls.termination is pod, so conversion_manager_service.deployment.env must not set ENABLE_HTTPS to anything but true. Remove it; the chart sets ENABLE_HTTPS." -}}
+{{- end -}}
+{{- if and (eq $termination "ingress") $envHttps -}}
+{{- fail "tls.termination is ingress, so conversion_manager_service.deployment.env must not set ENABLE_HTTPS to true. TLS terminates in one place only." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
