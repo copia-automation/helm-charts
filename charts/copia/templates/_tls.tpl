@@ -187,6 +187,24 @@ as they did before it existed.
 {{- if ne (toString ($cmServiceHttp.type | default "")) "ClusterIP" -}}
 {{- fail "gatewayApi.enabled requires conversion_manager_service.service.http.type: ClusterIP." -}}
 {{- end -}}
+{{- $cmSecret := .Values.conversion_manager_service.secret | default dict -}}
+{{- if hasKey $cmSecret "HOST" -}}
+{{- $bind := toString $cmSecret.HOST -}}
+{{- if or (eq $bind "") (eq $bind "localhost") (eq $bind "127.0.0.1") (eq $bind "::1") -}}
+{{- fail "gatewayApi.enabled requires conversion_manager_service.secret.HOST to be a non-loopback address." -}}
+{{- end -}}
+{{- end -}}
+{{- range $env := (.Values.conversion_manager_service.deployment.env | default list) -}}
+{{- if and (kindIs "map" $env) (eq (toString ($env.name | default "")) "HOST") -}}
+{{- if hasKey $env "valueFrom" -}}
+{{- fail "gatewayApi.enabled does not support conversion_manager_service.deployment.env HOST from valueFrom." -}}
+{{- end -}}
+{{- $bind := toString ($env.value | default "") -}}
+{{- if or (eq $bind "") (eq $bind "localhost") (eq $bind "127.0.0.1") (eq $bind "::1") -}}
+{{- fail "gatewayApi.enabled requires conversion_manager_service.deployment.env HOST to be a non-loopback address." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

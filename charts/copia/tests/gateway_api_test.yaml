@@ -115,3 +115,44 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: gatewayApi.enabled requires service.http.type
+  - it: rejects a loopback conversion-manager HOST from the Secret
+    template: copia-tls-secret.yaml
+    set:
+      gatewayApi.enabled: true
+      conversion_manager_service.secret.HOST: localhost
+    asserts:
+      - failedTemplate:
+          errorPattern: gatewayApi.enabled requires conversion_manager_service.secret.HOST
+  - it: rejects a loopback conversion-manager HOST from deployment env
+    template: copia-tls-secret.yaml
+    set:
+      gatewayApi.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: HOST
+          value: 127.0.0.1
+    asserts:
+      - failedTemplate:
+          errorPattern: gatewayApi.enabled requires conversion_manager_service.deployment.env HOST
+  - it: rejects a valueFrom conversion-manager HOST from deployment env
+    template: copia-tls-secret.yaml
+    set:
+      gatewayApi.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: HOST
+          valueFrom:
+            secretKeyRef:
+              name: app-config
+              key: host
+    asserts:
+      - failedTemplate:
+          errorPattern: gatewayApi.enabled does not support conversion_manager_service.deployment.env HOST
+  - it: allows a non-loopback conversion-manager HOST from deployment env
+    template: copia-tls-secret.yaml
+    set:
+      gatewayApi.enabled: true
+      conversion_manager_service.deployment.env:
+        - name: HOST
+          value: 0.0.0.0
+    asserts:
+      - hasDocuments:
+          count: 0
