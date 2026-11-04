@@ -7,6 +7,12 @@
 {{- $_ := include "copia.cloudsql.validate" . }}
 {{- end }}
 {{- $cm := deepCopy .Values.conversion_manager_service.configmap }}
+{{- if .Values.gatewayApi.enabled }}
+{{- $bind := toString ($cm.HOST | default "") }}
+{{- if or (eq $bind "") (eq $bind "localhost") (eq $bind "127.0.0.1") (eq $bind "::1") }}
+{{- $_ := set $cm "HOST" "0.0.0.0" }}
+{{- end }}
+{{- end }}
 {{- if eq "true" (include "copia.tls.pod" .) }}
   {{- $tlsDir := include "copia.tls.cmMountPath" . }}
   {{- $_ := set $cm "ENABLE_HTTPS" true }}

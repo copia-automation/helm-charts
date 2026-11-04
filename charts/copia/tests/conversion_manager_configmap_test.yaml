@@ -50,6 +50,23 @@ tests:
       - equal:
           path: data.ENABLE_HTTPS
           value: "false"
+  - it: binds all interfaces when Gateway API is enabled and HOST is loopback
+    set:
+      conversion_manager_service.enabled: true
+      gatewayApi.enabled: true
+    asserts:
+      - equal:
+          path: data.HOST
+          value: "0.0.0.0"
+  - it: keeps an explicit conversion-manager bind address
+    set:
+      conversion_manager_service.enabled: true
+      gatewayApi.enabled: true
+      conversion_manager_service.configmap.HOST: 10.1.2.3
+    asserts:
+      - equal:
+          path: data.HOST
+          value: "10.1.2.3"
   - it: CloudNativePG sets DB_HOST from the Cluster and remaps reserved DB_USER
     set:
       conversion_manager_service.enabled: true

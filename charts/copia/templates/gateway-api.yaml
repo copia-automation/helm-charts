@@ -39,8 +39,8 @@ metadata:
     {{- include "app.labels" . | nindent 4 }}
 spec:
   parentRefs:
-    - name: {{ $gatewayName }}
-      namespace: {{ $gatewayNamespace }}
+    - name: {{ $copiaName }}
+      kind: ListenerSet
       sectionName: copia-https
   rules:
     - backendRefs:
@@ -55,8 +55,8 @@ metadata:
     {{- include "app.conversion-manager.labels" . | nindent 4 }}
 spec:
   parentRefs:
-    - name: {{ $gatewayName }}
-      namespace: {{ $gatewayNamespace }}
+    - name: {{ $copiaName }}
+      kind: ListenerSet
       sectionName: conversion-manager-https
   rules:
     - backendRefs:
