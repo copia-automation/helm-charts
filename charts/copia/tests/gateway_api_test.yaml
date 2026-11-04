@@ -1,0 +1,95 @@
+suite: Test Gateway API ListenerSet
+templates:
+  - gateway-api.yaml
+  - copia-tls-secret.yaml
+release:
+  name: r
+set:
+  copia.config.server.HTTP_PORT: 4001
+  conversion_manager_service.enabled: true
+  service.http.type: ClusterIP
+  conversion_manager_service.service.http.type: ClusterIP
+  tls.copia.secretName: customer-tls
+tests:
+  - it: renders no Gateway API resources by default
+    template: gateway-api.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: renders TCP listeners and routes for pod-terminated TLS
+    template: gateway-api.yaml
+    set:
+      gatewayApi.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: kind
+          value: ListenerSet
+        documentIndex: 0
+      - equal:
+          path: spec.parentRef.name
+          value: internal
+        documentIndex: 0
+      - equal:
+          path: spec.parentRef.namespace
+          value: system-gateway
+        documentIndex: 0
+      - equal:
+          path: spec.listeners[0].protocol
+          value: TCP
+        documentIndex: 0
+      - equal:
+          path: spec.listeners[0].port
+          value: 443
+        documentIndex: 0
+      - equal:
+          path: spec.listeners[1].protocol
+          value: TCP
+        documentIndex: 0
+      - equal:
+          path: spec.listeners[1].port
+          value: 3010
+        documentIndex: 0
+      - equal:
+          path: kind
+          value: TCPRoute
+        documentIndex: 1
+      - equal:
+          path: spec.parentRefs[0].sectionName
+          value: copia-https
+        documentIndex: 1
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 3000
+        documentIndex: 1
+      - equal:
+          path: kind
+          value: TCPRoute
+        documentIndex: 2
+      - equal:
+          path: spec.parentRefs[0].sectionName
+          value: conversion-manager-https
+        documentIndex: 2
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 3010
+        documentIndex: 2
+  - it: rejects Gateway API without pod TLS
+    template: copia-tls-secret.yaml
+    set:
+      gatewayApi.enabled: true
+      tls.termination: ingress
+      ingress.enabled: true
+      conversion_manager_service.ingress.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: gatewayApi.enabled requires pod TLS termination
+  - it: rejects Gateway API with a NodePort Copia Service
+    template: copia-tls-secret.yaml
+    set:
+      gatewayApi.enabled: true
+      service.http.type: NodePort
+    asserts:
+      - failedTemplate:
+          errorPattern: gatewayApi.enabled requires service.http.type

@@ -15,6 +15,19 @@ main() {
   log::success "Distr base + per-target overlay renders cleanly"
 
   log::exec_command helm template copia charts/copia \
+    --api-versions gateway.networking.k8s.io/v1 \
+    --values charts/copia/distr/values.base.yaml \
+    --values charts/copia/distr/values.customer.example.yaml \
+    --set gatewayApi.enabled=true \
+    --set tls.copia.secretName=customer-tls \
+    --set ingress.enabled=false \
+    --set conversion_manager_service.ingress.enabled=false \
+    --set-json 'ingress.tls=[]' \
+    --set-json 'conversion_manager_service.ingress.tls=[]' \
+    >/dev/null
+  log::success "Distr Gateway API ListenerSet overlay renders cleanly"
+
+  log::exec_command helm template copia charts/copia \
     --api-versions postgresql.cnpg.io/v1 \
     --values charts/copia/distr/values.base.yaml \
     --values charts/copia/distr/values.customer.example.yaml \

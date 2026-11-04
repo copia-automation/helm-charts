@@ -1,0 +1,65 @@
+{{- if .Values.gatewayApi.enabled }}
+{{- $gatewayName := .Values.gatewayApi.gatewayName | default "internal" }}
+{{- $gatewayNamespace := .Values.gatewayApi.gatewayNamespace | default "system-gateway" }}
+{{- $copiaName := include "app.fullname" . }}
+{{- $cmName := include "app.conversion-manager.fullname" . }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: {{ $copiaName }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  parentRef:
+    name: {{ $gatewayName }}
+    namespace: {{ $gatewayNamespace }}
+  listeners:
+    - name: copia-https
+      protocol: TCP
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+        kinds:
+          - kind: TCPRoute
+    - name: conversion-manager-https
+      protocol: TCP
+      port: 3010
+      allowedRoutes:
+        namespaces:
+          from: Same
+        kinds:
+          - kind: TCPRoute
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: TCPRoute
+metadata:
+  name: {{ $copiaName }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ $gatewayName }}
+      namespace: {{ $gatewayNamespace }}
+      sectionName: copia-https
+  rules:
+    - backendRefs:
+        - name: {{ $copiaName }}-http
+          port: {{ .Values.service.http.port }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: TCPRoute
+metadata:
+  name: {{ $cmName }}
+  labels:
+    {{- include "app.conversion-manager.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ $gatewayName }}
+      namespace: {{ $gatewayNamespace }}
+      sectionName: conversion-manager-https
+  rules:
+    - backendRefs:
+        - name: {{ $cmName }}
+          port: {{ .Values.conversion_manager_service.service.http.port }}
+{{- end }}

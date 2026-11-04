@@ -105,6 +105,11 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - git.example.com
+gatewayApi:
+  # The release namespace needs gateway.windsorcli.dev/internal: "true".
+  enabled: false
+  gatewayName: internal
+  gatewayNamespace: system-gateway
 resources: {}
   # limits:
   #   cpu: 100m

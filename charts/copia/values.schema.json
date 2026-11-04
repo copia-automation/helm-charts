@@ -837,6 +837,25 @@
         }
       }
     },
+    "gatewayApi": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Expose pod-terminated TLS through a Gateway ListenerSet.",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "gatewayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gatewayNamespace": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "copia": {
       "type": "object",
       "additionalProperties": true,
