@@ -39,7 +39,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ toJson .Values.conversion_manager_service.configmap | sha256sum }}
+        checksum/config: {{ include "copia.conversionManager.renderedConfig" . | sha256sum }}
         checksum/secret: {{ toJson .Values.conversion_manager_service.secret | sha256sum }}
         {{- if eq "true" (include "copia.tls.pod" .) }}
         checksum/tls: {{ include "copia.tls.cmChecksum" . }}

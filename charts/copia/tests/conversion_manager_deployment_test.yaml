@@ -255,4 +255,24 @@ tests:
       - equal:
           path: spec.template.spec.volumes[1].secret.secretName
           value: RELEASE-NAME-copia-cm-pg-app-credentials
+  - it: config checksum follows the raw configmap before Gateway API
+    set:
+      conversion_manager_service.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/config"]
+          value: 4b491f853161af50d444858dd3242b9ead376478f4eb5ce88d3beb76d26410cf
+  - it: enabling Gateway API on upgrade changes the config checksum
+    release:
+      upgrade: true
+    set:
+      conversion_manager_service.enabled: true
+      gatewayApi.enabled: true
+    asserts:
+      - notEqual:
+          path: spec.template.metadata.annotations["checksum/config"]
+          value: 4b491f853161af50d444858dd3242b9ead376478f4eb5ce88d3beb76d26410cf
+      - equal:
+          path: spec.template.metadata.annotations["checksum/config"]
+          value: 89389563b69f059a62b2d9e5e6164276c2806e1506b662920a0c1879ae322b51
 
