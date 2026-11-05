@@ -96,6 +96,12 @@ as they did before it existed.
 {{- $cmOn := eq (toString $cm.enabled) "true" -}}
 {{- $cmIngress := $cm.ingress | default dict -}}
 {{- $ingress := .Values.ingress | default dict -}}
+{{- $gatewayApi := .Values.gatewayApi | default dict -}}
+{{- $gatewayApiOn := eq (toString $gatewayApi.enabled) "true" -}}
+{{- $service := .Values.service | default dict -}}
+{{- $serviceHttp := $service.http | default dict -}}
+{{- $cmService := $cm.service | default dict -}}
+{{- $cmServiceHttp := $cmService.http | default dict -}}
 {{- $server := dig "config" "server" dict (.Values.copia | default dict) -}}
 {{- $copiaHttps := eq (lower (toString (index $server "PROTOCOL" | default ""))) "https" -}}
 {{- $cmHttps := eq "true" (include "copia.tls.isTrue" (dig "configmap" "ENABLE_HTTPS" false $cm)) -}}
@@ -159,6 +165,44 @@ as they did before it existed.
 {{- $want := ternary "true" "false" (eq $termination "pod") -}}
 {{- if or (hasKey $e "valueFrom") (ne (toString $e.value) $want) -}}
 {{- fail (printf "tls.termination is %s, so ENABLE_HTTPS in conversion_manager_service.deployment.env must be the literal %s. Remove it; the chart sets ENABLE_HTTPS." $termination $want) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if $gatewayApiOn -}}
+{{- if ne $termination "pod" -}}
+{{- fail "gatewayApi.enabled requires pod TLS termination. Set tls.copia.secretName, or tls.copia.certificate and tls.copia.privateKey." -}}
+{{- end -}}
+{{- if not $cmOn -}}
+{{- fail "gatewayApi.enabled requires conversion_manager_service.enabled." -}}
+{{- end -}}
+{{- if $ingress.enabled -}}
+{{- fail "gatewayApi.enabled cannot be combined with ingress.enabled." -}}
+{{- end -}}
+{{- if $cmIngress.enabled -}}
+{{- fail "gatewayApi.enabled cannot be combined with conversion_manager_service.ingress.enabled." -}}
+{{- end -}}
+{{- if ne (toString ($serviceHttp.type | default "")) "ClusterIP" -}}
+{{- fail "gatewayApi.enabled requires service.http.type: ClusterIP." -}}
+{{- end -}}
+{{- if ne (toString ($cmServiceHttp.type | default "")) "ClusterIP" -}}
+{{- fail "gatewayApi.enabled requires conversion_manager_service.service.http.type: ClusterIP." -}}
+{{- end -}}
+{{- $cmSecret := .Values.conversion_manager_service.secret | default dict -}}
+{{- if hasKey $cmSecret "HOST" -}}
+{{- $bind := toString $cmSecret.HOST -}}
+{{- if or (eq $bind "") (eq $bind "localhost") (eq $bind "127.0.0.1") (eq $bind "::1") -}}
+{{- fail "gatewayApi.enabled requires conversion_manager_service.secret.HOST to be a non-loopback address." -}}
+{{- end -}}
+{{- end -}}
+{{- range $env := (.Values.conversion_manager_service.deployment.env | default list) -}}
+{{- if and (kindIs "map" $env) (eq (toString ($env.name | default "")) "HOST") -}}
+{{- if hasKey $env "valueFrom" -}}
+{{- fail "gatewayApi.enabled does not support conversion_manager_service.deployment.env HOST from valueFrom." -}}
+{{- end -}}
+{{- $bind := toString ($env.value | default "") -}}
+{{- if or (eq $bind "") (eq $bind "localhost") (eq $bind "127.0.0.1") (eq $bind "::1") -}}
+{{- fail "gatewayApi.enabled requires conversion_manager_service.deployment.env HOST to be a non-loopback address." -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

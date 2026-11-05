@@ -658,3 +658,17 @@ true
 true
 {{- end -}}
 {{- end -}}
+
+{{/*
+Conversion-manager ConfigMap data, with a reachable bind address when Gateway API is on.
+*/}}
+{{- define "copia.conversionManager.renderedConfig" -}}
+{{- $cm := deepCopy (.Values.conversion_manager_service.configmap | default dict) -}}
+{{- if .Values.gatewayApi.enabled -}}
+{{- $bind := toString ($cm.HOST | default "") -}}
+{{- if or (eq $bind "") (eq $bind "localhost") (eq $bind "127.0.0.1") (eq $bind "::1") -}}
+{{- $_ := set $cm "HOST" "0.0.0.0" -}}
+{{- end -}}
+{{- end -}}
+{{- toJson $cm -}}
+{{- end -}}
