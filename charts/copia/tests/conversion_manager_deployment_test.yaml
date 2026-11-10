@@ -223,6 +223,15 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].command[0]
           value: /bin/sh
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^\s*npx prisma migrate deploy$
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^\s*exec node -r tsconfig-paths/register \./bin/index\.js$
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^\s*(exec )?yarn\s
       - equal:
           path: spec.template.spec.volumes[0].secret.secretName
           value: RELEASE-NAME-copia-cm-pg-connection
@@ -249,6 +258,15 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].command[0]
           value: /bin/sh
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^\s*npx prisma migrate deploy$
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^\s*exec node -r tsconfig-paths/register \./bin/index\.js$
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^\s*(exec )?yarn\s
       - equal:
           path: spec.template.spec.volumes[0].secret.secretName
           value: RELEASE-NAME-copia-cm-pg-connection

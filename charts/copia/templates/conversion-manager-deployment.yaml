@@ -114,7 +114,10 @@ spec:
               if [ -f /etc/app-credentials/password ]; then
                 export DB_PASSWORD="$(tr -d '\n' < /etc/app-credentials/password)"
               fi
-              exec yarn run:prod
+              # Same steps as the image's `yarn run:prod`, without yarn, which the
+              # Chainguard runtime image doesn't include.
+              npx prisma migrate deploy
+              exec node -r tsconfig-paths/register ./bin/index.js
           {{- end }}
           envFrom:
             - configMapRef:
