@@ -223,6 +223,14 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].command[0]
           value: /bin/sh
+      # Migrations run from the image's own prisma, then the server starts.
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^\s*\./node_modules/\.bin/prisma migrate deploy\n\s*exec node -r tsconfig-paths/register \./bin/index\.js$
+      # No yarn or npx outside comments: the Chainguard runtime has no yarn.
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^[^#\n]*\b(yarn|npx)\b
       - equal:
           path: spec.template.spec.volumes[0].secret.secretName
           value: RELEASE-NAME-copia-cm-pg-connection
@@ -249,6 +257,14 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].command[0]
           value: /bin/sh
+      # Migrations run from the image's own prisma, then the server starts.
+      - matchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^\s*\./node_modules/\.bin/prisma migrate deploy\n\s*exec node -r tsconfig-paths/register \./bin/index\.js$
+      # No yarn or npx outside comments: the Chainguard runtime has no yarn.
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].args[0]
+          pattern: (?m)^[^#\n]*\b(yarn|npx)\b
       - equal:
           path: spec.template.spec.volumes[0].secret.secretName
           value: RELEASE-NAME-copia-cm-pg-connection
