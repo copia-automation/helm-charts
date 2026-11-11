@@ -74,7 +74,10 @@ conversion_manager_service:
       type: ClusterIP
   configmap:
     NODE_ENV: production
-    LOGGER_LEVEL: http
+    # Morgan logs every HTTP request, including the kubelet's /api/v1/ping
+    # probes, at the http level. info drops those lines. Set http or debug
+    # to see request logs while troubleshooting.
+    LOGGER_LEVEL: info
     # Bind all interfaces so the kubelet probe and the Service reach the pod;
     # the chart default localhost binds loopback only.
     HOST: 0.0.0.0
