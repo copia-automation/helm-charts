@@ -74,7 +74,7 @@ conversion_manager_service:
       type: ClusterIP
   configmap:
     NODE_ENV: production
-    LOGGER_LEVEL: http
+    LOGGER_LEVEL: info
     # Bind all interfaces so the kubelet probe and the Service reach the pod;
     # the chart default localhost binds loopback only.
     HOST: 0.0.0.0
