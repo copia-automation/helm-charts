@@ -70,7 +70,7 @@ jobs:
       # Install Helm before the exit-node route; get.helm.sh has failed to resolve through it.
       - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
-          version: v3.21.2
+          version: v3.22.1
 
       - name: Connect to tailnet
         if: ${{ inputs.exit-node != '' }}
